@@ -1,0 +1,612 @@
+id: modely-vypoctu
+number: 9
+title: Modely výpočtu
+source: "TGD1 skripta kap. 8 (str. 51–55); přednáška 9 (folie 5–11)"
+exam_questions: [14]
+summary: |
+  Abychom mohli přesně mluvit o „časové náročnosti", „polynomiálních algoritmech" nebo
+  „těžkých problémech", potřebujeme pevný abstraktní model výpočtu. Kapitola zavádí
+  **počítač s libovolným přístupem** (RAM), jeho příkazy, měření času a paměti
+  výpočtu a ukazuje, že pro polynomialitu stačí sledovat čas. Na závěr modelujeme
+  rozhodovací problém **jazykem**, algoritmus **přijímacím počítačem** a definujeme
+  **třídu P** – základ celé teorie NP-úplnosti v další kapitole.
+sections:
+  - number: "8.1"
+    title: Počítač s libovolným přístupem
+  - number: "8.2"
+    title: Časová a paměťová náročnost výpočtu
+  - number: "8.3"
+    title: Problémy (jazyky) třídy P
+items:
+  # ------------------------------------------------------------------ 8.1
+  - id: rem-churchova-teze
+    kind: remark
+    label: "Churchova teze"
+    section: "8.1"
+    title: Definice algoritmu a Churchova teze
+    terms: [algoritmus, Churchova teze, Church–Turingova teze, Turingův stroj, Turingův počítač, rekurzivní funkce, model výpočtu]
+    statement: |
+      Pojem *algoritmus* lze formalizovat mnoha způsoby, např.:
+
+      * Turingův počítač (stroj),
+      * rekurzivní funkce,
+      * program v některém programovacím jazyce,
+      * počítač s libovolným přístupem (RAM), …
+
+      **„Churchova teze":** každá úloha, která je algoritmizovatelná podle některé
+      z těchto definic, je algoritmizovatelná i podle všech ostatních.
+    intuition: |
+      Churchova teze není matematická věta (nelze ji dokázat, protože „algoritmus" v
+      intuitivním smyslu není formálně definován) – je to zkušenostní fakt: všechny
+      dosud navržené rozumné modely výpočtu umí řešit přesně tytéž úlohy. Můžeme si
+      proto vybrat model, se kterým se nejpohodlněji pracuje. Pro teorii složitosti
+      navíc platí, že rozumné modely se navzájem simulují s nejvýše **polynomiálním**
+      zpomalením, takže třídy jako P nezávisí na volbě modelu.
+    related: [def-ram]
+    source: "skripta str. 51; folie 9, str. 5"
+
+  - id: def-ram
+    kind: definition
+    section: "8.1"
+    title: Počítač s libovolným přístupem (RAM)
+    terms: [počítač s libovolným přístupem, RAM, random access machine, vstupní páska, výstupní páska, vstupní hlava, výstupní hlava, programová jednotka, programový registr, pracovní registr, indexový registr, paměťová buňka, aritmetická jednotka]
+    statement: |
+      **Počítač s libovolným přístupem** (angl. *Random Access Machine*, RAM) se skládá z
+
+      * **vstupní jednotky** – jednosměrně nekonečná *vstupní páska* rozdělená na pole,
+        ze které čte *vstupní hlava*;
+      * **výstupní jednotky** – *výstupní páska* s poli, na kterou zapisuje *výstupní hlava*;
+      * **programové jednotky** obsahující *program* (konečnou posloupnost příkazů) a
+        *programový registr* (ukazuje na právě prováděný příkaz);
+      * **aritmetické jednotky**;
+      * **paměti** – posloupnosti buněk s adresami $0, 1, 2, \dots$, kde buňka $0$ je
+        *pracovní registr*, buňka $1$ je *indexový registr* a buňky $2, 3, \dots$ jsou
+        obyčejné *paměťové buňky*.
+
+      V polích vstupní i výstupní pásky jsou celá čísla libovolné velikosti. Paměťových
+      buněk je neomezeně mnoho a každá může obsahovat libovolně velké celé číslo.
+      Nadále slovy „počítač" či „stroj" rozumíme vždy tento abstraktní model.
+    intuition: |
+      RAM je idealizovaný „assemblerový" počítač: má akumulátor (pracovní registr), jeden
+      indexový registr pro nepřímé adresování, neomezenou paměť a pásky pro vstup a výstup.
+      Proti Turingovu stroji je jeho popis složitější, ale programuje se mnohem
+      přirozeněji a je bližší skutečným počítačům – proto se v něm snadno odhaduje počet
+      kroků algoritmů, které známe z teorie grafů.
+    related: [def-konfigurace-pocitace, def-prikazy-ram, rem-churchova-teze]
+    source: "skripta str. 51–52; folie 9, str. 6"
+
+  - id: def-konfigurace-pocitace
+    kind: definition
+    section: "8.1"
+    title: Konfigurace a počáteční konfigurace počítače
+    terms: [konfigurace počítače, počáteční konfigurace, stav počítače, vstupní data]
+    statement: |
+      **Konfigurace počítače** je přiřazení, které každému
+
+      * poli vstupní pásky,
+      * poli výstupní pásky,
+      * paměťové buňce,
+      * programovému registru
+
+      přiřazuje celé číslo (je to popis okamžitého stavu počítače).
+
+      **Počáteční konfigurace**: existuje $n$ takové, že pole vstupní pásky s adresami
+      $n, n+1, \dots$, všechna pole výstupní pásky a všechny paměťové buňky obsahují nuly a
+      programový registr má hodnotu $1$. (Na polích vstupní pásky s adresami
+      $0, \dots, n-1$ jsou tedy vstupní data.)
+    intuition: |
+      Konfigurace je „snímek" celého stroje v jednom okamžiku. Na začátku je všechno
+      vynulované kromě vstupu a stroj začíná prvním příkazem programu.
+    related: [def-ram, def-vypocet-program]
+    source: "skripta str. 52; folie 9, str. 7"
+
+  - id: def-vypocet-program
+    kind: definition
+    section: "8.1"
+    title: Výpočet a program počítače
+    terms: [výpočet počítače, krok výpočtu, program počítače, příkaz]
+    statement: |
+      **Výpočet počítače** je posloupnost konfigurací $C_0, C_1, \dots$ taková, že $C_0$ je
+      počáteční konfigurace a každý **krok** (přechod $C_{t} \to C_{t+1}$) je dán
+      provedením některého z příkazů.
+
+      **Program počítače** je konečná posloupnost $p_1, \dots, p_n$ příkazů.
+    intuition: |
+      Program je pevný text, výpočet je jeho konkrétní „běh" na konkrétním vstupu.
+      Počet kroků výpočtu bude naší mírou času.
+    related: [def-konfigurace-pocitace, def-prikazy-ram, def-doba-a-pamet-vypoctu]
+    source: "skripta str. 53; folie 9, str. 7"
+
+  - id: def-prikazy-ram
+    kind: definition
+    section: "8.1"
+    title: Příkazy počítače s libovolným přístupem
+    terms: [příkazy RAM, instrukce, LOAD, STORE, ADD, SUBTRACT, MULTIPLY, DIVIDE, READ, WRITE, JUMP, JZERO, JGE, STOP, ACCEPT, REJECT, návěští]
+    statement: |
+      **Přesuny v paměti**
+
+      * `LOAD operand` – do pracovního registru uloží hodnotu operandu (ostatní beze změny);
+      * `STORE operand` – do paměťové buňky s adresou rovnou adrese operandu uloží obsah
+        pracovního registru.
+
+      **Aritmetické příkazy**
+
+      * `ADD operand` – k obsahu pracovního registru přičte hodnotu operandu;
+      * `SUBTRACT operand` – od obsahu pracovního registru odečte hodnotu operandu;
+      * `MULTIPLY operand` – obsah pracovního registru vynásobí hodnotou operandu;
+      * `DIVIDE operand` – obsah pracovního registru vydělí hodnotou operandu.
+
+      **Vstupy a výstupy**
+
+      * `READ` – do pracovního registru dá obsah aktuálního pole vstupní pásky a posune
+        vstupní hlavu o 1 vpravo;
+      * `WRITE` – obsah pracovního registru zapíše do aktuálního pole výstupní pásky a
+        posune výstupní hlavu o 1 vpravo.
+
+      **Skoky** (návěštím rozumíme číslo příkazu programu, tj. přirozené číslo)
+
+      * `JUMP návěští` – uloží návěští do programového registru;
+      * `JZERO návěští` – provede `JUMP`, je-li obsah pracovního registru roven nule;
+      * `JGE návěští` – provede `JUMP`, je-li obsah pracovního registru $\ge 0$.
+
+      **Zastavení**
+
+      * `STOP` – ukončí výpočet;
+      * `ACCEPT` – ukončí výpočet, u rozhodovacích úloh s pravdivostní hodnotou 1;
+      * `REJECT` – totéž co `ACCEPT`, ale s hodnotou 0.
+    intuition: |
+      Sada příkazů je záměrně minimální – přesto (s nepřímým adresováním přes indexový
+      registr) stačí na naprogramování libovolného algoritmu, např. práce s poli,
+      maticemi sousednosti nebo frontou při BFS. Příkazy `ACCEPT`/`REJECT` jsou
+      připravené pro rozhodovací problémy, kde odpověď je jen „ano/ne".
+    examples:
+      - title: Sečtení dvou čísel
+        body: |
+          Vstupní páska obsahuje dvě čísla, program zapíše jejich součet:
+
+          1. `READ` (pracovní registr := první číslo)
+          2. `STORE 2` (uložíme ho do buňky 2)
+          3. `READ` (pracovní registr := druhé číslo)
+          4. `ADD 2` (přičteme obsah buňky 2)
+          5. `WRITE` (zapíšeme výsledek)
+          6. `STOP`
+
+          Výpočet trvá 6 kroků a používá paměť velikosti 2 (nejvyšší použitá adresa).
+      - title: Jednoduchý přijímací program
+        body: |
+          Program přijme vstup právě tehdy, když je první vstupní číslo nula:
+
+          1. `READ`
+          2. `JZERO 4`
+          3. `REJECT`
+          4. `ACCEPT`
+
+          Program neobsahuje `WRITE` ani `STOP` a vždy skončí `ACCEPT`/`REJECT` – je to
+          tedy [přijímací počítač](#def-prijimaci-pocitac).
+    related: [def-ram, def-operand-adresovaci-chyba, def-prijimaci-pocitac]
+    source: "skripta str. 53; folie 9, str. 8–9"
+
+  - id: def-operand-adresovaci-chyba
+    kind: definition
+    section: "8.1"
+    title: Způsoby zadání operandu, adresovací chyba
+    terms: [operand, přímá adresace, nepřímá adresace, indexová adresace, konstanta, adresovací chyba]
+    statement: |
+      Operand příkazu lze zadat třemi způsoby:
+
+      * $j$ ($j$ je přirozené číslo nebo nula) – adresa operandu je $j$, hodnota operandu
+        je obsah buňky s adresou $j$ (*přímá adresace*);
+      * $*j$ ($j$ je celé číslo) – adresa operandu je $i + j$, kde $i$ je obsah indexového
+        registru; hodnota je obsah buňky s adresou $i+j$ (*nepřímá / indexová adresace*);
+      * $=j$ ($j$ je celé číslo) – hodnota operandu je přímo číslo $j$, adresa není
+        definována (*konstanta*).
+
+      **Adresovací chyba** nastane, když se u operandu $*j$ objeví okamžitá hodnota
+      $i + j$ záporná. Výpočet se v takovém případě zastaví.
+    intuition: |
+      Indexová adresace $*j$ je to, co z RAM dělá „počítač s libovolným přístupem": obsah
+      indexového registru lze počítat, takže se v konstantním čase dostaneme k libovolné
+      buňce – např. k prvku pole `A[i]` jako `LOAD *j`, kde $j$ je začátek pole.
+    examples:
+      - title: Čtení prvku pole
+        body: |
+          Je-li pole uloženo od buňky 10 a v indexovém registru je $i = 3$, pak `LOAD *10`
+          načte obsah buňky $13$, tj. čtvrtý prvek pole. `LOAD =10` naopak načte číslo $10$
+          a `LOAD 10` obsah buňky $10$.
+    related: [def-prikazy-ram, def-doba-a-pamet-vypoctu]
+    source: "skripta str. 53; folie 9, str. 9"
+
+  # ------------------------------------------------------------------ 8.2
+  - id: def-doba-a-pamet-vypoctu
+    kind: definition
+    label: "Definice 8.1"
+    section: "8.2"
+    title: Doba výpočtu a paměť výpočtu
+    terms: [doba výpočtu, časová náročnost, paměťová náročnost, velikost paměti, příkaz zastavení, dělení nulou]
+    statement: |
+      Řekneme, že **výpočet počítače trval dobu $t$**, jestliže
+
+      * v $t$-tém kroku došlo k provedení příkazu zastavení, nebo k adresovací chybě, nebo
+        k dělení nulou, a
+      * v krocích $0, 1, \dots, t-1$ žádný z uvedených případů nenastal.
+
+      Řekneme, že **výpočet počítače pracoval s pamětí velikosti $m$**, jestliže
+
+      * nebyl proveden příkaz s adresou $> m$ a
+      * byl proveden příkaz s adresou $= m$.
+    intuition: |
+      Čas = počet provedených příkazů do zastavení, paměť = nejvyšší použitá adresa.
+      Každý příkaz (i násobení obřích čísel) stojí jednotku času – viz
+      [uniformní hodnocení](#rem-uniformni-hodnoceni).
+    related: [rem-uniformni-hodnoceni, thm-simulace-v-pameti-fn, def-casova-slozitost-jazyka]
+    source: "skripta str. 53; folie 9, str. 10"
+
+  - id: rem-uniformni-hodnoceni
+    kind: remark
+    label: "Poznámka, Omezení 1"
+    section: "8.2"
+    title: Uniformní hodnocení paměti a Omezení 1
+    terms: [uniformní hodnocení, logaritmické hodnocení, Omezení 1, velikost čísel v paměti]
+    statement: |
+      Definice 8.1 odpovídá tzv. **uniformnímu hodnocení** paměti: nepřihlíží se k obsahu
+      buněk ani k jeho velikosti (každý příkaz trvá jeden krok, každá buňka zabírá jednotku
+      paměti). Alternativou je **logaritmické hodnocení**, kde cena příkazu závisí na
+      délce binárního zápisu čísel, se kterými se pracuje.
+
+      Uniformní hodnocení je zpravidla výhodnější, ale dovoluje „podvádět" – např. uložit
+      celý řádek matice jako jedno obrovské číslo a zpracovat ho jedním příkazem. Proto se
+      dohodneme:
+
+      **Omezení 1.** Nechť $p$ je pevně daný polynom. Připouštíme jen výpočty, při nichž v
+      žádné buňce paměti není číslo v absolutní hodnotě větší než
+      $p(\max\{n, |c_1|, |c_2|, \dots, |c_n|\})$, kde $c_1, \dots, c_n$ jsou vstupní data.
+
+      Pokud by bylo toto omezení příliš silné, velká čísla rozdělíme do několika buněk a
+      přesuny v paměti provedeme posloupností příkazů.
+    intuition: |
+      Bez omezení velikosti čísel by se dalo opakovaným násobením (`MULTIPLY` sama sebou)
+      během $n$ kroků vytvořit číslo s $2^n$ ciframi a „zadarmo" s ním počítat – model by
+      pak byl nerealisticky silný. Omezení 1 zaručuje, že čísla mají jen
+      $O(\log n)$-bitové zápisy, a uniformní hodnocení je pak věrné.
+    related: [def-doba-a-pamet-vypoctu, thm-simulace-v-pameti-fn]
+    source: "skripta str. 53–54; folie 9, str. 10"
+
+  - id: thm-simulace-v-pameti-fn
+    kind: theorem
+    label: "Věta 8.1"
+    section: "8.2"
+    title: Simulace výpočtu v paměti O(f(n))
+    terms: [simulace výpočtu, rozsah paměti, časová a paměťová složitost]
+    statement: |
+      Nechť $f$ je funkce a $M$ počítač, který každou vstupní posloupnost délky $n$
+      zpracuje v čase $f(n)$. Pak existuje počítač $M'$, který zpracuje týž vstup v čase
+      $O\big((f(n))^2\big)$ a v paměti $O(f(n))$ a dá týž výstup.
+    intuition: |
+      Za $f(n)$ kroků se dá „sáhnout" nejvýše na $f(n)$ různých buněk, jenže adresy těchto
+      buněk mohou být obrovské (třeba buňka číslo $10^{100}$), takže *rozsah* paměti
+      (nejvyšší adresa) může být mnohem větší než čas. Řešení: místo skutečné paměti si
+      vedeme „slovník" dvojic (adresa, hodnota) uložený hustě za sebou. Paměť pak
+      odpovídá počtu skutečně použitých buněk a za vyhledávání ve slovníku zaplatíme
+      nejvýše kvadratickým zpomalením.
+    proof: |
+      *Ve skriptech je uvedena jen myšlenka důkazu; zde je rozvedena.*
+
+      Počítač $M'$ simuluje krok po kroku výpočet $M$. Pracovní a indexový registr
+      (adresy 0, 1) i pásky používá stejně jako $M$, obsah ostatních buněk $M$ však
+      neukládá na jejich adresy. Místo toho si od začátku volné paměti vede **tabulku
+      dvojic** $(a, c)$ uložených v po sobě jdoucích buňkách, kde $c$ je aktuální obsah
+      buňky $M$ s adresou $a$.
+
+      * Když $M$ čte buňku s adresou $a$, $M'$ projde tabulku a najde dvojici s první
+        složkou $a$ (pokud neexistuje, je hodnota $0$).
+      * Když $M$ ukládá číslo $c$ na adresu $a$, $M'$ buď přepíše druhou složku
+        nalezené dvojice, nebo připíše novou dvojici $(a, c)$ na konec tabulky.
+
+      (Technické detaily – pomocné buňky pro procházení tabulky, přepočet nepřímých adres
+      – nejsou podstatné.)
+
+      **Paměť.** V každém kroku $M$ přibude do tabulky nejvýše jedna dvojice, tedy tabulka
+      má nejvýše $f(n)$ dvojic a $M'$ potřebuje $2f(n) + O(1) = O(f(n))$ buněk.
+
+      **Čas.** Simulace jednoho kroku $M$ vyžaduje projít tabulku délky $O(f(n))$, tj.
+      $O(f(n))$ kroků $M'$. Kroků $M$ je nejvýše $f(n)$, celkem tedy
+      $O\big((f(n))^2\big)$.
+
+      Výstup $M'$ je zřejmě stejný jako výstup $M$. $\square$
+    proof_steps:
+      - "Problém: za $f(n)$ kroků se použije nejvýše $f(n)$ buněk, ale jejich adresy (rozsah paměti) mohou být libovolně velké."
+      - "$M'$ simuluje $M$ krok po kroku, obsah buněk $M$ však ukládá jako dvojice (adresa, hodnota) v souvislé tabulce na začátku volné paměti."
+      - "Čtení buňky $M$ = vyhledání dvojice v tabulce; zápis = přepsání nalezené dvojice nebo připsání nové na konec."
+      - "Každý krok $M$ přidá nejvýše jednu dvojici, takže tabulka i paměť $M'$ mají velikost $O(f(n))$."
+      - "Jeden krok $M$ se simuluje průchodem tabulky v čase $O(f(n))$; při $f(n)$ krocích je celkový čas $O(f(n)^2)$."
+    related: [def-doba-a-pamet-vypoctu, cor-polynomialni-cas-a-pamet]
+    source: "skripta str. 54; folie 9, str. 10"
+
+  - id: cor-polynomialni-cas-a-pamet
+    kind: corollary
+    label: "Důsledek 8.1"
+    section: "8.2"
+    title: Polynomiální čas implikuje polynomiální paměť
+    terms: [polynomiální čas, polynomiální paměť, polynomiální algoritmus]
+    statement: |
+      Jestliže existuje počítač, který každou vstupní posloupnost délky $n$ zpracuje v
+      polynomiálním čase, pak existuje počítač, který každou vstupní posloupnost zpracuje
+      v polynomiálním čase i paměti.
+    intuition: |
+      Při definici polynomiality se tedy stačí omezit na **časovou** složitost – paměť
+      „přijde zadarmo".
+    proof: |
+      Nechť $M$ pracuje v čase $f(n) \le p(n)$ pro polynom $p$. Podle
+      [Věty 8.1](#thm-simulace-v-pameti-fn) existuje $M'$ se stejným výstupem, který
+      pracuje v čase $O(p(n)^2)$ a v paměti $O(p(n))$. Obě funkce jsou polynomy v $n$
+      (součin polynomů je polynom), tedy $M'$ je polynomiální v čase i paměti. $\square$
+    proof_steps:
+      - "Nechť $M$ zpracuje každý vstup délky $n$ v čase nejvýše $p(n)$, kde $p$ je polynom."
+      - "Podle Věty 8.1 existuje $M'$ se stejným výstupem, s časem $O(p(n)^2)$ a pamětí $O(p(n))$."
+      - "$p(n)^2$ i $p(n)$ jsou polynomy, takže $M'$ je polynomiální v čase i v paměti."
+    related: [thm-simulace-v-pameti-fn, def-trida-p]
+    source: "skripta str. 54; folie 9, str. 10"
+
+  # ------------------------------------------------------------------ 8.3
+  - id: def-slovo-jazyk
+    kind: definition
+    label: "Definice 8.2"
+    section: "8.3"
+    title: Vstupní data (slovo), délka slova, jazyk
+    terms: [vstupní data, slovo, délka slova, jazyk, kódování vstupu, binární slovo]
+    statement: |
+      **Vstupními daty** nebo **slovem** nazveme konečnou posloupnost nul a jedniček.
+      **Délkou slova** rozumíme počet členů posloupnosti vstupních dat.
+      **Jazykem** nazveme konečnou (nebo i nekonečnou) množinu slov.
+    intuition: |
+      Libovolný vstup (graf, formuli, číslo) lze zakódovat jako posloupnost bitů – např.
+      graf maticí sousednosti zapsanou po řádcích (délka $n^2$). Rozhodovací problém
+      („je graf souvislý?") pak ztotožníme s **jazykem** všech slov, která kódují instance
+      s odpovědí ANO. Délka slova je přirozená míra velikosti vstupu, vůči které měříme
+      složitost.
+    examples:
+      - title: Jazyk souvislých grafů
+        body: |
+          Graf na $n$ uzlech zakódujeme maticí sousednosti zapsanou po řádcích jako slovo
+          délky $n^2$. Jazyk SOUVISLÉ je množina všech slov, která kódují souvislý graf.
+          Např. slovo `0110 1001 1001 0110` (mezery jen pro čitelnost) kóduje kružnici
+          $C_4$ a patří do jazyka; slovo `0100 1000 0001 0010` (dvě disjunktní hrany)
+          nepatří.
+    related: [def-prijimaci-pocitac, def-trida-p]
+    source: "skripta str. 54; folie 9, str. 11"
+
+  - id: def-prijimaci-pocitac
+    kind: definition
+    label: "Definice 8.3"
+    section: "8.3"
+    title: Přijímací počítač, jazyk přijímaný počítačem
+    terms: [přijímací počítač, přijímá slovo, odmítá slovo, jazyk přijímaný počítačem, ACCEPT, REJECT, acceptor, rozhodovací algoritmus]
+    statement: |
+      **Přijímací počítač** je počítač, který má následující dvě vlastnosti:
+
+      1. jeho program neobsahuje příkazy `WRITE` ani `STOP`,
+      2. pro každé slovo $w$ se výpočet zastaví po konečném počtu kroků provedením příkazu
+         `ACCEPT` nebo `REJECT` (aniž by došlo k adresovací chybě nebo dělení nulou).
+
+      Řekneme, že přijímací počítač **přijímá** slovo $w$, pokud se výpočet zastaví příkazem
+      `ACCEPT`, a **odmítá** slovo $w$, pokud výpočet skončí příkazem `REJECT`.
+
+      Množina přijímaných slov se nazývá **jazyk přijímaný počítačem**.
+    intuition: |
+      Přijímací počítač je abstraktní model **algoritmu řešícího rozhodovací problém**
+      (např. „má daný graf hamiltonovskou kružnici?"): nic nevypisuje, jen na konci řekne
+      ANO (`ACCEPT`) nebo NE (`REJECT`), a to vždy – nesmí se zacyklit ani spadnout.
+    related: [def-slovo-jazyk, def-casova-slozitost-jazyka, def-prikazy-ram]
+    source: "skripta str. 54; folie 9, str. 11"
+
+  - id: def-casova-slozitost-jazyka
+    kind: definition
+    label: "Definice 8.4"
+    section: "8.3"
+    title: Časová (paměťová) složitost jazyka
+    terms: [časová složitost jazyka, paměťová složitost jazyka, složitost problému]
+    statement: |
+      Nechť $J$ je jazyk a $f : \mathbb{N} \to \mathbb{N}$. **Časová (paměťová) složitost
+      jazyka $J$ je nejvýše $f$**, jestliže existuje přijímací počítač $M$, který přijímá
+      $J$ a každé slovo jazyka $J$ délky $n$ zpracuje v čase (paměti) $f(n)$.
+    intuition: |
+      Složitost je vlastnost **problému**, ne konkrétního programu: říká, že existuje
+      *nějaký* algoritmus, který se vejde do daného časového (paměťového) rozpočtu
+      jako funkce délky vstupu.
+    related: [def-prijimaci-pocitac, def-doba-a-pamet-vypoctu, def-trida-p]
+    source: "skripta str. 55; folie 9, str. 11"
+
+  - id: def-trida-p
+    kind: definition
+    label: "Definice 8.5"
+    section: "8.3"
+    title: Třída P
+    terms: [třída P, polynomiální problém, polynomiální jazyk, P, polynomial time, efektivně řešitelný problém]
+    statement: |
+      **Třída P** je třída všech jazyků $J$, pro něž existuje polynom $p$ takový, že
+      časová složitost jazyka $J$ je nejvýše $p$.
+    intuition: |
+      P = rozhodovací problémy řešitelné **deterministicky v polynomiálním čase** – obvyklá
+      formalizace „efektivně řešitelných" úloh. Díky [Důsledku 8.1](#cor-polynomialni-cas-a-pamet)
+      není třeba nic předepisovat o paměti a díky Churchově tezi (a polynomiálním
+      vzájemným simulacím modelů) nezáleží ani na volbě modelu výpočtu.
+    examples:
+      - title: Jazyky třídy P
+        body: |
+          Do třídy P patří např. jazyky slov (vstupních dat) odpovídajících
+
+          * souvislým grafům (BFS/DFS v čase $O(n+m)$),
+          * $k$-souvislým grafům pro každé $k \ge 1$,
+          * acyklickým orientovaným grafům (topologické uspořádání),
+          * a mnoha dalším vlastnostem, pro něž jsme v předchozích kapitolách měli
+            polynomiální algoritmy (existence toku dané velikosti, existence kostry ceny
+            $\le k$, …).
+    related: [def-casova-slozitost-jazyka, rem-rozhodovaci-vs-optimalizacni, cor-polynomialni-cas-a-pamet, def-trida-p-intuitivne]
+    source: "skripta str. 55; folie 9, str. 11"
+
+  - id: rem-rozhodovaci-vs-optimalizacni
+    kind: remark
+    label: "Poznámka"
+    section: "8.3"
+    title: Rozhodovací a optimalizační problémy
+    terms: [rozhodovací problém, optimalizační problém, převod optimalizační úlohy na rozhodovací, decision problem]
+    statement: |
+      Je-li přijímací počítač modelem algoritmu řešícího rozhodovací problém, je jazyk
+      modelem tohoto problému. Při zkoumání příslušnosti jazyka (= problému) do některé z
+      tříd složitosti musí jít vždy o **rozhodovací problém** (např. „je daný graf
+      souvislý?"). **Optimalizační problémy** je nutné nejprve převést na rozhodovací
+      úlohu. Např. místo úlohy nalézt minimální kostru uvažujeme rozhodovací problém, zda
+      existuje kostra ceny $\le k$ pro nějaké předem pevně dané $k$.
+    intuition: |
+      Přijímací počítač umí odpovědět jen ANO/NE, proto třídy P, NP, NPC obsahují jen
+      rozhodovací problémy. Z hlediska polynomiality se ale nic neztrácí: umíme-li
+      rychle rozhodnout „existuje řešení ceny $\le k$?", najdeme optimum binárním
+      vyhledáváním přes $k$ (polynomiálně mnoho dotazů), a naopak z optima odpověď na
+      rozhodovací otázku vyčteme okamžitě.
+    related: [def-trida-p, def-prijimaci-pocitac]
+    source: "skripta str. 55"
+
+quiz:
+  - id: q-modely-01
+    question: |
+      Co říká **Churchova teze**?
+    options:
+      - Každý problém z NP lze řešit v polynomiálním čase.
+      - Úloha algoritmizovatelná podle jedné rozumné definice algoritmu je algoritmizovatelná i podle všech ostatních.
+      - Každý počítač s libovolným přístupem lze simulovat v lineárním čase Turingovým strojem.
+      - Každá logická formule má úplnou konjunktivní normální formu.
+    correct: 1
+    explanation: |
+      Churchova teze tvrdí, že různé formalizace pojmu algoritmus (Turingův stroj,
+      rekurzivní funkce, RAM, programovací jazyk) mají stejnou „sílu". Není to dokazatelná
+      věta, protože intuitivní pojem algoritmu není formálně definován.
+    related: [rem-churchova-teze]
+  - id: q-modely-02
+    question: |
+      Jakou roli má v počítači s libovolným přístupem **indexový registr** (buňka s adresou 1)?
+    options:
+      - Uchovává číslo právě prováděného příkazu.
+      - Provádějí se v něm všechny aritmetické operace.
+      - Ukazuje na aktuální pole vstupní pásky.
+      - Slouží k nepřímé adresaci – operand $*j$ má adresu $i+j$, kde $i$ je obsah indexového registru.
+    correct: 3
+    explanation: |
+      Číslo příkazu je v programovém registru, aritmetika probíhá v pracovním registru
+      (adresa 0). Indexový registr umožňuje nepřímou adresaci $*j$, a tedy přístup k
+      libovolné buňce podle vypočtené adresy (práce s poli).
+    related: [def-operand-adresovaci-chyba, def-ram]
+  - id: q-modely-03
+    question: |
+      Kdy nastane **adresovací chyba**?
+    options:
+      - Když u operandu $*j$ vyjde okamžitá hodnota $i+j$ záporná.
+      - Když program skočí na návěští větší než počet příkazů.
+      - Když se dělí nulou.
+      - Když se zapíše na výstupní pásku číslo větší než 1.
+    correct: 0
+    explanation: |
+      Adresovací chyba je definována právě pro nepřímou adresaci: adresa $i+j$ nesmí být
+      záporná. Dělení nulou je samostatná situace, která také ukončí výpočet
+      (Definice 8.1), ale není to adresovací chyba.
+    related: [def-operand-adresovaci-chyba, def-doba-a-pamet-vypoctu]
+  - id: q-modely-04
+    question: |
+      Proč se zavádí **Omezení 1** (čísla v paměti jsou v absolutní hodnotě omezena polynomem
+      ve velikosti vstupu)?
+    options:
+      - Aby výpočet vždy skončil.
+      - Aby počet paměťových buněk byl konečný.
+      - Aby se při uniformním hodnocení nedalo „zrychlovat" ukládáním obrovských čísel (např. celých řádků matice) do jedné buňky.
+      - Aby bylo možné používat dělení.
+    correct: 2
+    explanation: |
+      Při uniformním hodnocení stojí každý příkaz jeden krok bez ohledu na velikost čísel.
+      Bez omezení by šlo zakódovat mnoho dat do jednoho čísla a zpracovat je „najednou",
+      což by model učinilo nerealisticky silným.
+    related: [rem-uniformni-hodnoceni]
+  - id: q-modely-05
+    question: |
+      Počítač $M$ zpracuje každý vstup délky $n$ v čase $f(n)$. Co zaručuje **Věta 8.1**?
+    options:
+      - Existuje $M'$ se stejným výstupem, s časem $O(f(n))$ a pamětí $O(\log f(n))$.
+      - $M$ sám pracuje v paměti $O(f(n))$.
+      - Existuje $M'$ s pamětí $O(1)$.
+      - Existuje $M'$ se stejným výstupem, s časem $O(f(n)^2)$ a pamětí $O(f(n))$.
+    correct: 3
+    explanation: |
+      Sám $M$ může používat obrovské adresy, takže jeho rozsah paměti nemusí být omezen
+      časem. $M'$ ukládá použité buňky jako dvojice (adresa, hodnota) – paměť $O(f(n))$,
+      každý krok stojí průchod tabulkou, čas tedy $O(f(n)^2)$.
+    related: [thm-simulace-v-pameti-fn]
+  - id: q-modely-06
+    question: |
+      Co plyne z **Důsledku 8.1** pro definici třídy P?
+    options:
+      - Stačí požadovat polynomiální čas – polynomiální paměť pak lze vždy zajistit.
+      - Třídu P je nutné definovat současně omezením času i paměti.
+      - Třída P závisí na tom, zda používáme uniformní nebo logaritmické hodnocení.
+      - Polynomiální paměť implikuje polynomiální čas.
+    correct: 0
+    explanation: |
+      Z polynomiálního času plyne (přes Větu 8.1) existence počítače s polynomiálním časem
+      i pamětí. Opačná implikace obecně neplatí – algoritmus s polynomiální pamětí může
+      běžet exponenciálně dlouho.
+    related: [cor-polynomialni-cas-a-pamet, def-trida-p]
+  - id: q-modely-07
+    question: |
+      Která vlastnost **není** požadována u přijímacího počítače?
+    options:
+      - Program neobsahuje příkaz `WRITE`.
+      - Program neobsahuje příkaz `STOP`.
+      - Pro každé slovo výpočet skončí `ACCEPT` nebo `REJECT`.
+      - Výpočet trvá nejvýše polynomiálně mnoho kroků.
+    correct: 3
+    explanation: |
+      Přijímací počítač se musí na každém vstupu zastavit (`ACCEPT`/`REJECT`), bez
+      `WRITE` a `STOP`, ale jeho čas může být libovolný. Polynomiální čas je až
+      podmínka pro příslušnost přijímaného jazyka do třídy P.
+    related: [def-prijimaci-pocitac, def-trida-p]
+  - id: q-modely-08
+    question: |
+      Úlohu „najdi minimální kostru grafu" chceme zařadit do třídy P. Jak postupujeme?
+    options:
+      - Nijak – optimalizační úlohy do P patří automaticky.
+      - Ukážeme, že úloha je v NP.
+      - Uvažujeme rozhodovací verzi „existuje kostra ceny $\le k$?" a ukážeme, že odpovídající jazyk je v P.
+      - Optimalizační úlohy do žádné třídy jazyků zařadit nelze ani nepřímo.
+    correct: 2
+    explanation: |
+      Třídy složitosti obsahují jazyky, tedy rozhodovací problémy. Optimalizační úlohu je
+      nutné převést na rozhodovací (s prahem $k$); Jarníkův či Kruskalův algoritmus pak
+      dokazuje, že rozhodovací verze je v P.
+    related: [rem-rozhodovaci-vs-optimalizacni, def-trida-p]
+  - id: q-modely-09
+    question: |
+      Jak je definována **délka slova** (vstupních dat)?
+    options:
+      - Jako největší číslo vyskytující se ve vstupu.
+      - Jako počet uzlů vstupního grafu.
+      - Jako počet kroků výpočtu na daném slově.
+      - Jako počet členů posloupnosti nul a jedniček tvořící slovo.
+    correct: 3
+    explanation: |
+      Slovo je konečná posloupnost nul a jedniček a jeho délka je počet jejích členů.
+      Pro graf zakódovaný maticí sousednosti je délka slova $n^2$, nikoli $n$ – pro
+      polynomialitu to ale nevadí, protože $n^2$ je polynom v $n$.
+    related: [def-slovo-jazyk]
+  - id: q-modely-10
+    question: |
+      Výpočet provedl příkazy s adresami 0, 2, 5 a 3 a v kroku 7 provedl `ACCEPT`
+      (v krocích 0–6 nedošlo k zastavení, adresovací chybě ani dělení nulou).
+      Jaká je doba výpočtu a velikost paměti podle Definice 8.1?
+    options:
+      - Doba 7, paměť 5.
+      - Doba 7, paměť 4.
+      - Doba 8, paměť 3.
+      - Doba 4, paměť 5.
+    correct: 0
+    explanation: |
+      Doba je index kroku, v němž poprvé došlo k zastavení (zde 7). Velikost paměti je
+      největší adresa použitá v nějakém příkazu (zde 5) – nezáleží na tom, kolik různých
+      buněk bylo použito.
+    related: [def-doba-a-pamet-vypoctu]

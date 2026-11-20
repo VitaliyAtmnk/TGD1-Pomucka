@@ -1,0 +1,2857 @@
+id: np-uplnost
+number: 10
+title: Teorie NP-úplnosti
+source: "TGD1 skripta kap. 9 (str. 55–72); přednášky 10, 11, 12"
+exam_questions: [14, 15, 16, 17, 18, 19]
+summary: |
+  Kapitola buduje teorii NP-úplnosti na modelu počítače s libovolným přístupem.
+  Začíná logickými formulemi a problémem splnitelnosti **SAT**, ukazuje, že **2-SAT**
+  je polynomiální (implikační graf a kvazikomponenty), zavádí **nedeterministický
+  počítač**, třídu **NP**, **polynomiální redukci** a **NP-úplnost**. Vrcholem je
+  **Cookova věta** (SAT je NP-úplný) a z ní odvozená NP-úplnost problémů 3-SAT, IND,
+  COV, CLIQUE a 3-COL. Znalost těchto redukcí je jádrem ústní zkoušky.
+sections:
+  - number: "9.1"
+    title: Logické formule
+  - number: "9.2"
+    title: Problém splnitelnosti logických formulí – SAT
+  - number: "9.3"
+    title: Problém k-SAT a polynomialita problému 2-SAT
+  - number: "9.4"
+    title: Problém existence nezávislé množiny uzlů dané velikosti – IND
+  - number: "9.5"
+    title: Třída NP
+  - number: "9.6"
+    title: Polynomiální redukce a NP-úplné problémy
+  - number: "9.7"
+    title: NP-úplnost problému SAT – Cookova věta
+  - number: "9.8"
+    title: Některé další NP-úplné problémy
+items:
+  # ------------------------------------------------------------------ 9.1
+  - id: def-logicka-formule
+    kind: definition
+    section: "9.1"
+    title: Logická proměnná a logická formule
+    terms: [logická proměnná, booleovská proměnná, logická formule, booleovská formule, negace, konjunkce, disjunkce, implikace, ekvivalence, vylučovací nebo, XOR, boolean formula]
+    statement: |
+      **Logická (booleovská) proměnná** je proměnná, která nabývá hodnot $0$ (false) a
+      $1$ (true).
+
+      **Logická formule** je definována konstruktivně:
+
+      1. konstanty $0$ a $1$ a každá logická proměnná jsou logickými formulemi,
+      2. jsou-li $f, g$ logické formule, pak jsou logickými formulemi i výrazy
+         $\bar f$, $f \wedge g$, $f \vee g$, $f \Rightarrow g$, $f \Leftrightarrow g$,
+         $f \oplus g$.
+
+      Význam spojek:
+
+      | spojka | název | hodnota 1 právě když |
+      |---|---|---|
+      | $\bar f$ | negace | $f = 0$ |
+      | $f \wedge g$ | konjunkce | $f = 1$ a současně $g = 1$ |
+      | $f \vee g$ | disjunkce | alespoň jeden z $f, g$ je roven 1 |
+      | $f \Rightarrow g$ | implikace | $\bar f = 1$ nebo $g = 1$ |
+      | $f \Leftrightarrow g$ | ekvivalence | $f = g$ |
+      | $f \oplus g$ | vylučovací nebo | právě jeden z $f, g$ je roven 1 |
+    intuition: |
+      Formule je „výraz" sestavený ze proměnných a spojek; po dosazení nul a jedniček za
+      proměnné se vyhodnotí na $0$ nebo $1$. Logické formule jsou univerzálním jazykem,
+      do kterého – jak ukáže Cookova věta – lze přeložit libovolný problém z NP.
+    related: [def-splnitelna-formule, def-knf]
+    source: "skripta str. 55; folie 10, str. 1"
+
+  - id: def-splnitelna-formule
+    kind: definition
+    label: "Definice 9.1"
+    section: "9.1"
+    title: Splněná a splnitelná formule, tautologie
+    terms: [splněná formule, splnitelná formule, tautologie, satisfiable, pravdivostní tabulka]
+    statement: |
+      Má-li formule pro dané hodnoty proměnných hodnotu $1$, říkáme, že je **splněna**.
+      Formule, která je splněna pro všechny hodnoty proměnných, se nazývá **tautologie**.
+
+      Řekneme, že formule $f$ proměnných $x_1, x_2, \dots, x_n$ je **splnitelná**,
+      jestliže existují hodnoty $x_1, x_2, \dots, x_n$, pro které je $f$ splněna.
+    intuition: |
+      Splnitelnost = „existuje aspoň jeden řádek pravdivostní tabulky s jedničkou",
+      tautologie = „jedničky jsou ve všech řádcích". Tabulka má ale $2^n$ řádků, takže
+      přímé ověření je exponenciální.
+    examples:
+      - title: Pravdivostní tabulka
+        body: |
+          Pro $f(x,y,z) = (x \Rightarrow \bar y) \wedge (\bar x \Rightarrow z)$:
+
+          | $x$ | $y$ | $z$ | $x \Rightarrow \bar y$ | $\bar x \Rightarrow z$ | $f$ |
+          |---|---|---|---|---|---|
+          | 0 | 0 | 0 | 1 | 0 | 0 |
+          | 0 | 0 | 1 | 1 | 1 | 1 |
+          | 0 | 1 | 0 | 1 | 0 | 0 |
+          | 0 | 1 | 1 | 1 | 1 | 1 |
+          | 1 | 0 | 0 | 1 | 1 | 1 |
+          | 1 | 0 | 1 | 1 | 1 | 1 |
+          | 1 | 1 | 0 | 0 | 1 | 0 |
+          | 1 | 1 | 1 | 0 | 1 | 0 |
+
+          Formule je tedy splnitelná, je splněna pro vektory $[0,0,1]$, $[0,1,1]$,
+          $[1,0,0]$, $[1,0,1]$. Tautologií není.
+      - title: Nesplnitelná formule
+        body: |
+          Formule $f(x,y,z) = \overline{(x \Rightarrow (y \vee z))} \wedge (y \oplus z)$ je
+          nesplnitelná: první člen je 1 jen pro $x=1, y=z=0$, ale pak $y \oplus z = 0$.
+    related: [def-logicka-formule, def-sat]
+    source: "skripta str. 55–56; folie 10, str. 1"
+
+  - id: def-knf
+    kind: definition
+    label: "Definice 9.2"
+    section: "9.1"
+    title: Literál, disjunktivní klauzule, KNF a ÚKNF
+    terms: [literál, klauzule, disjunktivní klauzule, konjunktivní normální forma, KNF, úplná konjunktivní normální forma, ÚKNF, CNF, conjunctive normal form, literal, clause]
+    statement: |
+      Proměnné a jejich negace se nazývají **literály**. Literály a disjunkce dvou či více
+      literálů se nazývají **(disjunktivní) klauzule**.
+
+      Je-li formule disjunktivní klauzulí nebo konjunkcí dvou či více disjunktivních
+      klauzulí, říkáme, že formule je v **konjunktivní normální formě (tvaru)**, zkráceně
+      **KNF**.
+
+      Je-li formule v KNF a každá klauzule obsahuje literály všech proměnných, říkáme, že
+      formule je v **úplné konjunktivní normální formě (tvaru)**, zkráceně **ÚKNF**.
+    intuition: |
+      KNF = „konjunkce podmínek, z nichž každá je disjunkcí". Každá klauzule je jedno
+      omezení typu „alespoň jeden z těchto literálů musí platit" – proto je KNF přirozený
+      tvar pro popis omezení a vstupní tvar problému SAT.
+    examples:
+      - title: Převod na ÚKNF a KNF
+        body: |
+          Formule $f(x,y,z) = (x \Rightarrow \bar y) \wedge (\bar x \Rightarrow z)$ není v KNF.
+          Z pravdivostní tabulky víme, že $f = 0$ pro vektory $[0,0,0]$, $[0,1,0]$, $[1,1,0]$,
+          $[1,1,1]$. Pro každý z nich vytvoříme klauzuli, která je nulová právě na něm:
+
+          $$f = (x \vee y \vee z) \wedge (x \vee \bar y \vee z) \wedge (\bar x \vee \bar y \vee z) \wedge (\bar x \vee \bar y \vee \bar z),$$
+
+          což je ÚKNF. Sloučením dvojic klauzulí ($(x \vee y \vee z) \wedge (x \vee \bar y \vee z) = x \vee z$
+          a podobně) dostaneme $f = (x \vee z) \wedge (\bar x \vee \bar y)$, což je KNF, ale už ne ÚKNF.
+    related: [def-logicka-formule, rem-jednoznacnost-uknf, def-dnf, thm-udnf-uknf, def-sat]
+    source: "skripta str. 56; folie 10, str. 2"
+
+  - id: rem-jednoznacnost-uknf
+    kind: remark
+    label: "Poznámka"
+    section: "9.1"
+    title: Jednoznačnost ÚKNF/ÚDNF, nejednoznačnost KNF/DNF
+    terms: [jednoznačnost ÚKNF, ÚDNF, princip duality]
+    statement: |
+      Pro danou formuli existuje vždy jen jediná ÚKNF (až na pořadí klauzulí a literálů –
+      je tedy určena jednoznačně). Pro KNF to obecně neplatí: téže formuli může
+      odpovídat několik různých KNF. Např. formuli
+      $f = (x \Rightarrow \bar y) \wedge (\bar x \Rightarrow z)$ lze zapsat jako
+      $(x \vee z) \wedge (\bar x \vee \bar y)$ i jako
+      $(x \vee y \vee z) \wedge (x \vee \bar y \vee z) \wedge (\bar x \vee \bar y)$.
+
+      Analogicky (z principu duality) je jednoznačná úplná DNF (**ÚDNF**), zatímco DNF
+      jednoznačná není.
+    intuition: |
+      ÚKNF obsahuje přesně jednu klauzuli za každý nulový řádek pravdivostní tabulky, je
+      tedy „otiskem" tabulky – a tabulka je formulí určena jednoznačně.
+    related: [def-knf, def-dnf, thm-udnf-uknf]
+    source: "skripta str. 56"
+
+  - id: def-dnf
+    kind: definition
+    label: "Definice 9.3"
+    section: "9.1"
+    title: Konjunktivní klauzule, DNF a ÚDNF
+    terms: [konjunktivní klauzule, disjunktivní normální forma, DNF, úplná disjunktivní normální forma, ÚDNF, disjunctive normal form]
+    statement: |
+      Literály a konjunkce dvou či více literálů se nazývají **(konjunktivní) klauzule**.
+      Je-li formule konjunktivní klauzulí nebo disjunkcí dvou či více konjunktivních
+      klauzulí, říkáme, že formule je v **disjunktivním normálním tvaru (formě)**, **DNF**.
+      Obsahuje-li navíc každá klauzule literály všech proměnných, jde o **úplnou DNF
+      (ÚDNF)**.
+    intuition: |
+      DNF je „seznam situací, kdy formule platí". U DNF je splnitelnost triviální (stačí
+      jedna klauzule bez dvojice $x, \bar x$) – proto je SAT definován pro KNF, kde je
+      problém netriviální.
+    examples:
+      - title: ÚDNF a DNF
+        body: |
+          Pro $f = (x \Rightarrow \bar y) \wedge (\bar x \Rightarrow z)$ (jedničky v řádcích
+          $[0,0,1], [0,1,1], [1,0,0], [1,0,1]$) je ÚDNF
+
+          $$f = (\bar x \wedge \bar y \wedge z) \vee (\bar x \wedge y \wedge z) \vee (x \wedge \bar y \wedge \bar z) \vee (x \wedge \bar y \wedge z).$$
+
+          Sloučením dvojic dostaneme DNF $f = (\bar x \wedge z) \vee (x \wedge \bar y)$.
+    related: [def-knf, rem-jednoznacnost-uknf, thm-udnf-uknf]
+    source: "skripta str. 56; folie 10, str. 2"
+
+  - id: thm-udnf-uknf
+    kind: theorem
+    label: "Věta 9.1"
+    section: "9.1"
+    title: Existence ÚDNF a ÚKNF
+    terms: [existence ÚKNF, existence ÚDNF, normální forma formule]
+    statement: |
+      Každou nekonstantní logickou formuli lze vyjádřit v ÚDNF i ÚKNF.
+    intuition: |
+      ÚDNF „vyjmenuje" všechny řádky tabulky s hodnotou 1, ÚKNF „zakáže" všechny řádky s
+      hodnotou 0. Nekonstantnost je potřeba proto, aby oba seznamy byly neprázdné.
+    proof: |
+      *Ve skriptech je jen odkaz na příklady; doplněno.*
+
+      Nechť $f(x_1, \dots, x_n)$ je nekonstantní, tj. existuje vektor, pro nějž $f = 1$,
+      i vektor, pro nějž $f = 0$. Pro vektor $t = (t_1, \dots, t_n) \in \{0,1\}^n$ označme
+      $x_i^{1} = x_i$, $x_i^{0} = \bar x_i$.
+
+      **ÚDNF.** Pro každý $t$ s $f(t) = 1$ vytvoříme konjunktivní klauzuli
+      $K_t = x_1^{t_1} \wedge \dots \wedge x_n^{t_n}$. Ta má hodnotu 1 právě pro vektor $t$.
+      Disjunkce $\bigvee_{t: f(t)=1} K_t$ (neprázdná, protože $f$ není konstantně 0) má
+      hodnotu 1 právě pro vektory, kde $f = 1$, je tedy rovna $f$ a každá klauzule obsahuje
+      literály všech proměnných.
+
+      **ÚKNF.** Pro každý $t$ s $f(t) = 0$ vytvoříme disjunktivní klauzuli
+      $D_t = x_1^{1-t_1} \vee \dots \vee x_n^{1-t_n}$. Ta má hodnotu 0 právě pro vektor $t$
+      (všechny literály jsou nulové jen tehdy). Konjunkce $\bigwedge_{t: f(t)=0} D_t$
+      (neprázdná, protože $f$ není konstantně 1) má hodnotu 0 právě pro vektory, kde
+      $f = 0$, je tedy rovna $f$. $\square$
+    proof_steps:
+      - "Nekonstantní formule má v pravdivostní tabulce aspoň jeden řádek s hodnotou 1 a aspoň jeden s hodnotou 0."
+      - "Pro každý řádek $t$ s $f(t)=1$ sestrojíme konjunkci literálů všech proměnných, která je pravdivá právě v řádku $t$."
+      - "Disjunkce těchto konjunkcí je rovna $f$ a je v ÚDNF."
+      - "Pro každý řádek $t$ s $f(t)=0$ sestrojíme disjunkci literálů všech proměnných, která je nepravdivá právě v řádku $t$."
+      - "Konjunkce těchto disjunkcí je rovna $f$ a je v ÚKNF."
+    related: [def-knf, def-dnf, rem-jednoznacnost-uknf]
+    source: "skripta str. 56; folie 10, str. 2"
+
+  # ------------------------------------------------------------------ 9.2
+  - id: def-sat
+    kind: definition
+    section: "9.2"
+    title: Problém splnitelnosti SAT
+    terms: [SAT, satisfiability, satisfiability problem, problém splnitelnosti, splnitelnost logických formulí, CNF-SAT]
+    statement: |
+      **SAT**
+
+      **Vstup:** logická formule $f(x_1, x_2, \dots, x_n)$ v proměnných $x_1, \dots, x_n$ v
+      KNF (tj. $f = c_1 \wedge c_2 \wedge \dots \wedge c_m$, kde $c_i$ jsou klauzule
+      proměnných $x_1, \dots, x_n$).
+
+      **Úkol:** zjistit, zda je formule $f$ splnitelná.
+    intuition: |
+      Typická vlastnost těžkých problémů: když řešení „uhodneme" (přiřazení hodnot), jeho
+      správnost ověříme rychle – stačí vyhodnotit formuli. Když ale formule splnitelná
+      není, neznáme lepší způsob, jak to dokázat, než v podstatě projít $2^n$ možností.
+      Totéž platí pro $k$-obarvitelnost, hamiltonovskost nebo existenci kliky velikosti
+      $k$ – a to není náhoda: SAT je jeden ze základních NP-úplných problémů
+      ([Cookova věta](#thm-cook)).
+    examples:
+      - title: Splnitelná a nesplnitelná instance
+        body: |
+          Formule
+          $f = (x \vee y \vee \bar z) \wedge (\bar x \vee \bar y) \wedge (\bar x \vee z) \wedge (x \vee \bar z) \wedge (\bar x \vee \bar y \vee z) \wedge (y \vee z)$
+          je splnitelná – uhodneme-li $x = 1, y = 0, z = 1$, snadno ověříme $f(1,0,1) = 1$.
+
+          Formule
+          $g = (x \vee y \vee z) \wedge (x \vee \bar z) \wedge (x \vee \bar y \vee z) \wedge (\bar x \vee y \vee z) \wedge (\bar x \vee \bar y) \wedge (\bar x \vee y \vee \bar z)$
+          splnitelná není: pro $x = 0$ plyne z $(x \vee \bar z)$, že $z = 0$, pak z
+          $(x \vee y \vee z)$ $y = 1$ a klauzule $(x \vee \bar y \vee z)$ je nepravdivá; pro
+          $x = 1$ plyne z $(\bar x \vee \bar y)$ $y = 0$ a pak klauzule
+          $(\bar x \vee y \vee z)$ a $(\bar x \vee y \vee \bar z)$ vyžadují $z = 1$ i $z = 0$.
+          Obecně ale takový „chytrý" argument nemáme a museli bychom zkoumat všech $2^3$
+          přiřazení.
+    related: [def-knf, def-k-sat, thm-cook]
+    source: "skripta str. 57; folie 10, str. 2"
+
+  # ------------------------------------------------------------------ 9.3
+  - id: def-k-sat
+    kind: definition
+    section: "9.3"
+    title: Problém k-SAT
+    terms: [k-SAT, k-splnitelnost, klauzule délky k]
+    statement: |
+      **$k$-SAT**
+
+      **Vstup:** logická formule tvaru
+      $$f(x_1, x_2, \dots, x_n) = \bigwedge_{i=1}^{m} \Big( \bigvee_{j=1}^{k} a_{ij} \Big),$$
+      kde každé $a_{ij}$ je rovno $x_\ell$ nebo $\bar x_\ell$ pro vhodné
+      $\ell \in \{1, \dots, n\}$ (tj. $f$ je formule v KNF, která má $m$ klauzulí délky $k$).
+
+      **Úkol:** zjistit, zda je formule $f$ splnitelná.
+
+      **Poznámka.** Úlohu jsme zformulovali pro klauzule délky *právě* $k$. Každou formuli
+      s klauzulemi délky *nejvýše* $k$ lze ekvivalentně zapsat s klauzulemi délky právě $k$
+      tak, že v „kratších" klauzulích zopakujeme některý literál (např.
+      $(x_1 \vee \bar x_2) = (x_1 \vee \bar x_2 \vee \bar x_2)$).
+    intuition: |
+      $k$-SAT je speciální případ SAT. Hranice obtížnosti je ostrá: 2-SAT je v P
+      ([Věta 9.2](#thm-2sat-p)), ale už 3-SAT je NP-úplný ([Věta 9.7](#thm-3sat-npc)).
+    related: [def-sat, def-2-sat, def-3-sat, thm-2sat-p, thm-3sat-npc]
+    source: "skripta str. 57; folie 11, str. 3"
+
+  - id: def-2-sat
+    kind: definition
+    section: "9.3"
+    title: Problém 2-SAT
+    terms: [2-SAT, 2-splnitelnost, klauzule délky 2]
+    statement: |
+      **2-SAT**
+
+      **Vstup:** logická formule
+      $f(x_1, \dots, x_n) = (a_1 \vee b_1) \wedge (a_2 \vee b_2) \wedge \dots \wedge (a_m \vee b_m)$,
+      kde každé $a_i, b_i$ ($i = 1, \dots, m$) je rovno $x_\ell$ nebo $\bar x_\ell$ pro vhodné
+      $\ell \in \{1, \dots, n\}$ (tj. $f$ je formule v KNF s klauzulemi délky 2).
+
+      **Úkol:** zjistit, zda je formule $f$ splnitelná.
+    intuition: |
+      Klauzule $(a \vee b)$ je totéž co dvojice implikací $\bar a \Rightarrow b$ a
+      $\bar b \Rightarrow a$: jakmile je jeden literál nepravdivý, druhý je *vynucen*.
+      Rozhodnutí se tedy šíří jednoznačně po řetězcích implikací – a ty lze zachytit
+      orientovaným grafem.
+    related: [def-k-sat, def-implikacni-graf, thm-2sat-p]
+    source: "skripta str. 58; folie 11, str. 3"
+
+  - id: def-implikacni-graf
+    kind: definition
+    section: "9.3"
+    title: Implikační graf formule 2-SAT
+    terms: [implikační graf, graf formule, implication graph, G_f]
+    statement: |
+      Nechť $f = C_1 \wedge C_2 \wedge \dots \wedge C_m$ je formule v proměnných
+      $x_1, \dots, x_n$ s klauzulemi o 2 literálech. Orientovaný graf $\vec{G}_f$ sestrojíme
+      takto:
+
+      * $U(\vec{G}_f) = \{x_1, \dots, x_n, \bar x_1, \dots, \bar x_n\}$,
+      * pro každou klauzuli $C_i = (a \vee b)$ budou v $\vec{G}_f$ obě hrany $(\bar a, b)$ a
+        $(\bar b, a)$ (přitom $\bar{\bar b} = b$).
+    intuition: |
+      Hrana $(\bar a, b)$ čte „je-li $a$ nepravdivý, musí být $b$ pravdivý". Orientovaná
+      cesta z $u$ do $v$ tedy znamená, že pravdivost $u$ vynucuje pravdivost $v$.
+      Graf má $2n$ uzlů a $2m$ hran a je „antisymetrický": každé hraně $(u,v)$ odpovídá
+      zrcadlová hrana $(\bar v, \bar u)$.
+    examples:
+      - title: Graf pro $(x_1 \vee \bar x_2) \wedge (\bar x_1 \vee \bar x_2) \wedge (\bar x_2 \vee x_3)$
+        body: |
+          Klauzule $(x_1 \vee \bar x_2)$ dává hrany $(\bar x_1, \bar x_2)$ a $(x_2, x_1)$,
+          klauzule $(\bar x_1 \vee \bar x_2)$ hrany $(x_1, \bar x_2)$ a $(x_2, \bar x_1)$,
+          klauzule $(\bar x_2 \vee x_3)$ hrany $(x_2, x_3)$ a $(\bar x_3, \bar x_2)$.
+        graph:
+          directed: true
+          nodes:
+            - { id: nx1, x: 0, y: 0, label: "¬x1" }
+            - { id: nx2, x: 4, y: 0, label: "¬x2" }
+            - { id: nx3, x: 8, y: 0, label: "¬x3" }
+            - { id: x1, x: 0, y: 4, label: "x1" }
+            - { id: x2, x: 4, y: 4, label: "x2" }
+            - { id: x3, x: 8, y: 4, label: "x3" }
+          edges:
+            - { from: nx1, to: nx2 }
+            - { from: x2, to: x1 }
+            - { from: x1, to: nx2 }
+            - { from: x2, to: nx1 }
+            - { from: x2, to: x3 }
+            - { from: nx3, to: nx2 }
+    related: [def-2-sat, lemma-2sat-symetrie, thm-2sat-p, def-kvazikomponenta]
+    illustrations:
+      - title: Implikační graf klauzuli po klauzuli
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: x1, x: 1, y: 1, label: "x1" }
+            - { id: x2, x: 5, y: 1, label: "x2" }
+            - { id: x3, x: 9, y: 1, label: "x3" }
+            - { id: nx1, x: 1, y: 7, label: "¬x1" }
+            - { id: nx2, x: 5, y: 7, label: "¬x2" }
+            - { id: nx3, x: 9, y: 7, label: "¬x3" }
+          edges: []
+        steps:
+          - caption: |
+              Formule $f = (x_1 \vee \bar x_2) \wedge (\bar x_1 \vee \bar x_2) \wedge (\bar x_2 \vee x_3)$ má $n = 3$ proměnné, graf $\vec G_f$ má tedy $2n = 6$ uzlů – za každou proměnnou uzel $x_i$ i $\bar x_i$. Hrany zatím žádné.
+          - caption: |
+              Klauzule $(x_1 \vee \bar x_2)$: je-li $x_1$ nepravdivý, musí platit $\bar x_2$ (hrana $\bar x_1 \to \bar x_2$), a je-li $x_2$ pravdivý, musí platit $x_1$ (hrana $x_2 \to x_1$). Obě hrany vyjadřují tutéž klauzuli.
+            add: [[nx1, nx2], [x2, x1]]
+            edges: { nx1-nx2: active, x2-x1: active }
+          - caption: |
+              Klauzule $(\bar x_1 \vee \bar x_2)$ přidá hrany $x_1 \to \bar x_2$ a $x_2 \to \bar x_1$ – „$x_1$ a $x_2$ nemohou být pravdivé zároveň“.
+            add: [[x1, nx2], [x2, nx1]]
+            edges: { x1-nx2: active, x2-nx1: active }
+          - caption: |
+              Poslední klauzule $(\bar x_2 \vee x_3)$ dá hrany $x_2 \to x_3$ a $\bar x_3 \to \bar x_2$. Graf má $2m = 6$ hran a každá hrana $u \to v$ má „zrcadlo“ $\bar v \to \bar u$.
+            add: [[x2, x3], [nx3, nx2]]
+            edges: { x2-x3: active, nx3-nx2: active }
+          - caption: |
+              Cesta $x_2 \to x_1 \to \bar x_2$ znamená $x_2 \Rightarrow \bar x_2$: kdyby byl $x_2$ pravdivý, musel by být zároveň nepravdivý. V každém splňujícím přiřazení je proto $x_2 = 0$.
+            edges: { x2-x1: path, x1-nx2: path }
+            nodes: { x2: source, nx2: sink }
+          - caption: |
+              Graf je acyklický, takže každá kvazikomponenta je jediný uzel (barevně). Žádná neobsahuje $x_i$ i $\bar x_i$, formule je tedy [splnitelná](#lemma-2sat-splnitelnost) – např. $x_2 = 0$, $x_1 = x_3 = 1$.
+    source: "skripta str. 58; folie 11, str. 3"
+
+  - id: lemma-2sat-symetrie
+    kind: lemma
+    label: "Lemma 9.1"
+    section: "9.3"
+    title: Symetrie sledů v implikačním grafu
+    terms: [symetrie implikačního grafu, kontrapozice]
+    statement: |
+      Existuje-li v $\vec{G}_f$ orientovaný sled z $a$ do $b$, pak v $\vec{G}_f$ existuje i
+      orientovaný sled z $\bar b$ do $\bar a$.
+    intuition: |
+      Je to obměna implikace (kontrapozice): z $a \Rightarrow b$ plyne
+      $\bar b \Rightarrow \bar a$.
+    proof: |
+      Z konstrukce $\vec{G}_f$ plyne, že $(u, v) \in H(\vec{G}_f)$ právě když
+      $(\bar v, \bar u) \in H(\vec{G}_f)$ – obě hrany vznikly z téže klauzule
+      $(\bar u \vee v)$. Je-li $a = u_0, u_1, \dots, u_r = b$ orientovaný sled, jsou tedy
+      hranami i $(\bar u_{i}, \bar u_{i-1})$ pro $i = r, \dots, 1$, a
+      $\bar b = \bar u_r, \bar u_{r-1}, \dots, \bar u_0 = \bar a$ je orientovaný sled
+      z $\bar b$ do $\bar a$. $\square$
+    proof_steps:
+      - "Každá klauzule $(\\bar u \\vee v)$ přispívá do grafu dvojicí hran $(u,v)$ a $(\\bar v, \\bar u)$."
+      - "Proto $(u,v)$ je hranou právě když $(\\bar v, \\bar u)$ je hranou."
+      - "Sled $a = u_0, \\dots, u_r = b$ projdeme pozpátku a každou hranu nahradíme zrcadlovou; vznikne sled $\\bar u_r, \\dots, \\bar u_0$ z $\\bar b$ do $\\bar a$."
+    related: [def-implikacni-graf, lemma-2sat-cesta]
+    illustrations:
+      - title: Každý sled má zrcadlový sled na negacích
+        for: proof
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: x1, x: 0.5, y: 3, label: "x1" }
+            - { id: x2, x: 3.5, y: 1, label: "x2" }
+            - { id: x3, x: 6.5, y: 1, label: "x3" }
+            - { id: x4, x: 9.5, y: 3, label: "x4" }
+            - { id: nx1, x: 0.5, y: 7, label: "¬x1" }
+            - { id: nx2, x: 3.5, y: 9, label: "¬x2" }
+            - { id: nx3, x: 6.5, y: 9, label: "¬x3" }
+            - { id: nx4, x: 9.5, y: 7, label: "¬x4" }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: nx2, to: nx1 }
+            - { from: x2, to: x3 }
+            - { from: nx3, to: nx2 }
+            - { from: x3, to: x4 }
+            - { from: nx4, to: nx3 }
+        steps:
+          - caption: |
+              Implikační graf formule $(\bar x_1 \vee x_2) \wedge (\bar x_2 \vee x_3) \wedge (\bar x_3 \vee x_4)$. Zvýrazněný sled $x_1 \to x_2 \to x_3 \to x_4$ říká $x_1 \Rightarrow x_4$.
+            edges: { x1-x2: path, x2-x3: path, x3-x4: path }
+            nodes: { x1: source, x4: sink }
+          - caption: |
+              Hrana $x_1 \to x_2$ vznikla z klauzule $(\bar x_1 \vee x_2)$ – a táž klauzule dala i hranu $\bar x_2 \to \bar x_1$. Každá hrana $(u, v)$ má tedy v grafu „dvojče“ $(\bar v, \bar u)$.
+            edges: { x1-x2: active, nx2-nx1: active }
+          - caption: |
+              Projdeme sled pozpátku a každou hranu nahradíme jejím dvojčetem: vznikne sled $\bar x_4 \to \bar x_3 \to \bar x_2 \to \bar x_1$, tj. $\bar x_4 \Rightarrow \bar x_1$ – obměna implikace $x_1 \Rightarrow x_4$.
+            edges: { nx4-nx3: path, nx3-nx2: path, nx2-nx1: path, x1-x2: considered, x2-x3: considered, x3-x4: considered }
+            nodes: { nx4: source, nx1: sink }
+          - caption: |
+              Přidáme klauzuli $(\bar x_4 \vee x_1)$: vznikne cyklus $x_1 \to x_2 \to x_3 \to x_4 \to x_1$ a díky symetrii i zrcadlový cyklus na negacích. I kvazikomponenty se zrcadlí: $\{x_1, \dots, x_4\}$ a $\{\bar x_1, \dots, \bar x_4\}$.
+            add: [[x4, x1], [nx1, nx4]]
+    source: "skripta str. 58; folie 11, str. 4"
+
+  - id: def-splnujici-prirazeni
+    kind: definition
+    section: "9.3"
+    title: Splňující přiřazení, hodnota literálu
+    terms: [splňující přiřazení, satisfying assignment, ohodnocení proměnných, hodnota literálu]
+    statement: |
+      **Splňující přiřazení** je každý vektor $t \in \{0,1\}^n$, pro který $f(t) = 1$ (tj.
+      takové přiřazení hodnot $0, 1$ proměnným $x_1, \dots, x_n$, že pro tyto hodnoty je
+      formule $f$ splněna).
+
+      Je-li $a$ literál a $t \in \{0,1\}^n$ přiřazení hodnot proměnným $x_1, \dots, x_n$,
+      pak hodnotu literálu $a$ po dosazení vektoru $t$ značíme $a(t)$.
+    intuition: |
+      Splňující přiřazení je „certifikát" splnitelnosti – kdo ho zná, ověří splnitelnost
+      vyhodnocením formule v lineárním čase.
+    related: [def-splnitelna-formule, lemma-2sat-cesta]
+    source: "skripta str. 58; folie 11, str. 4"
+
+  - id: lemma-2sat-cesta
+    kind: lemma
+    label: "Lemma 9.2"
+    section: "9.3"
+    title: Cesta v implikačním grafu přenáší pravdivost
+    terms: [šíření implikací, cesta v implikačním grafu]
+    statement: |
+      Existuje-li v $\vec{G}_f$ cesta z $a$ do $b$, pak pro každé splňující přiřazení $t$ je
+      $a(t) = 1 \Rightarrow b(t) = 1$.
+    intuition: |
+      Každá hrana je implikace, která platí v každém splňujícím přiřazení; řetězením
+      implikací dostaneme implikaci mezi koncovými uzly cesty.
+    proof: |
+      Nejprve pro hranu: je-li $(a, b)$ hrana $\vec{G}_f$, pak ve $f$ existuje klauzule
+      $(\bar a \vee b)$. Protože $t$ je splňující, má po dosazení $t$ každá klauzule hodnotu 1,
+      tedy $\bar a(t) \vee b(t) = 1$. Je-li $a(t) = 1$, je $\bar a(t) = 0$, a proto nutně
+      $b(t) = 1$.
+
+      Pro cestu $a = u_0, u_1, \dots, u_r = b$ postupujeme indukcí podle $r$: z $u_0(t) = 1$
+      plyne podle tvrzení pro hranu $u_1(t) = 1$, odtud $u_2(t) = 1$, atd., až
+      $u_r(t) = b(t) = 1$. $\square$
+    proof_steps:
+      - "Hrana $(a,b)$ vznikla z klauzule $(\\bar a \\vee b)$, která má ve splňujícím přiřazení hodnotu 1."
+      - "Je-li $a(t) = 1$, je $\\bar a(t) = 0$, a tedy musí být $b(t) = 1$ – tvrzení platí pro jednu hranu."
+      - "Indukcí podél cesty $u_0, u_1, \\dots, u_r$ se hodnota 1 přenese z $u_0 = a$ až do $u_r = b$."
+    related: [lemma-2sat-symetrie, lemma-2sat-kvazikomponenta, def-splnujici-prirazeni]
+    source: "skripta str. 58; folie 11, str. 4"
+
+  - id: lemma-2sat-kvazikomponenta
+    kind: lemma
+    label: "Lemma 9.3"
+    section: "9.3"
+    title: Literály v jedné kvazikomponentě mají stejnou hodnotu
+    terms: [kvazikomponenta implikačního grafu, silná komponenta]
+    statement: |
+      Je-li $t$ splňující přiřazení, pak pro každou kvazikomponentu $\vec{G}_i$ grafu
+      $\vec{G}_f$ a pro každé uzly $a, b \in U(\vec{G}_i)$ je $a(t) = b(t)$ (a tedy také
+      $\bar a(t) = \bar b(t)$).
+    intuition: |
+      V kvazikomponentě vede cesta mezi každými dvěma uzly oběma směry, takže
+      $a \Rightarrow b$ i $b \Rightarrow a$, tj. $a \Leftrightarrow b$. Celá kvazikomponenta
+      je buď celá pravdivá, nebo celá nepravdivá.
+    proof: |
+      Uzly $a, b$ leží v téže kvazikomponentě, proto v $\vec{G}_f$ existuje cesta z $a$ do $b$
+      i z $b$ do $a$. Podle [Lemmatu 9.2](#lemma-2sat-cesta) platí $a(t) = 1 \Rightarrow b(t) = 1$
+      i $b(t) = 1 \Rightarrow a(t) = 1$. Hodnoty jsou z $\{0,1\}$, proto $a(t) = b(t)$, a tedy
+      i $\bar a(t) = 1 - a(t) = 1 - b(t) = \bar b(t)$. (Podle
+      [Lemmatu 9.1](#lemma-2sat-symetrie) navíc $\bar a, \bar b$ leží také ve společné
+      kvazikomponentě.) $\square$
+    proof_steps:
+      - "Uzly $a, b$ jedné kvazikomponenty jsou spojeny orientovanou cestou z $a$ do $b$ i z $b$ do $a$."
+      - "Podle Lemmatu 9.2 platí v každém splňujícím přiřazení $a(t)=1 \\Rightarrow b(t)=1$ i $b(t)=1 \\Rightarrow a(t)=1$."
+      - "Tedy $a(t) = b(t)$ a negací také $\\bar a(t) = \\bar b(t)$."
+    related: [lemma-2sat-cesta, lemma-2sat-symetrie, lemma-2sat-splnitelnost, def-kvazikomponenta]
+    illustrations:
+      - title: Kvazikomponenta je celá pravdivá, nebo celá nepravdivá
+        for: proof
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: x1, x: 0.5, y: 5, label: "x1" }
+            - { id: x2, x: 3.5, y: 1, label: "x2" }
+            - { id: nx3, x: 3.5, y: 9, label: "¬x3" }
+            - { id: nx1, x: 9.5, y: 5, label: "¬x1" }
+            - { id: nx2, x: 6.5, y: 1, label: "¬x2" }
+            - { id: x3, x: 6.5, y: 9, label: "x3" }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: nx2, to: nx1 }
+            - { from: x2, to: nx3 }
+            - { from: x3, to: nx2 }
+            - { from: nx3, to: x1 }
+            - { from: nx1, to: x3 }
+        steps:
+          - caption: |
+              Implikační graf formule $(\bar x_1 \vee x_2) \wedge (\bar x_2 \vee \bar x_3) \wedge (x_3 \vee x_1)$ má dvě kvazikomponenty (barevně): $\{x_1, x_2, \bar x_3\}$ a zrcadlovou $\{\bar x_1, \bar x_2, x_3\}$.
+          - caption: |
+              Uzly levé kvazikomponenty leží na cyklu $x_1 \to x_2 \to \bar x_3 \to x_1$, mezi každými dvěma vede cesta oběma směry. Podle [Lemmatu 9.2](#lemma-2sat-cesta) tedy platí $x_1 \Leftrightarrow x_2 \Leftrightarrow \bar x_3$.
+            edges: { x1-x2: path, x2-nx3: path, nx3-x1: path }
+          - caption: |
+              Je-li $x_1 = 1$, cesty přenesou pravdivost na $x_2$ i $\bar x_3$: $x_1 = x_2 = 1$, $x_3 = 0$. Celá levá komponenta je pravdivá, zrcadlová nepravdivá – a je to splňující přiřazení.
+            nodes: { x1: done, x2: done, nx3: done }
+            labels: { x1: "1", x2: "1", nx3: "1", nx1: "0", nx2: "0", x3: "0" }
+          - caption: |
+              Druhá možnost $x_1 = 0$: pak musí být nepravdivé i $x_2$ a $\bar x_3$, jinak by z nich vedla cesta do nepravdivého $x_1$. Znovu je komponenta jednotná: $x_1 = x_2 = 0$, $x_3 = 1$.
+            nodes: { nx1: done, nx2: done, x3: done }
+            labels: { x1: "0", x2: "0", nx3: "0", nx1: "1", nx2: "1", x3: "1" }
+          - caption: |
+              Smíšené hodnoty nejdou: při $x_1 = 1$ a $x_2 = 0$ vede hrana $x_1 \to x_2$ z pravdy do nepravdy, tj. klauzule $(\bar x_1 \vee x_2)$ není splněna.
+            edges: { x1-x2: rejected }
+            nodes: { x1: done, x2: rejected }
+            labels: { x1: "1", x2: "0" }
+    source: "skripta str. 58; folie 11, str. 4"
+
+  - id: lemma-2sat-splnitelnost
+    kind: lemma
+    label: "Lemma 9.4"
+    section: "9.3"
+    title: Kritérium splnitelnosti 2-SAT
+    terms: [kritérium splnitelnosti 2-SAT, kvazikomponenta obsahuje proměnnou i negaci, acyklické očíslování]
+    statement: |
+      Formule $f$ je splnitelná právě když žádná kvazikomponenta grafu $\vec{G}_f$
+      neobsahuje současně některou proměnnou i její negaci.
+    intuition: |
+      Leží-li $x_i$ a $\bar x_i$ v jedné kvazikomponentě, platí $x_i \Leftrightarrow \bar x_i$ –
+      spor. Pokud se to nikde nestane, přiřazení sestrojíme „odzadu": kvazikomponenty
+      seřadíme acyklicky a pravdivými prohlásíme ty literály, které leží „níž po proudu"
+      než jejich negace. Implikace pak nikdy nevedou z pravdy do nepravdy.
+    proof: |
+      **a) Nutnost.** Nechť $t$ je splňující přiřazení. Kdyby některá kvazikomponenta
+      obsahovala současně $x_i$ i $\bar x_i$, bylo by podle
+      [Lemmatu 9.3](#lemma-2sat-kvazikomponenta) $x_i(t) = \bar x_i(t)$, což je spor.
+
+      **b) Postačitelnost.** Nechť žádná kvazikomponenta neobsahuje současně proměnnou i
+      její negaci. Označme $\vec{G}_1, \dots, \vec{G}_s$ kvazikomponenty grafu $\vec{G}_f$ v
+      acyklickém očíslování (tj. $\vec{G}_1$ je vstupní, $\vec{G}_s$ výstupní a hrany z
+      $\vec{G}_i$ do $\vec{G}_j$ existují pouze pro $i < j$). Pro literál $a$ označme
+      $\iota(a)$ index kvazikomponenty, v níž leží.
+
+      *Konstrukce přiřazení $t$.* Postupujeme pro $j = s, s-1, \dots, 1$; pro každou
+      proměnnou $x_i$ určíme největší index $j_0$ takový, že $x_i$ nebo $\bar x_i$ leží v
+      $\vec{G}_{j_0}$, a položíme $x_i = 1$, jestliže $x_i \in U(\vec{G}_{j_0})$, a $x_i = 0$,
+      jestliže $\bar x_i \in U(\vec{G}_{j_0})$. Protože $x_i$ a $\bar x_i$ nejsou v téže
+      kvazikomponentě, je přiřazení jednoznačné. Jinými slovy: **literál $a$ je pravdivý
+      právě když $\iota(a) > \iota(\bar a)$.**
+
+      *$t$ je splňující.* Předpokládejme naopak, že nějaká klauzule $(a \vee b)$ má
+      hodnotu 0, tj. $a(t) = b(t) = 0$. Pak $\iota(a) < \iota(\bar a)$ a
+      $\iota(b) < \iota(\bar b)$. Klauzule ale dává hrany $(\bar a, b)$ a $(\bar b, a)$, a
+      hrany vedou jen „dopředu" nebo uvnitř kvazikomponenty, tedy
+      $\iota(\bar a) \le \iota(b)$ a $\iota(\bar b) \le \iota(a)$. Celkem
+      $$\iota(a) < \iota(\bar a) \le \iota(b) < \iota(\bar b) \le \iota(a),$$
+      což je spor. Každá klauzule má tedy hodnotu 1 a $f$ je splněna. $\square$
+    proof_steps:
+      - "Nutnost: ve splňujícím přiřazení mají literály jedné kvazikomponenty stejnou hodnotu (Lemma 9.3), takže $x_i$ a $\\bar x_i$ v ní ležet nemohou."
+      - "Postačitelnost: kvazikomponenty očíslujeme acyklicky $\\vec{G}_1, \\dots, \\vec{G}_s$ tak, že hrany vedou jen od nižšího indexu k vyššímu."
+      - "Proměnnou $x_i$ nastavíme na 1, právě když komponenta s $x_i$ má vyšší index než komponenta s $\\bar x_i$ (zpracováváme od $\\vec{G}_s$)."
+      - "Přiřazení je dobře definované, protože $x_i$ a $\\bar x_i$ nikdy nejsou v téže kvazikomponentě."
+      - "Kdyby klauzule $(a \\vee b)$ byla nepravdivá, z hran $(\\bar a, b)$ a $(\\bar b, a)$ by plynulo $\\iota(a) < \\iota(\\bar a) \\le \\iota(b) < \\iota(\\bar b) \\le \\iota(a)$ – spor."
+    related: [lemma-2sat-kvazikomponenta, thm-2sat-p, alg-2sat, def-kondenzace, def-kvazikomponenta]
+    illustrations:
+      - title: Od splnitelné formule ke sporu x1 ⇔ ¬x1
+        for: proof
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: x1, x: 0.5, y: 5, label: "x1" }
+            - { id: x2, x: 3.5, y: 1, label: "x2" }
+            - { id: nx3, x: 3.5, y: 9, label: "¬x3" }
+            - { id: nx1, x: 9.5, y: 5, label: "¬x1" }
+            - { id: nx2, x: 6.5, y: 1, label: "¬x2" }
+            - { id: x3, x: 6.5, y: 9, label: "x3" }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: nx2, to: nx1 }
+            - { from: x2, to: nx3 }
+            - { from: x3, to: nx2 }
+            - { from: nx3, to: x1 }
+            - { from: nx1, to: x3 }
+        steps:
+          - caption: |
+              Formule $(\bar x_1 \vee x_2) \wedge (\bar x_2 \vee \bar x_3) \wedge (x_3 \vee x_1)$: graf má dvě kvazikomponenty a žádná neobsahuje proměnnou spolu s její negací – formule je splnitelná.
+          - caption: |
+              Přidáme klauzuli $(\bar x_1 \vee \bar x_2)$, tj. hrany $x_1 \to \bar x_2$ a $x_2 \to \bar x_1$. Obě vedou z levé komponenty do pravé, kvazikomponenty se nezmění; v acyklickém očíslování je levá první a pravá (výstupní) druhá.
+            add: [[x1, nx2], [x2, nx1]]
+            edges: { x1-nx2: active, x2-nx1: active }
+          - caption: |
+              Pravdivý je literál, jehož komponenta má vyšší index než komponenta negace. Výstupní je pravá, takže $\bar x_1 = \bar x_2 = x_3 = 1$, tj. $x_1 = x_2 = 0$, $x_3 = 1$. Žádná hrana nevede z pravdy do nepravdy – všechny čtyři klauzule jsou splněny.
+            nodes: { nx1: done, nx2: done, x3: done }
+            labels: { x1: "0", x2: "0", nx3: "0", nx1: "1", nx2: "1", x3: "1" }
+          - caption: |
+              Opačná volba (levá komponenta pravdivá) selže: hrany $x_1 \to \bar x_2$ a $x_2 \to \bar x_1$ by vedly z pravdy do nepravdy. Proto se pravda přiděluje „odzadu“, od výstupní komponenty.
+            nodes: { x1: done, x2: done, nx3: done }
+            edges: { x1-nx2: rejected, x2-nx1: rejected }
+            labels: { x1: "1", x2: "1", nx3: "1", nx1: "0", nx2: "0", x3: "0" }
+          - caption: |
+              Přidáme ještě $(x_1 \vee x_2)$: hrany $\bar x_1 \to x_2$ a $\bar x_2 \to x_1$ vedou zpět doleva a komponenty splynou – graf je silně souvislý. Cyklus $x_1 \to \bar x_2 \to \bar x_1 \to x_2 \to \bar x_3 \to x_1$ dává $x_1 \Leftrightarrow \bar x_1$, spor: formule je nesplnitelná.
+            add: [[nx1, x2], [nx2, x1]]
+            edges: { x1-nx2: path, nx2-nx1: path, nx1-x2: path, x2-nx3: path, nx3-x1: path }
+            nodes: { x1: rejected, nx1: rejected }
+    source: "skripta str. 58–59; folie 11, str. 4"
+
+  - id: thm-2sat-p
+    kind: theorem
+    label: "Věta 9.2"
+    section: "9.3"
+    title: 2-SAT je polynomiální
+    terms: [2-SAT ∈ P, polynomialita 2-SAT, 2-SAT v lineárním čase]
+    statement: |
+      $\text{2-SAT} \in \mathrm{P}$.
+    intuition: |
+      U 2-SAT každé rozhodnutí *vynucuje* další (z nepravdivého literálu plyne pravdivost
+      druhého literálu klauzule), takže se nic nemusí „zkoušet" – stačí analyzovat
+      dosažitelnost v implikačním grafu. U 3-SAT nepravdivost jednoho literálu jen zúží
+      klauzuli na „$b$ nebo $c$" a vznikají skutečné volby, které se kombinatoricky
+      násobí – proto 3-SAT polynomiální algoritmus (pravděpodobně) nemá.
+    proof: |
+      Pro formuli $f$ s $n$ proměnnými a $m$ klauzulemi sestrojíme
+      [implikační graf](#def-implikacni-graf) $\vec{G}_f$. Má $|U(\vec{G}_f)| = 2n$ uzlů a
+      $|H(\vec{G}_f)| = 2m$ hran, jeho velikost je tedy polynomiální (lineární) funkcí
+      velikosti formule a sestrojíme ho v čase $O(n + m)$.
+
+      Kvazikomponenty, kondenzaci a acyklické očíslování kondenzace lze nalézt v
+      polynomiálním čase (dokonce v čase $O(n+m)$, např. Tarjanovým algoritmem). Podle
+      [Lemmatu 9.4](#lemma-2sat-splnitelnost) je $f$ splnitelná právě když žádná
+      kvazikomponenta neobsahuje dvojici $x_i, \bar x_i$, což ověříme v čase $O(n)$.
+      Dostáváme tak polynomiální algoritmus pro 2-SAT, tj. $\text{2-SAT} \in \mathrm{P}$.
+      Důkaz Lemmatu 9.4 navíc dává i konstrukci splňujícího přiřazení. $\square$
+    proof_steps:
+      - "Z formule sestrojíme implikační graf $\\vec{G}_f$ se $2n$ uzly a $2m$ hranami: klauzule $(a \\vee b)$ dává hrany $(\\bar a, b)$ a $(\\bar b, a)$."
+      - "Dokážeme pomocná lemmata: symetrie sledů (9.1), cesta přenáší pravdivost (9.2), kvazikomponenta má jednotnou hodnotu (9.3)."
+      - "Lemma 9.4: $f$ je splnitelná právě když žádná kvazikomponenta neobsahuje proměnnou i její negaci; přiřazení se získá z acyklického očíslování kondenzace."
+      - "Kvazikomponenty, kondenzaci a acyklické očíslování nalezneme v polynomiálním (lineárním) čase."
+      - "Test podmínky z Lemmatu 9.4 je tedy polynomiální algoritmus pro 2-SAT, a proto 2-SAT ∈ P."
+    related: [def-2-sat, def-implikacni-graf, lemma-2sat-splnitelnost, alg-2sat, def-trida-p, thm-3sat-npc]
+    source: "skripta str. 58–59; folie 11, str. 3–4"
+
+  - id: alg-2sat
+    kind: algorithm
+    section: "9.3"
+    title: Algoritmus pro 2-SAT přes implikační graf
+    terms: [algoritmus 2-SAT, implikační graf, kvazikomponenty, silně souvislé komponenty, Tarjanův algoritmus, Aspvall–Plass–Tarjan]
+    statement: |
+      **Vstup:** formule $f = (a_1 \vee b_1) \wedge \dots \wedge (a_m \vee b_m)$ v proměnných
+      $x_1, \dots, x_n$.
+      **Výstup:** NE, nebo splňující přiřazení $t$.
+    intuition: |
+      Sestrojíme graf vynucených implikací, sbalíme ho na kvazikomponenty (literály, které
+      musí mít stejnou hodnotu) a ověříme, že žádná proměnná není ekvivalentní své negaci.
+      Pak dáváme pravdu literálům „nejvíc po proudu" – z pravdivého literálu vedou hrany
+      jen do pravdivých.
+    pseudocode: |
+      1. Sestroj $\vec{G}_f$: uzly $x_1, \dots, x_n, \bar x_1, \dots, \bar x_n$; pro každou
+         klauzuli $(a \vee b)$ přidej hrany $(\bar a, b)$ a $(\bar b, a)$.
+      2. Najdi kvazikomponenty $\vec{G}_f$ (např. Tarjanovým nebo Kosarajuovým algoritmem).
+      3. Pokud pro některé $i$ leží $x_i$ a $\bar x_i$ v téže kvazikomponentě, vrať **NE**
+         (formule není splnitelná).
+      4. Kondenzaci očísluj acyklicky: $\vec{G}_1, \dots, \vec{G}_s$, hrany vedou jen z
+         $\vec{G}_i$ do $\vec{G}_j$ pro $i < j$. Pro literál $a$ nechť $\iota(a)$ je index
+         jeho kvazikomponenty.
+      5. Pro $i = 1, \dots, n$ polož $x_i := 1$, je-li $\iota(x_i) > \iota(\bar x_i)$, jinak
+         $x_i := 0$.
+      6. Vrať přiřazení $t = (x_1, \dots, x_n)$.
+    complexity: |
+      $O(n + m)$ – graf má $2n$ uzlů a $2m$ hran, kvazikomponenty i acyklické očíslování
+      kondenzace se najdou lineárním průchodem do hloubky (Tarjanův algoritmus vydává
+      kvazikomponenty dokonce rovnou v obráceném acyklickém pořadí) a kroky 3 a 5 stojí
+      $O(n)$. Ve skriptech stačí tvrzení „polynomiální".
+    examples:
+      - title: Splnitelná formule s acyklickým grafem
+        body: |
+          $f(x_1,x_2,x_3) = (\bar x_1 \vee \bar x_3) \wedge (x_2 \vee \bar x_3) \wedge (\bar x_1 \vee x_3) \wedge (x_2 \vee x_3)$.
+
+          Hrany: $(x_1,\bar x_3), (x_3,\bar x_1)$; $(\bar x_2,\bar x_3), (x_3, x_2)$;
+          $(x_1, x_3), (\bar x_3, \bar x_1)$; $(\bar x_2, x_3), (\bar x_3, x_2)$.
+          Graf je acyklický, každá kvazikomponenta je jediný uzel. Acyklické očíslování:
+
+          | uzel | $x_1$ | $x_2$ | $x_3$ | $\bar x_1$ | $\bar x_2$ | $\bar x_3$ |
+          |---|---|---|---|---|---|---|
+          | $\iota$ | 1 | 5 | 4 | 6 | 2 | 3 |
+
+          $\iota(\bar x_1) = 6 > 1$ … $x_1 = 0$; $\iota(x_2) = 5 > 2$ … $x_2 = 1$;
+          $\iota(x_3) = 4 > 3$ … $x_3 = 1$. Splňující přiřazení $t = (0,1,1)$ – ověření:
+          $(1 \vee 0)(1 \vee 0)(1 \vee 1)(1 \vee 1) = 1$.
+        graph:
+          directed: true
+          nodes:
+            - { id: nx1, x: 0, y: 0, label: "¬x1" }
+            - { id: nx2, x: 4, y: 0, label: "¬x2" }
+            - { id: nx3, x: 8, y: 0, label: "¬x3" }
+            - { id: x1, x: 0, y: 4, label: "x1" }
+            - { id: x2, x: 4, y: 4, label: "x2" }
+            - { id: x3, x: 8, y: 4, label: "x3" }
+          edges:
+            - { from: x1, to: nx3 }
+            - { from: x3, to: nx1 }
+            - { from: nx2, to: nx3 }
+            - { from: x3, to: x2 }
+            - { from: x1, to: x3 }
+            - { from: nx3, to: nx1 }
+            - { from: nx2, to: x3 }
+            - { from: nx3, to: x2 }
+      - title: Nesplnitelná formule – graf je silně souvislý
+        body: |
+          $f(x_1,x_2,x_3) = (x_1 \vee x_2) \wedge (\bar x_1 \vee x_2) \wedge (\bar x_2 \vee x_3) \wedge (\bar x_2 \vee \bar x_3)$.
+
+          Hrany: $(\bar x_1, x_2), (\bar x_2, x_1), (x_1, x_2), (\bar x_2, \bar x_1), (x_2, x_3), (\bar x_3, \bar x_2), (x_2, \bar x_3), (x_3, \bar x_2)$.
+          Např. $x_2 \to x_3 \to \bar x_2 \to x_1 \to x_2$, takže $x_2$ a $\bar x_2$ jsou v téže
+          kvazikomponentě (graf je dokonce silně souvislý) – formule **není splnitelná**.
+          (Intuitivně: první dvě klauzule vynucují $x_2 = 1$ a poslední dvě pak $x_3 = 1$ i
+          $x_3 = 0$.)
+        graph:
+          directed: true
+          nodes:
+            - { id: nx1, x: 0, y: 0, label: "¬x1" }
+            - { id: nx2, x: 4, y: 0, label: "¬x2" }
+            - { id: nx3, x: 8, y: 0, label: "¬x3" }
+            - { id: x1, x: 0, y: 4, label: "x1" }
+            - { id: x2, x: 4, y: 4, label: "x2" }
+            - { id: x3, x: 8, y: 4, label: "x3" }
+          edges:
+            - { from: nx1, to: x2 }
+            - { from: nx2, to: x1 }
+            - { from: x1, to: x2 }
+            - { from: nx2, to: nx1 }
+            - { from: x2, to: x3 }
+            - { from: nx3, to: nx2 }
+            - { from: x2, to: nx3 }
+            - { from: x3, to: nx2 }
+      - title: Netriviální kvazikomponenty (vlastní příklad)
+        body: |
+          $f = (\bar x_1 \vee x_2) \wedge (x_1 \vee \bar x_2) \wedge (x_1 \vee x_3) \wedge (\bar x_2 \vee \bar x_3)$.
+
+          Hrany: $(x_1, x_2), (\bar x_2, \bar x_1), (x_2, x_1), (\bar x_1, \bar x_2), (\bar x_1, x_3), (\bar x_3, x_1), (x_2, \bar x_3), (x_3, \bar x_2)$.
+          Kvazikomponenty jsou dvě: $K = \{\bar x_1, \bar x_2, x_3\}$ a
+          $K' = \{x_1, x_2, \bar x_3\}$ (všimněte si symetrie – $K'$ obsahuje přesně negace
+          literálů z $K$). Žádná neobsahuje proměnnou i její negaci, formule je splnitelná.
+          Mezi $K$ a $K'$ nevede žádná hrana, zvolíme třeba $\iota(K) = 1$, $\iota(K') = 2$;
+          pravdivé jsou literály z $K'$: $t = (1, 1, 0)$. Ověření:
+          $(0 \vee 1)(1 \vee 0)(1 \vee 0)(0 \vee 1) = 1$.
+        graph:
+          directed: true
+          nodes:
+            - { id: nx1, x: 0, y: 0, label: "¬x1" }
+            - { id: nx2, x: 4, y: 0, label: "¬x2" }
+            - { id: nx3, x: 8, y: 0, label: "¬x3" }
+            - { id: x1, x: 0, y: 4, label: "x1" }
+            - { id: x2, x: 4, y: 4, label: "x2" }
+            - { id: x3, x: 8, y: 4, label: "x3" }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: nx2, to: nx1 }
+            - { from: x2, to: x1 }
+            - { from: nx1, to: nx2 }
+            - { from: nx1, to: x3 }
+            - { from: nx3, to: x1 }
+            - { from: x2, to: nx3 }
+            - { from: x3, to: nx2 }
+    visualization: two-sat
+    related: [thm-2sat-p, lemma-2sat-splnitelnost, def-implikacni-graf, def-kvazikomponenta, def-kondenzace]
+    source: "skripta str. 58–59 (důkaz Věty 9.2 a příklady); folie 11, str. 3–4"
+  # ------------------------------------------------------------------ 9.4
+  - id: def-ind
+    kind: definition
+    section: "9.4"
+    title: Problém IND (nezávislá množina dané velikosti)
+    terms: [IND, independent set, nezávislá množina, problém nezávislé množiny, číslo nezávislosti, "α(G)"]
+    statement: |
+      **IND**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech a přirozené číslo $k \le n$.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje nezávislá množina uzlů velikosti alespoň $k$.
+
+      **Poznámka.** IND se často zaměňuje s úlohou zjistit číslo nezávislosti $\alpha(G)$.
+      Určení $\alpha(G)$ (jako kteréhokoli parametru grafu) je ale *optimalizační*, nikoli
+      rozhodovací problém, a nemá smysl mluvit o jeho příslušnosti do třídy P. Úlohu lze
+      však snadno převést na nejvýše $n$-násobné řešení IND pro různé hodnoty $k$. Proto
+      lze $\alpha(G)$ určit v polynomiálním čase právě když IND patří do P – z hlediska
+      polynomiality jsou obě úlohy ekvivalentní.
+    intuition: |
+      IND je rozhodovací verze hledání největší nezávislé množiny
+      ([nezávislá množina](#def-nezavisla-mnozina)). Je to „grafový přepis" SAT: v
+      následujících příkladech uvidíme, že IND a SAT se na sebe dají polynomiálně převést
+      oběma směry.
+    related: [def-nezavisla-mnozina, rem-redukce-ind-na-sat, rem-redukce-sat-na-ind, thm-ind-npc]
+    source: "skripta str. 60; folie 11, str. 5"
+
+  - id: rem-redukce-ind-na-sat
+    kind: remark
+    label: "Příklad a poznámka (odst. 9.4)"
+    section: "9.4"
+    title: Polynomiální redukce IND na SAT
+    terms: [redukce IND na SAT, kódování grafu formulí, IND ◁ SAT]
+    statement: |
+      Je dán graf $G$ s uzly $x_1, \dots, x_n$ a číslo $k$. Sestrojíme formuli
+      $f(u_1, \dots, u_n)$, která je splněna právě když množina
+      $N = \{x_i \in U(G) \mid u_i = 1\}$ je nezávislá množina o alespoň $k$ prvcích.
+      Položíme $f = f_1 \wedge f_2$, kde
+
+      1. $f_1(u_1, \dots, u_n) = \bigwedge_{\{x_i, x_j\} \in H(G)} (\bar u_i \vee \bar u_j)$,
+      2. $f_2(u_1, \dots, u_n)$ je formule, která má hodnotu 1 právě tehdy, když alespoň
+         $k$ z proměnných $u_1, \dots, u_n$ má hodnotu 1 (na to existují standardní
+         konstrukce, které skripta neuvádějí).
+
+      Zřejmě $f_1$ je splněna právě když množina $N$ je nezávislá. Délka $f_1$ je
+      polynomiální funkcí $n$, neboť počet klauzulí je roven počtu hran (nejvýše
+      $O(n^2)$); totéž platí pro $f_2$. Našli jsme tedy **polynomiální redukci IND na SAT**.
+    intuition: |
+      Proměnná $u_i$ = „uzel $x_i$ vybereme". Klauzule $(\bar u_i \vee \bar u_j)$ zakazuje
+      vybrat oba konce hrany, $f_2$ hlídá počet. Je-li tedy SAT snadný, je snadný i IND.
+    examples:
+      - title: Formule $f_1$ pro konkrétní graf
+        body: |
+          Graf $G$: cesta $x_1 x_2 x_3 x_4 x_5$ a navíc hrana $x_2 x_4$. Pak
+          $$f_1 = (\bar u_1 \vee \bar u_2) \wedge (\bar u_2 \vee \bar u_3) \wedge (\bar u_3 \vee \bar u_4) \wedge (\bar u_4 \vee \bar u_5) \wedge (\bar u_2 \vee \bar u_4).$$
+          Např. $u = (1,0,1,0,1)$ splňuje $f_1$ a odpovídá nezávislé množině
+          $\{x_1, x_3, x_5\}$.
+
+          *Jedna možná konstrukce $f_2$ (doplněno):* pomocné proměnné $s_{i,j}$ („mezi
+          $u_1, \dots, u_i$ je aspoň $j$ jedniček") s klauzulemi vyjadřujícími
+          $s_{i,j} \Rightarrow s_{i-1,j} \vee (s_{i-1,j-1} \wedge u_i)$ a požadavkem $s_{n,k}$ –
+          celkem $O(nk)$ klauzulí.
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 0, y: 2 }
+            - { id: x2, x: 2, y: 2 }
+            - { id: x3, x: 4, y: 2 }
+            - { id: x4, x: 6, y: 2 }
+            - { id: x5, x: 8, y: 2 }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: x4 }
+            - { from: x4, to: x5 }
+            - { from: x2, to: x4 }
+    related: [def-ind, def-sat, cor-sat-tezsi-nez-ind, def-polynomialni-redukce]
+    source: "skripta str. 60; folie 11, str. 5"
+
+  - id: cor-sat-tezsi-nez-ind
+    kind: corollary
+    label: "Důsledek 9.1"
+    section: "9.4"
+    title: SAT je alespoň tak těžký jako IND
+    terms: [SAT alespoň tak těžký jako IND]
+    statement: |
+      Úloha SAT je alespoň tak těžká jako úloha IND.
+    intuition: |
+      Pojem „alespoň tak těžký" zde ještě není přesný – zpřesní ho
+      [polynomiální redukce](#def-polynomialni-redukce): platí $\text{IND} \triangleleft \text{SAT}$.
+    proof: |
+      Podle [redukce IND na SAT](#rem-redukce-ind-na-sat) lze každou instanci $(G, k)$ úlohy
+      IND v polynomiálním čase přeložit na formuli $f$ v KNF polynomiální délky tak, že
+      $G$ má nezávislou množinu velikosti alespoň $k$ právě když $f$ je splnitelná. Každý
+      algoritmus pro SAT tedy po složení s tímto překladem řeší i IND, a to s nejvýše
+      polynomiálním zdržením. $\square$
+    proof_steps:
+      - "Instanci $(G,k)$ přeložíme na formuli $f = f_1 \\wedge f_2$ polynomiální délky."
+      - "$f$ je splnitelná právě když $G$ má nezávislou množinu velikosti alespoň $k$."
+      - "Algoritmus pro SAT složený s překladem tedy řeší IND s nejvýše polynomiálním zdržením."
+    related: [rem-redukce-ind-na-sat, cor-sat-p-implikuje-ind-p]
+    source: "skripta str. 60; folie 11, str. 5"
+
+  - id: cor-sat-p-implikuje-ind-p
+    kind: corollary
+    label: "Důsledek 9.2"
+    section: "9.4"
+    title: Polynomiální algoritmus na SAT dává polynomiální algoritmus na IND
+    terms: [SAT ∈ P implikuje IND ∈ P]
+    statement: |
+      Kdybychom měli polynomiální algoritmus na SAT, bylo by možné vytvořit polynomiální
+      algoritmus i na IND.
+    proof: |
+      Nechť SAT řešíme v čase $q(N)$ pro formuli délky $N$ ($q$ polynom). Instanci $(G,k)$
+      velikosti $n$ přeložíme v čase $r(n)$ na formuli délky $N \le r(n)$ ($r$ polynom) a
+      na ni pustíme algoritmus pro SAT. Celkový čas je $r(n) + q(r(n))$, což je polynom
+      v $n$ (složení polynomů je polynom). $\square$
+    proof_steps:
+      - "Instanci IND velikosti $n$ přeložíme v polynomiálním čase $r(n)$ na formuli délky nejvýše $r(n)$."
+      - "Na formuli spustíme polynomiální algoritmus pro SAT s časem $q(\\cdot)$."
+      - "Celkový čas $r(n) + q(r(n))$ je polynom v $n$, protože složení polynomů je polynom."
+    related: [cor-sat-tezsi-nez-ind, cor-sat-p-ekvivalentni-ind-p]
+    source: "skripta str. 60; folie 11, str. 5"
+
+  - id: rem-redukce-sat-na-ind
+    kind: remark
+    label: "Příklad (odst. 9.4)"
+    section: "9.4"
+    title: Polynomiální redukce SAT na IND
+    terms: [redukce SAT na IND, SAT ◁ IND, graf klauzulí a literálů]
+    statement: |
+      Nechť je dána formule v KNF
+      $$f(u_1, \dots, u_n) = \bigwedge_{i=1}^{m} \Big( \bigvee_{j=1}^{m_i} a_{ij} \Big),$$
+      kde každé $a_{ij}$ je tvaru $u_k$ nebo $\bar u_k$. Sestrojíme graf $G$:
+
+      * $U(G) = \{x_{ij} \mid i = 1, \dots, m;\ j = 1, \dots, m_i\}$ (jeden uzel za každý výskyt
+        literálu),
+      * $H(G) = \big\{\{x_{ij}, x_{iq}\} \mid j \ne q\big\} \cup \big\{\{x_{ij}, x_{pq}\} \mid i \ne p,\ a_{ij} = \bar a_{pq}\big\}$,
+
+      tj. literály téže klauzule tvoří kliku a navíc spojíme každé dva *komplementární*
+      výskyty literálů v různých klauzulích. Pak v $G$ existuje nezávislá množina velikosti
+      $m$ právě když $f$ je splnitelná – jde o **polynomiální redukci SAT na IND**
+      (podrobný důkaz viz [Věta 9.8](#thm-ind-npc)).
+    intuition: |
+      Nezávislá množina velikosti $m$ musí vybrat z každé klauzule (kliky) právě jeden
+      literál – „ten, který klauzuli splní". Hrany mezi $u_k$ a $\bar u_k$ zaručí, že
+      výběr je bezesporný.
+    related: [def-ind, def-sat, thm-ind-npc, cor-ind-tezsi-nez-sat]
+    source: "skripta str. 60–61; folie 11, str. 6"
+
+  - id: cor-ind-tezsi-nez-sat
+    kind: corollary
+    label: "Důsledek 9.3"
+    section: "9.4"
+    title: IND je alespoň tak těžký jako SAT
+    terms: [IND alespoň tak těžký jako SAT]
+    statement: |
+      Úloha IND je alespoň tak těžká jako úloha SAT.
+    proof: |
+      Podle [redukce SAT na IND](#rem-redukce-sat-na-ind) přeložíme formuli $f$ s $m$
+      klauzulemi v polynomiálním čase na graf $G$ (počet uzlů = počet výskytů literálů,
+      hran nejvýše kvadraticky) a číslo $k = m$ tak, že $f$ je splnitelná právě když $G$ má
+      nezávislou množinu velikosti $m$. Každý algoritmus pro IND tak po složení s
+      překladem řeší SAT s nejvýše polynomiálním zdržením. $\square$
+    proof_steps:
+      - "Formuli s $m$ klauzulemi přeložíme na graf výskytů literálů (kliky klauzulí + hrany mezi komplementárními literály) a $k = m$."
+      - "Graf má polynomiální velikost a $f$ je splnitelná právě když v něm existuje nezávislá množina velikosti $m$."
+      - "Algoritmus pro IND složený s překladem tedy řeší SAT s nejvýše polynomiálním zdržením."
+    related: [rem-redukce-sat-na-ind, cor-ind-p-implikuje-sat-p]
+    source: "skripta str. 61; folie 11, str. 6"
+
+  - id: cor-ind-p-implikuje-sat-p
+    kind: corollary
+    label: "Důsledek 9.4"
+    section: "9.4"
+    title: Polynomiální algoritmus na IND dává polynomiální algoritmus na SAT
+    terms: [IND ∈ P implikuje SAT ∈ P]
+    statement: |
+      Kdybychom měli polynomiální algoritmus na IND, bylo by možné vytvořit polynomiální
+      algoritmus i na SAT.
+    proof: |
+      Formuli délky $N$ přeložíme v polynomiálním čase $r(N)$ na instanci IND velikosti
+      nejvýše $r(N)$ a vyřešíme ji polynomiálním algoritmem pro IND v čase $q(r(N))$.
+      Celkem $r(N) + q(r(N))$, což je polynom. $\square$
+    proof_steps:
+      - "Formuli délky $N$ přeložíme v čase $r(N)$ na instanci $(G, m)$ problému IND velikosti nejvýše $r(N)$."
+      - "Instanci vyřešíme polynomiálním algoritmem pro IND v čase $q(r(N))$."
+      - "Celkový čas $r(N) + q(r(N))$ je polynomiální."
+    related: [cor-ind-tezsi-nez-sat, cor-sat-p-ekvivalentni-ind-p]
+    source: "skripta str. 61; folie 11, str. 6"
+
+  - id: cor-sat-p-ekvivalentni-ind-p
+    kind: corollary
+    label: "Důsledek 9.5"
+    section: "9.4"
+    title: SAT ∈ P právě když IND ∈ P
+    terms: [SAT ∈ P právě když IND ∈ P, ekvivalence SAT a IND]
+    statement: |
+      $\text{SAT} \in \mathrm{P}$ právě když $\text{IND} \in \mathrm{P}$.
+    intuition: |
+      Dva na první pohled zcela odlišné problémy (logika vs. grafy) jsou z hlediska
+      polynomiality stejně těžké. To je první náznak teorie NP-úplnosti: celá velká
+      skupina problémů „stojí a padá" společně.
+    proof: |
+      Implikace „$\Rightarrow$" je [Důsledek 9.2](#cor-sat-p-implikuje-ind-p), implikace
+      „$\Leftarrow$" je [Důsledek 9.4](#cor-ind-p-implikuje-sat-p). $\square$
+    proof_steps:
+      - "Je-li SAT ∈ P, pak díky redukci IND na SAT je IND ∈ P (Důsledek 9.2)."
+      - "Je-li IND ∈ P, pak díky redukci SAT na IND je SAT ∈ P (Důsledek 9.4)."
+      - "Obě implikace dohromady dávají ekvivalenci."
+    related: [cor-sat-p-implikuje-ind-p, cor-ind-p-implikuje-sat-p, thm-vlastnosti-redukce]
+    source: "skripta str. 61; folie 11, str. 6"
+
+  # ------------------------------------------------------------------ 9.5
+  - id: def-nedeterministicky-algoritmus
+    kind: definition
+    label: "Definice 9.4"
+    section: "9.5"
+    title: Nedeterministický algoritmus
+    terms: [nedeterministický algoritmus, nedeterminismus, nedeterministický krok, nondeterministic algorithm, uhádnutí řešení]
+    statement: |
+      **Nedeterministický algoritmus** se v některých krocích může libovolně rozhodnout pro
+      některé z několika možných různých pokračování.
+    intuition: |
+      Nedeterminismus modeluje „šťastné uhádnutí": algoritmus odpoví ANO, pokud
+      *existuje* posloupnost voleb vedoucí k ANO. Není to reálný počítač, ale
+      formalizace pojmu „řešení se dá uhodnout a rychle ověřit".
+    related: [alg-ind-nedeterministicky, def-nedeterministicky-prijimaci-pocitac, def-trida-np]
+    source: "skripta str. 62; folie 12, str. 1"
+
+  - id: alg-ind-nedeterministicky
+    kind: algorithm
+    label: "Příklad (před Def. 9.5)"
+    section: "9.5"
+    title: Nedeterministický algoritmus pro IND
+    terms: [nedeterministický algoritmus IND, IND ∈ NP, certifikát nezávislé množiny]
+    statement: |
+      **Vstup:** graf $G$ s uzly $u_1, \dots, u_n$ a přirozené číslo $k \le n$.
+      Algoritmus přijme (`ACCEPT`) na některém výpočtu právě když $G$ obsahuje nezávislou
+      množinu o alespoň $k$ uzlech.
+    intuition: |
+      Krok 2 „uhodne" podmnožinu uzlů, kroky 3–4 ji deterministicky a rychle ověří.
+      V důsledku nedeterminismu je $2^n$ různých výpočtů, ale podstatné je, že v $G$
+      existuje nezávislá množina o alespoň $k$ uzlech **právě když existuje výpočet
+      končící `ACCEPT`**. Každý jednotlivý výpočet je přitom polynomiální, takže
+      $\text{IND} \in \mathrm{NP}$.
+    pseudocode: |
+      1. $X := \emptyset$ (inicializace)
+      2. pro $i = 1, 2, \dots, n$ proveď *nedeterministicky*: buď $X := X \cup \{u_i\}$,
+         nebo $X := X$
+      3. jestliže $\{u_i, u_j\} \in H(G)$ pro některé $u_i, u_j \in X$, pak `REJECT`
+         (test nezávislosti)
+      4. je-li $|X| \ge k$, pak `ACCEPT`, jinak `REJECT` (test velikosti)
+    complexity: |
+      Každý přípustný výpočet trvá $O(n^2)$ kroků (krok 2 $O(n)$, test nezávislosti
+      $O(n^2)$ s maticí sousednosti) – algoritmus pracuje v polynomiálně omezeném čase.
+      Přípustných výpočtů je ovšem $2^n$; deterministická simulace všech by trvala
+      $O(2^n n^2)$.
+    related: [def-nedeterministicky-algoritmus, def-ind, def-trida-np, def-polynomialne-omezeny-cas]
+    source: "skripta str. 62; folie 12, str. 1"
+
+  - id: def-nedeterministicky-prijimaci-pocitac
+    kind: definition
+    label: "Definice 9.5"
+    section: "9.5"
+    title: Nedeterministický přijímací počítač
+    terms: [nedeterministický přijímací počítač, CHOOSE, nedeterministický stroj, nondeterministic machine]
+    statement: |
+      **Nedeterministický přijímací počítač** má (navíc oproti dříve definovanému
+      [přijímacímu počítači](#def-prijimaci-pocitac)) příkaz `CHOOSE L1, L2`, kde `L1`,
+      `L2` jsou návěští.
+
+      Smysl příkazu `CHOOSE L1, L2` lze ekvivalentně vyjádřit: *vyber si* `JUMP L1` *nebo*
+      `JUMP L2`.
+    intuition: |
+      `CHOOSE` je jediný nedeterministický prvek – větvení výpočtu na dvě možnosti. Celý
+      průběh pak tvoří strom možných výpočtů; opakovaným `CHOOSE` lze „uhodnout"
+      libovolný řetězec bitů (např. podmnožinu uzlů).
+    related: [def-prijimaci-pocitac, def-prijimani-nedeterministickym-pocitacem, def-nedeterministicky-algoritmus]
+    source: "skripta str. 62; folie 12, str. 2"
+
+  - id: def-prijimani-nedeterministickym-pocitacem
+    kind: definition
+    label: "Definice 9.6"
+    section: "9.5"
+    title: Přijetí slova a jazyka nedeterministickým počítačem
+    terms: [přípustný výpočet, přijetí slova nedeterministickým počítačem, odmítnutí slova, přijímaný jazyk]
+    statement: |
+      Řekneme, že slovo $w$ je **přijímáno** nedeterministickým přijímacím počítačem $M$,
+      jestliže existuje přípustný výpočet počítače $M$ s počáteční konfigurací danou
+      slovem $w$ a končící `ACCEPT`. V opačném případě řekneme, že nedeterministický
+      přijímací počítač **odmítá** slovo $w$.
+
+      Řekneme, že $M$ **přijímá jazyk** $J$, jestliže pro každé slovo $w$ je
+      $w \in J \Leftrightarrow M$ přijímá $w$.
+    intuition: |
+      Asymetrie ANO/NE: pro přijetí stačí **jeden** dobrý výpočet, pro odmítnutí musí
+      **všechny** výpočty skončit `REJECT`. Odtud i rozdílné měření času v
+      [Definici 9.7](#def-cas-nedeterministickeho-vypoctu).
+    related: [def-nedeterministicky-prijimaci-pocitac, def-cas-nedeterministickeho-vypoctu]
+    source: "skripta str. 62; folie 12, str. 2"
+
+  - id: def-cas-nedeterministickeho-vypoctu
+    kind: definition
+    label: "Definice 9.7"
+    section: "9.5"
+    title: Čas zpracování slova nedeterministickým počítačem
+    terms: [čas nedeterministického výpočtu, zpracování slova v čase t]
+    statement: |
+      Řekneme, že nedeterministický přijímací počítač $M$ **zpracuje slovo $w$ v čase
+      nejvýše $t$**, jestliže
+
+      * buď $M$ přijímá $w$ a existuje přípustný výpočet určený slovem $w$ a končící
+        `ACCEPT` po nejvýše $t$ krocích,
+      * nebo $M$ odmítá $w$ a každý přípustný výpočet končí po nejvýše $t$ krocích.
+    intuition: |
+      Když $M$ přijímá, o čase rozhoduje nejkratší přijímající výpočet (při prvním
+      `ACCEPT` už odpověď známe). Když odmítá, musíme počkat, až skončí všechny
+      přípustné výpočty, takže se počítá ten nejdelší.
+    related: [def-prijimani-nedeterministickym-pocitacem, def-polynomialne-omezeny-cas]
+    source: "skripta str. 62; folie 12, str. 2"
+
+  - id: def-polynomialne-omezeny-cas
+    kind: definition
+    label: "Definice 9.8"
+    section: "9.5"
+    title: Nedeterministický počítač v polynomiálně omezeném čase
+    terms: [polynomiálně omezený čas, nedeterministický polynomiální čas]
+    statement: |
+      Řekneme, že nedeterministický přijímací počítač $M$ **pracuje v polynomiálně
+      omezeném čase**, jestliže existuje polynom $p$ takový, že libovolné slovo délky $n$
+      zpracuje v čase nejvýše $p(n)$.
+    intuition: |
+      Polynomiálně omezená je *délka* každého relevantního výpočtu, nikoli jejich *počet*.
+      Např. nedeterministický algoritmus pro IND má každý přípustný výpočet polynomiální,
+      ale přípustných výpočtů je $2^n$.
+    related: [def-cas-nedeterministickeho-vypoctu, def-trida-np, alg-ind-nedeterministicky]
+    source: "skripta str. 62; folie 12, str. 2"
+
+  - id: alg-ham-nedeterministicky
+    kind: algorithm
+    label: "Příklad (před Def. 9.9)"
+    section: "9.5"
+    title: Nedeterministický algoritmus pro HAM
+    terms: [HAM, hamiltonovská kružnice, HAM ∈ NP, nedeterministický algoritmus HAM, faktor grafu]
+    statement: |
+      **HAM**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje hamiltonovská kružnice.
+
+      Nedeterministický přijímací počítač $M$ pro HAM: náhodně (nedeterministicky)
+      vygeneruje faktor grafu $G$ a ověří, zda je to hamiltonovská kružnice. Každý výpočet
+      je polynomiální a přijímaná slova jsou právě hamiltonovské grafy – tedy
+      $\text{HAM} \in \mathrm{NP}$.
+    intuition: |
+      Hamiltonovská kružnice je právě souvislý faktor, v němž mají všechny uzly stupeň 2.
+      Uhodnout faktor je nedeterministický krok, ověřit souvislost a stupně je snadné.
+    pseudocode: |
+      1. pro každou hranu $e \in H(G)$ nedeterministicky rozhodni, zda $e$ patří do faktoru
+         $F$ (tím je „náhodně vygenerován" faktor grafu $G$)
+      2. test souvislosti $F$: není-li souvislý, `REJECT`
+      3. test kružnice (pravidelný graf stupně 2): není-li každý uzel $F$ stupně 2,
+         `REJECT`, jinak `ACCEPT`
+    complexity: |
+      Každý přípustný výpočet trvá $O(n^2)$ kroků (generování faktoru $O(m)$, souvislost
+      BFS/DFS $O(n+m)$, stupně $O(n+m)$, $m = O(n^2)$). Výpočtů je $2^m$.
+    related: [def-trida-np, def-nedeterministicky-prijimaci-pocitac, rem-dalsi-npc-problemy]
+    source: "skripta str. 63"
+
+  - id: def-trida-np
+    kind: definition
+    label: "Definice 9.9"
+    section: "9.5"
+    title: Třída NP
+    terms: [třída NP, NP, nondeterministic polynomial time, nedeterministicky polynomiální, polynomiálně verifikovatelný problém]
+    statement: |
+      **Třída NP** je třída všech jazyků $J$ takových, že existuje nedeterministický
+      přijímací počítač, který pracuje v polynomiálně omezeném čase a přijímá jazyk $J$.
+
+      **Poznámka.** Přijímací počítač je modelem algoritmu řešícího rozhodovací problém a
+      jazyk je modelem tohoto problému. Všechny problémy z třídy NP tedy musí být
+      rozhodovací. Optimalizační problém je nutné nejprve převést na rozhodovací (jako u
+      IND v odst. 9.4).
+    intuition: |
+      NP = problémy, jejichž kladná odpověď má **krátký a rychle ověřitelný certifikát**
+      (přiřazení u SAT, množina uzlů u IND, kružnice u HAM). „N" znamená
+      *nedeterministický*, nikoli „nepolynomiální"! Do NP patří i všechny problémy z P.
+    examples:
+      - title: Příslušnost do NP
+        body: |
+          * IND ∈ NP – [nedeterministický algoritmus pro IND](#alg-ind-nedeterministicky).
+          * HAM ∈ NP – [nedeterministický algoritmus pro HAM](#alg-ham-nedeterministicky).
+          * SAT ∈ NP – uhodneme přiřazení a vyhodnotíme formuli.
+          * Obecný postup: nedeterministicky vygeneruj kandidáta na řešení polynomiální
+            velikosti a deterministicky ho v polynomiálním čase ověř.
+    related: [def-polynomialne-omezeny-cas, def-trida-p, thm-p-podmnozina-np, rem-polynomialni-verifikace, def-np-uplny, def-trida-np-intuitivne]
+    source: "skripta str. 63; folie 12, str. 3"
+
+  - id: thm-p-podmnozina-np
+    kind: theorem
+    label: "Věta 9.3"
+    section: "9.5"
+    title: P ⊆ NP
+    terms: [P ⊂ NP, P je podmnožinou NP, problém P = NP]
+    statement: |
+      $\mathrm{P} \subset \mathrm{NP}$ (ve smyslu inkluze $\mathrm{P} \subseteq \mathrm{NP}$).
+    intuition: |
+      Co umíme rychle vyřešit, umíme i „rychle uhodnout" – nedeterminismus prostě
+      nepoužijeme. Zda je inkluze ostrá (tj. zda $\mathrm{P} \ne \mathrm{NP}$), je slavný
+      otevřený problém.
+    proof: |
+      Deterministický přijímací počítač je speciálním případem nedeterministického (takového,
+      který nepoužívá příkaz `CHOOSE`). Má jediný přípustný výpočet, takže jeho čas ve
+      smyslu [Definice 9.7](#def-cas-nedeterministickeho-vypoctu) je roven času ve smyslu
+      Definice 8.1. Přijímá-li tedy $J$ v polynomiálním čase, je to zároveň
+      nedeterministický přijímací počítač pracující v polynomiálně omezeném čase, a
+      $J \in \mathrm{NP}$. $\square$
+    proof_steps:
+      - "Nechť $J \\in \\mathrm{P}$ a $M$ je deterministický přijímací počítač přijímající $J$ v polynomiálním čase."
+      - "$M$ je zároveň nedeterministický přijímací počítač, který jen nepoužívá příkaz CHOOSE; má jediný přípustný výpočet."
+      - "Jeho čas podle Definice 9.7 je stejný jako deterministický, tedy polynomiální, a proto $J \\in \\mathrm{NP}$."
+    related: [def-trida-p, def-trida-np, thm-p-np-npc, prop-p-podmnozina-np]
+    source: "skripta str. 63; folie 12, str. 3"
+
+  - id: rem-polynomialni-verifikace
+    kind: remark
+    label: "Poznámka"
+    section: "9.5"
+    title: NP jako polynomiálně verifikovatelné problémy
+    terms: [polynomiálně verifikovatelný problém, verifikace řešení, certifikát, uhádnutí řešení]
+    statement: |
+      Pro problémy třídy NP je typické, že podaří-li se nám „uhodnout" řešení, je ověření
+      jeho správnosti možné provést v polynomiálním čase. Na úrovni abstraktního počítače
+      je „uhádnutí" modelováno nedeterminismem.
+
+      Pro problémy z P umíme řešení v polynomiálním čase **nalézt** (a tedy i **ověřit**).
+      U problémů z NP rezignujeme na polynomiální nalezení řešení, stále však požadujeme,
+      aby již uhodnuté řešení šlo v polynomiálním čase **ověřit (verifikovat)**. Proto se
+      o problémech z NP často mluví jako o *polynomiálně verifikovatelných* problémech.
+    intuition: |
+      Rozdíl mezi P a NP je rozdíl mezi „vyřešit sudoku" a „zkontrolovat vyplněné
+      sudoku". Intuice říká, že kontrola je snazší – dokázat to ale zatím nikdo neumí.
+    related: [def-trida-np, thm-p-podmnozina-np]
+    source: "skripta str. 63"
+
+  - id: rem-trachtenbrot-zykov
+    kind: remark
+    label: "Příklad (odst. 9.5)"
+    section: "9.5"
+    title: Problém mimo NP – Trachtenbrot–Zykovův problém
+    terms: [Trachtenbrot–Zykovův problém, lokálně H graf, problém mimo NP, okolí uzlu]
+    statement: |
+      Existuje posloupnost grafů $G_1, G_2, \dots$ libovolně velkých, v nichž pro každý uzel
+      $x$ indukuje množina $N(x)$ všech sousedů uzlu $x$ tentýž graf – cestu délky 3. Otočme
+      otázku a uvažujme rozhodovací úlohu:
+
+      **Vstup:** neorientovaný graf $H$ na $n$ uzlech.
+
+      **Úkol:** zjistit, zda existuje graf $G$, v němž okolí každého uzlu indukuje podgraf
+      izomorfní s grafem $H$.
+
+      Tento problém (Trachtenbrot–Zykovův) je příkladem rozhodovacího problému, který
+      **nepatří do třídy NP**: i pro malý graf $H$ může být hledaný graf $G$ veliký a nemáme
+      předem žádný odhad jeho velikosti. I kdyby se nám podařilo graf $G$ „náhodně
+      uhodnout", nemůžeme zaručit, že ověření jeho vlastností proběhne v čase
+      polynomiálním vzhledem k velikosti vstupu.
+    intuition: |
+      Problém je v NP jen tehdy, když má certifikát *polynomiální velikosti*. Zde je
+      přirozeným certifikátem graf $G$, ale jeho velikost není vstupem nijak omezena.
+      Zjištění, že problém je v NP, je tedy vlastně pozitivní zpráva – existují problémy
+      podstatně horší. (*Doplněno:* v obecnosti je známo, že tento problém je dokonce
+      algoritmicky nerozhodnutelný – Bulitko, 1973.)
+    related: [def-trida-np]
+    source: "skripta str. 64"
+
+  - id: rem-typy-algoritmu
+    kind: remark
+    label: "Poznámka"
+    section: "9.5"
+    title: Typy algoritmů pro (pravděpodobně) nepolynomiální problémy
+    terms: [hrubá síla, heuristika, přibližné řešení, typy algoritmů, brute force]
+    statement: |
+      Máme-li prakticky vyřešit problém popsaný jazykem $J$, o němž se domníváme, že není
+      v P, klademe si postupně otázky:
+
+      1. Je $J \in \mathrm{P}$?
+      2. Je alespoň $J \in \mathrm{NP}$ (nebo je ještě hůře)?
+      3. Hledáme přesné řešení postupy typu „hrubá síla" (probírkou všech možností).
+      4. Rezignujeme na přesné řešení (postupy 3 jsou příliš náročné), použijeme heuristiku
+         a spokojíme se s přibližným řešením.
+
+      | algoritmus | deterministický | polynomiální | přijímá $J$ |
+      |---|---|---|---|
+      | (1) dokazuje $J \in \mathrm{P}$ | ANO | ANO | ANO |
+      | (2) dokazuje $J \in \mathrm{NP}$ | NE | ANO | ANO |
+      | (3) „hrubá síla" | ANO | NE | ANO |
+      | (4) heuristika | ANO | ANO | NE |
+
+      Algoritmus se všemi třemi „pěknými" vlastnostmi (deterministický, polynomiální,
+      přijímá $J$) lze (při současném stavu poznání – pokud $\mathrm{P} \ne \mathrm{NP}$)
+      nalézt jen pro jazyky z P; mimo P musíme na jednu z vlastností rezignovat.
+    intuition: |
+      Pro NP-úplné problémy je to praktická mapa: buď exponenciální přesný algoritmus
+      (backtracking, branch & bound, FPT algoritmy), nebo rychlá heuristika bez záruky
+      optimality.
+    related: [def-trida-p, def-trida-np]
+    source: "skripta str. 64; folie 12, str. 3"
+
+  # ------------------------------------------------------------------ 9.6
+  - id: def-prekladaci-pocitac
+    kind: definition
+    label: "Definice 9.10"
+    section: "9.6"
+    title: Překládací počítač
+    terms: [překládací počítač, transducer, překlad slova, "M(w)"]
+    statement: |
+      **Překládací počítač** je počítač $M$ s libovolným přístupem takový, že pro každý jeho
+      výpočet (daný libovolnou počáteční konfigurací) platí:
+
+      * každé provedení `WRITE` zapíše na výstupní pásku číslo $0$ nebo $1$,
+      * po konečném počtu kroků se výpočet zastaví provedením `STOP`.
+
+      Posloupnost nul a jedniček zapsanou na výstupní pásce při výpočtu určeném slovem $w$
+      označíme $M(w)$.
+    intuition: |
+      Překládací počítač realizuje funkci z množiny všech slov do sebe: dostane slovo
+      (např. kód formule) a vypíše jiné slovo (např. kód grafu). Je to model „překladače"
+      instancí jednoho problému na instance druhého.
+    related: [def-polynomialni-redukce]
+    source: "skripta str. 65; folie 12, str. 4"
+
+  - id: def-polynomialni-redukce
+    kind: definition
+    label: "Definice 9.11"
+    section: "9.6"
+    title: Polynomiální redukce (redukovatelnost jazyků)
+    terms: [polynomiální redukce, redukovatelnost, převod problémů, "J1 ◁ J2", Karpova redukce, polynomial-time reduction, many-one reduction, "≤p"]
+    statement: |
+      Řekneme, že jazyk $J_1$ je **redukovatelný** na jazyk $J_2$ (značíme
+      $J_1 \triangleleft J_2$), jestliže existuje deterministický
+      [překládací počítač](#def-prekladaci-pocitac) $M$ pracující v polynomiálně omezeném
+      čase takový, že pro každé slovo $w$ je
+      $$w \in J_1 \Leftrightarrow M(w) \in J_2.$$
+    intuition: |
+      $J_1 \triangleleft J_2$ čti „$J_1$ není těžší než $J_2$" nebo „$J_2$ je alespoň tak
+      těžký jako $J_1$": algoritmus pro $J_2$ spolu s překladem dává algoritmus pro $J_1$.
+      Pozor na směr! Chceme-li ukázat, že nový problém $X$ je těžký, redukujeme **známý
+      těžký problém na $X$**, nikoli naopak. Podstatné je, že překlad musí zachovat
+      odpověď v *obou* směrech (ANO-instance na ANO-instance a NE-instance na
+      NE-instance). V literatuře se často značí $J_1 \le_p J_2$.
+    examples:
+      - title: Už známé redukce
+        body: |
+          Příklady z odst. 9.4 dávají v této terminologii polynomiální redukce
+          $\text{IND} \triangleleft \text{SAT}$ ([zde](#rem-redukce-ind-na-sat)) a
+          $\text{SAT} \triangleleft \text{IND}$ ([zde](#rem-redukce-sat-na-ind)).
+    related: [def-prekladaci-pocitac, thm-vlastnosti-redukce, def-np-uplny]
+    source: "skripta str. 65; folie 12, str. 4"
+
+  - id: thm-vlastnosti-redukce
+    kind: theorem
+    label: "Věta 9.4"
+    section: "9.6"
+    title: Vlastnosti polynomiální redukce
+    terms: [tranzitivita redukce, uzavřenost NP na redukce, uzavřenost P na redukce]
+    statement: |
+      1. $J_1 \triangleleft J_2,\ J_2 \triangleleft J_3 \Rightarrow J_1 \triangleleft J_3$ (tranzitivita),
+      2. $J_1 \triangleleft J_2,\ J_2 \in \mathrm{NP} \Rightarrow J_1 \in \mathrm{NP}$,
+      3. $J_1 \triangleleft J_2,\ J_2 \in \mathrm{P} \Rightarrow J_1 \in \mathrm{P}$.
+    intuition: |
+      Redukce se dají skládat a „snadnost" se přenáší proti směru redukce: je-li cílový
+      problém snadný (v P, resp. v NP), je snadný i zdrojový. Kontrapozice bodu 3 je
+      nástroj na dokazování obtížnosti: je-li $J_1$ těžký a $J_1 \triangleleft J_2$, je těžký
+      i $J_2$.
+    proof: |
+      **1)** Nechť $M_1$ realizuje $J_1 \triangleleft J_2$ v čase $p_1$ a $M_2$ realizuje
+      $J_2 \triangleleft J_3$ v čase $p_2$. Počítač $M$ realizující $J_1 \triangleleft J_3$
+      získáme složením $M_1$ a $M_2$:
+
+      * program $M_2$ zapíšeme za program $M_1$,
+      * příkaz `STOP` v programu $M_1$ všude nahradíme skokem na první instrukci $M_2$,
+      * upravíme návěští v programu $M_2$, jeho vstupy a výstupy (výstup $M_1$ se místo na
+        pásku ukládá do paměti, odkud ho $M_2$ čte místo vstupní pásky), aby odpovídaly
+        adresám a číslům příkazů.
+
+      Pak $w \in J_1 \Leftrightarrow M_1(w) \in J_2 \Leftrightarrow M_2(M_1(w)) \in J_3$.
+      *Polynomialita (doplněno):* $M_1$ provede nejvýše $p_1(n)$ kroků, a protože každý
+      `WRITE` zapíše jeden symbol, je $|M_1(w)| \le p_1(n)$. $M_2$ pak pracuje v čase
+      $p_2(|M_1(w)|) \le p_2(p_1(n))$. Celkový čas $p_1(n) + p_2(p_1(n))$ (plus režie na
+      předávání dat, opět polynomiální) je polynom.
+
+      **2)** a **3)** obdobně (*rozvedeno*): Nechť $M_1$ realizuje $J_1 \triangleleft J_2$ v
+      čase $p_1$ a $A$ je (nedeterministický, resp. deterministický) přijímací počítač
+      přijímající $J_2$ v čase $p_2$. Složením $M_1$ a $A$ stejným postupem jako v bodě 1
+      vznikne přijímací počítač, který na slově $w$ nejprve deterministicky spočítá
+      $M_1(w)$ a pak na něm spustí $A$. Ten přijme $w$ právě když $A$ přijme $M_1(w)$, tj.
+      právě když $M_1(w) \in J_2$, tj. právě když $w \in J_1$. Čas je nejvýše
+      $p_1(n) + p_2(p_1(n))$, tedy polynomiální. Je-li $A$ deterministický, je deterministický
+      i výsledný počítač ($J_1 \in \mathrm{P}$); je-li nedeterministický, je výsledný
+      počítač nedeterministický pracující v polynomiálně omezeném čase
+      ($J_1 \in \mathrm{NP}$). $\square$
+    proof_steps:
+      - "Tranzitivita: počítače $M_1$ (pro $J_1 \\triangleleft J_2$) a $M_2$ (pro $J_2 \\triangleleft J_3$) složíme – STOP v $M_1$ nahradíme skokem na začátek $M_2$ a upravíme návěští a vstupy/výstupy."
+      - "Platí $w \\in J_1 \\Leftrightarrow M_1(w) \\in J_2 \\Leftrightarrow M_2(M_1(w)) \\in J_3$."
+      - "Výstup $M_1$ má délku nejvýše $p_1(n)$, takže složený čas je nejvýše $p_1(n) + p_2(p_1(n))$, což je polynom."
+      - "Body 2 a 3: překladač $M_1$ složíme s přijímacím počítačem pro $J_2$; výsledek přijme $w$ právě když $M_1(w) \\in J_2$, tj. právě když $w \\in J_1$."
+      - "Čas je opět polynomiální; determinismus (resp. nedeterminismus) se složením zachová, takže $J_1 \\in \\mathrm{P}$ (resp. $J_1 \\in \\mathrm{NP}$)."
+    related: [def-polynomialni-redukce, def-trida-p, def-trida-np, def-np-uplny, thm-p-np-npc]
+    source: "skripta str. 65; folie 12, str. 4"
+
+  - id: def-np-uplny
+    kind: definition
+    label: "Definice 9.12"
+    section: "9.6"
+    title: NP-úplný jazyk, třída NPC
+    terms: [NP-úplný, NP-úplnost, NPC, NP-complete, NP-completeness, nejtěžší problémy v NP]
+    statement: |
+      Jazyk $J$ se nazývá **NP-úplný**, jestliže platí
+
+      1. $J \in \mathrm{NP}$,
+      2. pro každý $J' \in \mathrm{NP}$ je $J' \triangleleft J$.
+
+      Třídu NP-úplných jazyků označíme **NPC** (*NP-complete*).
+    intuition: |
+      NP-úplné problémy jsou „nejtěžší" problémy z NP: kterýkoli problém z NP lze na ně
+      polynomiálně převést. Vyřešit jediný z nich polynomiálně by znamenalo vyřešit
+      polynomiálně všechno z NP ([Věta 9.5](#thm-p-np-npc)).
+
+      **Jak se NP-úplnost dokazuje v praxi:** (a) ukážeme $X \in \mathrm{NP}$ (certifikát
+      + rychlé ověření), (b) zvolíme známý NP-úplný problém $K$ a sestrojíme polynomiální
+      redukci $K \triangleleft X$; podmínka 2 pak plyne z tranzitivity.
+    related: [def-np-tezky, def-polynomialni-redukce, def-trida-np, thm-p-np-npc, thm-cook, rem-npc-poznamky, def-np-uplnost-intuitivne]
+    source: "skripta str. 65; folie 12, str. 5"
+
+  - id: def-np-tezky
+    kind: definition
+    label: "Poznámka 5 za Větou 9.5"
+    section: "9.6"
+    title: NP-těžký jazyk
+    terms: [NP-těžký, NP-hard, NP-těžkost, optimalizační verze NP-úplných problémů]
+    statement: |
+      Jazyk $J$ se nazývá **NP-těžký**, jestliže pro každý $J' \in \mathrm{NP}$ platí
+      $J' \triangleleft J$ (tj. $J$ splňuje podmínku 2 z
+      [Definice 9.12](#def-np-uplny), ale nemusí být z NP).
+
+      Speciálně NP-těžkými problémy jsou optimalizační verze NP-úplných problémů (určení
+      $\alpha(G)$, $\omega(G)$, $\chi(G)$ atd.).
+    intuition: |
+      NP-těžký = „alespoň tak těžký jako všechno v NP", bez požadavku, aby sám byl v NP
+      (může být i mnohem těžší, třeba nerozhodnutelný). NP-úplný = NP-těžký **a** v NP.
+      Optimalizační problémy nejsou jazyky, a proto nemohou být NP-úplné – u nich se
+      mluví o NP-těžkosti. (Přesněji: pro optimalizační úlohu se NP-těžkost chápe přes
+      obecnější, tzv. Turingovy redukce – algoritmus pro optimum rozhodne i rozhodovací
+      verzi.)
+    related: [def-np-uplny, rem-npc-poznamky, def-chromaticke-cislo]
+    source: "skripta str. 66 (Poznámka, bod 5); folie 12, str. 5"
+
+  - id: thm-p-np-npc
+    kind: theorem
+    label: "Věta 9.5"
+    section: "9.6"
+    title: Buď P = NP, nebo P ∩ NPC = ∅
+    terms: [P = NP, P ∩ NPC = ∅, problém P vs NP]
+    statement: |
+      Platí: buď $\mathrm{P} = \mathrm{NP}$, nebo $\mathrm{P} \cap \mathrm{NPC} = \emptyset$.
+    intuition: |
+      Stačí jediný NP-úplný problém vyřešit polynomiálně a celé NP se „zhroutí" do P.
+      Naopak, je-li $\mathrm{P} \ne \mathrm{NP}$, žádný NP-úplný problém polynomiální
+      algoritmus nemá. Proto je důkaz NP-úplnosti silným argumentem, proč nehledat
+      polynomiální algoritmus.
+    proof: |
+      Předpokládejme, že $\mathrm{P} \cap \mathrm{NPC} \ne \emptyset$, a vezměme
+      $K \in \mathrm{P} \cap \mathrm{NPC}$. Pro libovolný $J \in \mathrm{NP}$ je
+      $J \triangleleft K$ (protože $K \in \mathrm{NPC}$), a podle
+      [Věty 9.4](#thm-vlastnosti-redukce), bod 3, je $J \in \mathrm{P}$ (protože
+      $K \in \mathrm{P}$). Tedy $\mathrm{NP} \subseteq \mathrm{P}$ a spolu s
+      [Větou 9.3](#thm-p-podmnozina-np) $\mathrm{P} = \mathrm{NP}$. $\square$
+    proof_steps:
+      - "Předpokládejme, že existuje $K \\in \\mathrm{P} \\cap \\mathrm{NPC}$."
+      - "Pro libovolné $J \\in \\mathrm{NP}$ platí $J \\triangleleft K$, protože $K$ je NP-úplný."
+      - "Podle Věty 9.4 (bod 3) z $J \\triangleleft K$ a $K \\in \\mathrm{P}$ plyne $J \\in \\mathrm{P}$."
+      - "Tedy $\\mathrm{NP} \\subseteq \\mathrm{P}$, a s Větou 9.3 dostáváme $\\mathrm{P} = \\mathrm{NP}$."
+    related: [def-np-uplny, thm-vlastnosti-redukce, thm-p-podmnozina-np, rem-npc-poznamky]
+    source: "skripta str. 65–66; folie 12, str. 5"
+
+  - id: rem-npc-poznamky
+    kind: remark
+    label: "Poznámka (za Větou 9.5)"
+    section: "9.6"
+    title: Vlastnosti třídy NPC
+    terms: [vzájemná redukovatelnost NP-úplných problémů, vztah P NP NPC]
+    statement: |
+      1. Jsou-li $J_1, J_2 \in \mathrm{NPC}$, pak $J_1 \triangleleft J_2$ i $J_2 \triangleleft J_1$.
+      2. NPC je třída „nejtěžších" úloh v NP a tyto úlohy jsou co do obtížnosti navzájem
+         ekvivalentní.
+      3. Jsou tedy dvě možnosti:
+         * $\mathrm{P} \subsetneq \mathrm{NP}$, $\mathrm{NPC} \subseteq \mathrm{NP}$,
+           $\mathrm{P} \cap \mathrm{NPC} = \emptyset$, nebo
+         * $\mathrm{P} = \mathrm{NPC} = \mathrm{NP}$.
+
+         Neví se však, která z možností platí.
+      4. Podle Definice 9.12 patří každý NP-úplný problém do NP, a je tedy rozhodovacím
+         problémem. Optimalizační problémy („určete $\alpha(G)$, $\omega(G)$, $\chi(G)$"
+         apod.) nemohou být NP-úplné, protože nepatří do NP; je nutné je nejprve převést
+         na rozhodovací problémy.
+      5. O jazycích, které splňují jen podmínku 2 definice 9.12, se říká, že jsou
+         [NP-těžké](#def-np-tezky).
+    intuition: |
+      Bod 1 plyne přímo z definice (každý z nich je v NP a každý jazyk z NP se redukuje na
+      každý NP-úplný). *Drobná technická výjimka (doplněno):* v případě
+      $\mathrm{P} = \mathrm{NP}$ nejsou NP-úplné triviální jazyky $\emptyset$ a „všechna
+      slova", protože na ně nelze redukovat nic netriviálního – skripta tuto výjimku
+      v bodě 3 zanedbávají.
+    related: [def-np-uplny, def-np-tezky, thm-p-np-npc]
+    source: "skripta str. 66"
+  # ------------------------------------------------------------------ 9.7
+  - id: thm-cook
+    kind: theorem
+    label: "Věta 9.6 (Cook)"
+    section: "9.7"
+    title: Cookova věta – SAT je NP-úplný
+    terms: [Cookova věta, Cook–Levinova věta, SAT ∈ NPC, SAT je NP-úplný, Cook-Levin theorem, první NP-úplný problém]
+    statement: |
+      $\text{SAT} \in \mathrm{NPC}$.
+    intuition: |
+      Až do této věty nevíme, zda vůbec nějaký NP-úplný problém existuje – musíme ukázat,
+      že na SAT lze převést **všechny** problémy z NP, aniž bychom je znali jednotlivě.
+      Pomůže model výpočtu: každý problém z NP je popsán nedeterministickým přijímacím
+      počítačem s polynomiálním časem, a tak stačí umět *logickou formulí popsat celý
+      výpočet takového počítače*. Proměnné zachytí obsah pásky, paměti a programového
+      registru v každém kroku, klauzule vynutí, že po sobě jdoucí konfigurace odpovídají
+      programu a že výpočet skončí `ACCEPT`. Formule je splnitelná právě když přijímající
+      výpočet existuje.
+
+      Jinak řečeno: každý polynomiálně verifikovatelný problém lze redukovat na problém
+      splnitelnosti formulí. Ověřit, že problém je v NP, bývá velmi snadné – a tento
+      často triviální fakt má díky Cookově větě netriviální důsledek: redukovatelnost na
+      SAT.
+    proof: |
+      **1. SAT ∈ NP.** Nedeterministicky přiřadíme proměnným hodnoty 0, 1 a vyhodnotíme
+      formuli $f$ (v čase úměrném délce formule). Tedy $\text{SAT} \in \mathrm{NP}$.
+
+      **2. Pro každý $J \in \mathrm{NP}$ je $J \triangleleft \text{SAT}$.** Nechť
+      $J \in \mathrm{NP}$ a $M$ je nedeterministický přijímací počítač přijímající $J$ v čase
+      omezeném polynomem $p$. Pro každé slovo $w$ sestrojíme formuli $f_w$ v KNF tak, že
+      $f_w$ je splnitelná, právě když $M$ přijímá $w$. Označme $n$ délku slova $w$,
+      $m = p(n)$ a $q$ počet příkazů programu $M$.
+
+      Lze předpokládat, že $p$ je současně polynom z [Omezení 1](#rem-uniformni-hodnoceni)
+      (jinak vezmeme maximum) a že výpočet pracuje v paměti nejvýše $m$ (to lze podle
+      [Věty 8.1](#thm-simulace-v-pameti-fn)). Tedy: nenulová čísla jsou jen na prvních $n$
+      polích vstupní pásky a v prvních $m$ paměťových buňkách, v žádné buňce není číslo v
+      absolutní hodnotě větší než $m$ a počet kroků je nejvýše $m$.
+
+      **Proměnné.** K popisu všech konfigurací stačí logické proměnné
+
+      * $a_i$, $i = 1, \dots, n$: $a_i = 1 \Leftrightarrow$ v $i$-tém poli vstupní pásky je 1;
+      * $b_{it}$, $i = 1, \dots, n$, $t = 0, \dots, m$: $b_{it} = 1 \Leftrightarrow$ po $t$-tém
+        kroku je vstupní hlava na $i$-tém poli;
+      * $c_{ijt}$, $i = 0, \dots, m$, $j = 0, \pm 1, \dots, \pm m$, $t = 0, \dots, m$:
+        $c_{ijt} = 1 \Leftrightarrow$ v $t$-té konfiguraci je v $i$-té buňce číslo $j$;
+      * $d_{jt}$, $j = 1, \dots, q$, $t = 0, \dots, m$: $d_{jt} = 1 \Leftrightarrow$ v $t$-té
+        konfiguraci je v programovém registru číslo $j$.
+
+      Proměnných je $n + n(m+1) + (m+1)^2(2m+1) + (m+1)q = O(m^3) = O(p^3(n))$, tedy
+      polynomiálně mnoho.
+
+      **Podmínky.** Mají-li proměnné popisovat výpočet $M$, který v $m$ krocích přijme $w$,
+      musí platit:
+
+      1. hodnoty $a_i$ se shodují s nulami a jedničkami slova $w$;
+      2. pro každé $t$ existuje nejvýše jedno $i$ s $b_{it} = 1$ (hlava není na dvou místech;
+         že někde je, plyne z popisu příkazů a počáteční konfigurace);
+      3. pro každé $i, t$ existuje právě jedno $j$ s $c_{ijt} = 1$ (v buňce je právě jedno číslo);
+      4. pro každé $t$ existuje právě jedno $j$ s $d_{jt} = 1$ (totéž pro programový registr);
+      5. jestliže $d_{jm} = 1$, pak $j$ je návěští některého příkazu `ACCEPT`;
+      6. vztah hodnot proměnných v krocích $t-1$ a $t$ odpovídá prováděnému příkazu.
+
+      Položíme $f_w = f_{w1} \wedge f_{w2} \wedge \dots \wedge f_{w6}$, kde $f_{wi}$ vyjadřuje
+      podmínku $i$. Pomocné formule:
+      $g(x_1, \dots, x_r) = \bigwedge_{1 \le i < j \le r} (\bar x_i \vee \bar x_j)$ je splněna
+      právě když *nejvýše jedno* $x_i = 1$;
+      $h(x_1, \dots, x_r) = g(x_1, \dots, x_r) \wedge (x_1 \vee \dots \vee x_r)$ je splněna
+      právě když *právě jedno* $x_i = 1$;
+      $k(x, y) = (x \vee \bar y) \wedge (\bar x \vee y)$ je splněna právě když $x = y$.
+
+      1. $f_{w1} = A_1 \wedge \dots \wedge A_n$, kde $A_i = a_i$, je-li $i$-tý symbol $w$
+         roven 1, a $A_i = \bar a_i$, je-li roven 0.
+      2. $f_{w2} = \bigwedge_{t=0}^{m} g(b_{1t}, \dots, b_{nt})$.
+      3. $f_{w3} = \bigwedge_{i=0}^{m} \bigwedge_{t=0}^{m} h(c_{i,-m,t}, \dots, c_{i,0,t}, \dots, c_{i,m,t})$.
+      4. $f_{w4} = \bigwedge_{t=0}^{m} h(d_{1t}, \dots, d_{qt})$.
+      5. $f_{w5} = \bigvee_{j \in A} d_{jm}$, kde $A$ je množina návěští všech výskytů
+         příkazu `ACCEPT`.
+      6. $f_{w6} = \bigwedge_{r=1}^{q} f_{w6r}$, kde $f_{w6r}$ popisuje působení $r$-tého
+         příkazu. Ukážeme to na příkladu: nechť $r$-tý příkaz je `ADD 8` (k pracovnímu
+         registru přičti obsah buňky 8). Pro $t = 1, \dots, m$ musí platit: je-li
+         $d_{r,t-1} = 1$ a $c_{0,x,t-1} \wedge c_{8,z,t-1} = 1$ (v pracovním registru je $x$, na
+         adrese 8 je $z$), pak $c_{0,x+z,t} = 1$. Po úpravě
+         $(A \Rightarrow B) \Leftrightarrow (\bar A \vee B)$ a de Morganovým zákonem:
+         $$f_1 = \bigwedge_{t=1}^{m} \bigwedge_{x=-m}^{m} \bigwedge_{z=-m}^{m} \big(\bar d_{r,t-1} \vee \bar c_{0,x,t-1} \vee \bar c_{8,z,t-1} \vee c_{0,x+z,t}\big).$$
+         Dále je třeba popsat, že se nic jiného nezměnilo:
+         $f_2 = \bigwedge_{i=1}^{m} \bigwedge_{j=-m}^{m} \bigwedge_{t=1}^{m} \big(d_{r,t-1} \Rightarrow k(c_{i,j,t-1}, c_{i,j,t})\big)$
+         (paměť kromě pracovního registru se nemění),
+         $f_3 = \bigwedge_{i=1}^{n} \bigwedge_{t=1}^{m} \big(d_{r,t-1} \Rightarrow k(b_{i,t-1}, b_{i,t})\big)$
+         (vstupní hlava se nehýbe),
+         $f_4 = \bigwedge_{j=1}^{q-1} \bigwedge_{t=1}^{m} \big(d_{r,t-1} \Rightarrow k(d_{j,t-1}, d_{j+1,t})\big)$
+         (programový registr se zvětší o 1). Formule $f_2, f_3, f_4$ se stejně upraví do
+         KNF a $f_{w6r} = f_1 \wedge f_2 \wedge f_3 \wedge f_4$. Obdobně se popíší všechny
+         ostatní příkazy; např. nedeterministický krok `CHOOSE L1, L2` jako
+         $d_{r,t-1} \Rightarrow (d_{L_1,t} \vee d_{L_2,t})$, v KNF
+         $\bar d_{r,t-1} \vee d_{L_1,t} \vee d_{L_2,t}$.
+
+      *(Doplněno pro úplnost:)* k $f_w$ se přidají i jednotkové klauzule popisující zbytek
+      počáteční konfigurace ($b_{1,0}$, $c_{i,0,0}$ pro všechna $i$, $d_{1,0}$) a příkaz
+      `ACCEPT` se popíše tak, že konfigurace po něm zůstává beze změny – kratší přijímající
+      výpočet se tak „prodlouží" na právě $m$ kroků a podmínka 5 ho zachytí.
+
+      **Správnost.** Přijímá-li $M$ slovo $w$, ohodnotíme proměnné podle přijímajícího
+      výpočtu a všechny podmínky 1–6 jsou splněny, tj. $f_w$ je splnitelná. Naopak každé
+      splňující přiřazení $f_w$ popisuje posloupnost konfigurací $C_0, \dots, C_m$, která
+      začíná počáteční konfigurací se slovem $w$, každý krok odpovídá některému příkazu
+      programu (u `CHOOSE` jedné z možností) a končí `ACCEPT` – tedy přípustný přijímající
+      výpočet $M$ na $w$. Proto $w \in J \Leftrightarrow f_w$ je splnitelná.
+
+      **Polynomialita.** $f_w$ má $O(p^3(n))$ proměnných; formule $f_{w1}, \dots, f_{w5}$ mají
+      polynomiálně mnoho klauzulí (nejvíce $f_{w3}$: $O(m^2)$ volání $h$ po $O(m^2)$
+      klauzulích, tj. $O(m^4)$), $f_{w6r}$ má $O(m^3)$ klauzulí a podobně pro všechny
+      příkazy, takže i $f_{w6}$ je omezena polynomem v $n$. Formuli lze z $w$ vypsat
+      deterministickým překládacím počítačem v polynomiálním čase, tj.
+      $J \triangleleft \text{SAT}$. $\square$
+    proof_steps:
+      - "SAT ∈ NP: nedeterministicky uhodneme přiřazení a formuli vyhodnotíme v lineárním čase."
+      - "Pro libovolný $J \\in \\mathrm{NP}$ vezmeme nedeterministický přijímací počítač $M$ s časem $p(n)$; díky Omezení 1 a Větě 8.1 lze předpokládat $m = p(n)$ kroků, $m$ buněk a čísla v rozsahu $[-m, m]$."
+      - "Zavedeme proměnné $a_i, b_{it}, c_{ijt}, d_{jt}$ popisující vstup, polohu hlavy, obsah buněk a programový registr v každém kroku – je jich $O(m^3)$."
+      - "Podmínky na korektní výpočet (vstup = $w$, právě jedno číslo v buňce a registru, hlava na jednom místě, krok odpovídá příkazu, na konci ACCEPT) zapíšeme pomocí formulí $g$, $h$, $k$ do KNF jako $f_{w1}, \\dots, f_{w6}$."
+      - "Působení každého příkazu (např. ADD 8, CHOOSE) se popíše klauzulemi vázajícími proměnné kroků $t-1$ a $t$."
+      - "Splňující přiřazení $f_w$ odpovídají přesně přijímajícím výpočtům $M$ na $w$, tedy $w \\in J \\Leftrightarrow f_w$ je splnitelná."
+      - "Formule má polynomiálně mnoho proměnných i klauzulí a sestrojí se v polynomiálním čase, tedy $J \\triangleleft \\mathrm{SAT}$, a SAT je NP-úplný."
+    related: [def-sat, def-np-uplny, def-trida-np, def-nedeterministicky-prijimaci-pocitac, rem-po-cookove-vete, thm-3sat-npc]
+    source: "skripta str. 66–68; folie 12, str. 6–8"
+
+  - id: rem-po-cookove-vete
+    kind: remark
+    label: "Poznámka (za Větou 9.6)"
+    section: "9.7"
+    title: Důsledky Cookovy věty pro dokazování NP-úplnosti
+    terms: [dokazování NP-úplnosti, NPC je neprázdná, strategie redukce]
+    statement: |
+      1. Nyní již víme, že třída NPC je neprázdná, neboť podle Cookovy věty je
+         $\text{SAT} \in \mathrm{NPC}$.
+      2. Jakmile víme, že $\mathrm{NPC} \ne \emptyset$, je dokazování NP-úplnosti dalších
+         problémů zpravidla snazší. Je-li $J \in \mathrm{NP}$ (což bývá zřejmé), pak k důkazu,
+         že $J \in \mathrm{NPC}$, stačí ukázat $K \triangleleft J$ pro některý vhodný jazyk
+         $K \in \mathrm{NPC}$: z NP-úplnosti $K$ plyne, že všechny jazyky z NP lze redukovat
+         na $K$, a z tranzitivity ([Věta 9.4](#thm-vlastnosti-redukce), bod 1) plyne
+         redukovatelnost na $J$.
+    intuition: |
+      Cookův „simulační" důkaz se dělá jen jednou. Všechny další důkazy NP-úplnosti jsou
+      řetězy redukcí: SAT → 3-SAT → IND → COV, CLIQUE; 3-SAT → 3-COL; …
+    related: [thm-cook, thm-vlastnosti-redukce, def-np-uplny, thm-3sat-npc]
+    source: "skripta str. 69"
+
+  # ------------------------------------------------------------------ 9.8
+  - id: def-3-sat
+    kind: definition
+    section: "9.8"
+    title: Problém 3-SAT
+    terms: [3-SAT, 3-splnitelnost, problém 3-splnitelnosti, klauzule délky 3]
+    statement: |
+      **3-SAT**
+
+      **Vstup:** logická formule
+      $f(x_1, \dots, x_n) = (a_1 \vee b_1 \vee c_1) \wedge (a_2 \vee b_2 \vee c_2) \wedge \dots \wedge (a_k \vee b_k \vee c_k)$,
+      kde každé $a_i, b_i, c_i$ ($i = 1, \dots, k$) je rovno $x_\ell$ nebo $\bar x_\ell$ pro
+      vhodné $\ell \in \{1, \dots, n\}$ (tj. $f$ je formule v KNF s klauzulemi délky 3).
+
+      **Úkol:** zjistit, zda je formule $f$ splnitelná.
+    intuition: |
+      3-SAT je „pracovní kůň" důkazů NP-úplnosti: je stejně těžký jako SAT, ale má
+      pravidelnou strukturu (každá klauzule přesně 3 literály), takže se z něj snadno
+      stavějí gadgety – trojúhelníky u IND, gadget $G_2$ u 3-COL.
+    related: [def-k-sat, thm-3sat-npc, def-sat]
+    source: "skripta str. 69; folie 12 (přednáška 12), str. 1"
+
+  - id: thm-3sat-npc
+    kind: theorem
+    label: "Věta 9.7"
+    section: "9.8"
+    title: 3-SAT je NP-úplný
+    terms: [3-SAT ∈ NPC, redukce SAT na 3-SAT, rozdělení klauzule]
+    statement: |
+      $\text{3-SAT} \in \mathrm{NPC}$.
+    intuition: |
+      Dlouhou klauzuli „rozřízneme" novou proměnnou $v$, která slouží jako „přenos":
+      $v = 1$ říká „pravdivý literál je v první části", $v = 0$ „je ve druhé části".
+      Splnitelnost se tím nezmění a klauzule se zkrátí. Naproti tomu 2-SAT je v P –
+      klauzuli délky 3 na klauzule délky 2 takto rozložit nelze.
+    proof: |
+      **1. 3-SAT ∈ NP** – to je zřejmé, neboť 3-SAT je speciální případ SAT (uhodneme
+      přiřazení a vyhodnotíme formuli).
+
+      **2. SAT ◁ 3-SAT.** Podle Cookovy věty a tranzitivity
+      ([Věta 9.4](#thm-vlastnosti-redukce)) stačí redukovat SAT na 3-SAT. Klíčové
+      pozorování: pro $m \ge 4$
+      $$u_1 \vee u_2 \vee \dots \vee u_m = 1 \iff \exists v:\ (u_1 \vee \dots \vee u_{m-2} \vee v) \wedge (u_{m-1} \vee u_m \vee \bar v) = 1.$$
+
+      *Důkaz pozorování (ve skriptech jen „zřejmé", doplněno):* Je-li některé $u_i = 1$ pro
+      $i \le m-2$, zvolíme $v = 0$ – první klauzule je splněna díky $u_i$, druhá díky
+      $\bar v$. Je-li $u_{m-1} = 1$ nebo $u_m = 1$, zvolíme $v = 1$. Naopak, jsou-li všechna
+      $u_i = 0$, musela by pravá strana splňovat $v = 1$ (první klauzule) i $\bar v = 1$
+      (druhá klauzule), což nelze.
+
+      V nové formuli je první klauzule o jeden literál kratší a druhá má délku 3, přičemž
+      $v$ je nová proměnná (pro každé rozdělení jiná). Postupným opakováním upravíme každou
+      klauzuli na klauzule délky nejvýše 3; klauzule délky 1 a 2 doplníme na délku přesně 3
+      opakováním literálu. Výsledná formule $f'$ je splnitelná právě když je splnitelná
+      původní formule $f$ (splňující přiřazení $f$ se rozšíří o vhodné hodnoty nových
+      proměnných; naopak restrikce splňujícího přiřazení $f'$ na původní proměnné splňuje
+      $f$).
+
+      *Polynomialita:* klauzule délky $\ell \ge 4$ se rozpadne na $\ell - 2$ klauzulí délky 3
+      s $\ell - 3$ novými proměnnými, takže délka $f'$ je $O(|f|)$ a převod proběhne v
+      lineárním čase. $\square$
+    proof_steps:
+      - "3-SAT ∈ NP, protože je to speciální případ SAT (uhodnout přiřazení a vyhodnotit)."
+      - "Díky Cookově větě a tranzitivitě redukcí stačí ukázat SAT ◁ 3-SAT."
+      - "Konstrukce: klauzuli $(u_1 \\vee \\dots \\vee u_m)$, $m \\ge 4$, nahradíme dvojicí $(u_1 \\vee \\dots \\vee u_{m-2} \\vee v) \\wedge (u_{m-1} \\vee u_m \\vee \\bar v)$ s novou proměnnou $v$ a opakujeme; krátké klauzule doplníme opakováním literálu."
+      - "Směr ⇒: je-li v původní klauzuli pravdivé $u_i$ v první části, zvolíme $v=0$, jinak $v=1$; obě nové klauzule jsou splněny."
+      - "Směr ⇐: jsou-li všechna $u_i = 0$, nové klauzule vyžadují $v = 1$ i $\\bar v = 1$ – spor; restrikce splňujícího přiřazení na původní proměnné tedy splňuje $f$."
+      - "Polynomialita: klauzule délky $\\ell$ dá $\\ell-2$ klauzulí délky 3, výsledná formule má lineární délku."
+    examples:
+      - title: Převod klauzulí na délku 3
+        body: |
+          Klauzuli $(x_1 \vee x_2 \vee \bar x_3 \vee x_4 \vee x_5)$ upravíme:
+
+          1. $(x_1 \vee x_2 \vee \bar x_3 \vee v_1) \wedge (x_4 \vee x_5 \vee \bar v_1)$,
+          2. první klauzule má stále délku 4:
+             $(x_1 \vee x_2 \vee v_2) \wedge (\bar x_3 \vee v_1 \vee \bar v_2) \wedge (x_4 \vee x_5 \vee \bar v_1)$.
+
+          Krátké klauzule: $(x_1 \vee \bar x_2) \mapsto (x_1 \vee \bar x_2 \vee \bar x_2)$,
+          $(x_3) \mapsto (x_3 \vee x_3 \vee x_3)$.
+
+          Kontrola pro $x_1 = x_2 = x_3 = 0$, $x_4 = 1$ (původní klauzule je pravdivá díky
+          $x_4$): zvolíme $v_1 = 1$ (pravdivý literál je „vpravo"), pak druhou klauzuli
+          splní $v_1$ a pro první zvolíme $v_2 = 1$. Všechny tři klauzule jsou splněny.
+    related: [def-3-sat, thm-cook, alg-sat-na-3sat, thm-ind-npc, thm-3col-npc, thm-2sat-p]
+    source: "skripta str. 69; přednáška 12, str. 1"
+
+  - id: alg-sat-na-3sat
+    kind: algorithm
+    section: "9.8"
+    title: Převod formule SAT na 3-SAT
+    terms: [převod SAT na 3-SAT, rozdělení klauzule, nová proměnná]
+    statement: |
+      **Vstup:** formule $f$ v KNF. **Výstup:** formule $f'$ v KNF s klauzulemi délky
+      přesně 3, která je splnitelná právě když je splnitelná $f$.
+    intuition: |
+      Mechanický převod z důkazu [Věty 9.7](#thm-3sat-npc) – dlouhé klauzule se „řetězí"
+      pomocí nových proměnných, krátké se doplní opakováním literálu.
+    pseudocode: |
+      1. $f' := $ prázdná konjunkce
+      2. pro každou klauzuli $C = (u_1 \vee \dots \vee u_\ell)$ formule $f$:
+         * je-li $\ell = 1$: přidej $(u_1 \vee u_1 \vee u_1)$;
+         * je-li $\ell = 2$: přidej $(u_1 \vee u_2 \vee u_2)$;
+         * je-li $\ell = 3$: přidej $C$;
+         * je-li $\ell \ge 4$: dokud má $C$ délku $\ge 4$, zaveď novou proměnnou $v$,
+           přidej klauzuli $(u_{\ell-1} \vee u_\ell \vee \bar v)$ a nahraď
+           $C := (u_1 \vee \dots \vee u_{\ell-2} \vee v)$; nakonec přidej zbylou klauzuli
+           délky 3.
+      3. vrať $f'$
+    complexity: |
+      $O(|f|)$ – klauzule délky $\ell \ge 4$ vytvoří $\ell - 2$ klauzulí a $\ell - 3$ nových
+      proměnných; výstup má lineární délku.
+    related: [thm-3sat-npc, def-3-sat]
+    source: "skripta str. 69 (důkaz Věty 9.7)"
+
+  - id: thm-ind-npc
+    kind: theorem
+    label: "Věta 9.8"
+    section: "9.8"
+    title: IND je NP-úplný
+    terms: [IND ∈ NPC, redukce 3-SAT na IND, redukce SAT na IND, NP-úplnost nezávislé množiny]
+    statement: |
+      $\text{IND} \in \mathrm{NPC}$.
+    intuition: |
+      Z každé klauzule chceme vybrat jeden „splňující" literál. Literály klauzule spojíme
+      do kliky (z každé klauzule lze vybrat nejvýše jeden) a komplementární literály
+      spojíme hranou (nelze vybrat $x$ i $\bar x$). Nezávislá množina velikosti $m$ (počet
+      klauzulí) je pak přesně bezesporný výběr splňujících literálů.
+    proof: |
+      **1. IND ∈ NP** – [nedeterministický algoritmus](#alg-ind-nedeterministicky) uhodne
+      množinu uzlů a v polynomiálním čase ověří nezávislost a velikost.
+
+      **2. Redukce.** Ve skriptech je uvedena redukce $\text{SAT} \triangleleft \text{IND}$
+      z odst. 9.4 (pak stačí Cookova věta). Zde ji zapíšeme pro 3-SAT (pro obecné SAT je
+      důkaz stejný, jen kliky klauzulí mají různé velikosti); díky
+      [Větě 9.7](#thm-3sat-npc) i tak dostaneme NP-úplnost.
+
+      *Konstrukce.* Nechť $f = C_1 \wedge \dots \wedge C_m$, $C_i = (a_{i1} \vee a_{i2} \vee a_{i3})$.
+      Sestrojíme graf $G$:
+
+      * uzly $x_{ij}$, $i = 1, \dots, m$, $j = 1, 2, 3$ – jeden za každý výskyt literálu;
+      * hrany $\{x_{ij}, x_{iq}\}$ pro $j \ne q$ – každá klauzule tvoří trojúhelník;
+      * hrany $\{x_{ij}, x_{pq}\}$ pro $i \ne p$, $a_{ij} = \bar a_{pq}$ – spojení komplementárních
+        výskytů.
+
+      Instancí IND je $(G, k)$ s $k = m$.
+
+      *Polynomialita.* $G$ má $3m$ uzlů a nejvýše $3m + \binom{3m}{2} = O(m^2)$ hran, sestrojí se
+      v čase $O(m^2)$.
+
+      *$f$ splnitelná ⇒ nezávislá množina velikosti $m$.* Nechť $t$ je splňující přiřazení.
+      V každé klauzuli $C_i$ je alespoň jeden literál roven 1; vybereme jeden takový uzel
+      $x_{ij_i}$ z každého trojúhelníka. Dostaneme $m$ uzlů; žádné dva neleží v téže klauzuli
+      a žádné dva nejsou komplementární (oba mají hodnotu 1, ale $a$ a $\bar a$ nemohou být
+      současně pravdivé). Množina je tedy nezávislá.
+
+      *Nezávislá množina velikosti $m$ ⇒ $f$ splnitelná.* Je-li $N$ nezávislá množina
+      velikosti $m$ v $G$, obsahuje z každého trojúhelníka nejvýše jeden uzel, a tedy právě
+      jeden. Příslušné literály položíme rovny 1. Protože $N$ je nezávislá, nemůže
+      obsahovat komplementární dvojici, takže žádná proměnná není definována dvěma
+      způsoby. Zbylé proměnné dodefinujeme libovolně. Pak má každá klauzule pravdivý
+      literál, a $f = 1$.
+
+      Tedy $f$ je splnitelná $\Leftrightarrow$ $G$ má nezávislou množinu velikosti (alespoň)
+      $m$, a $\text{3-SAT} \triangleleft \text{IND}$. $\square$
+    proof_steps:
+      - "IND ∈ NP: uhodneme množinu uzlů a v polynomiálním čase ověříme, že je nezávislá a má aspoň $k$ prvků."
+      - "Konstrukce: pro formuli s $m$ klauzulemi vytvoříme uzel za každý výskyt literálu, literály každé klauzule spojíme do trojúhelníku (kliky) a spojíme každé dva komplementární výskyty; položíme $k = m$."
+      - "Graf má $3m$ uzlů a $O(m^2)$ hran, sestrojí se v polynomiálním čase."
+      - "Směr ⇒: ze splňujícího přiřazení vybereme v každé klauzuli jeden pravdivý literál; výběr je nezávislý, protože pravdivé literály nejsou komplementární."
+      - "Směr ⇐: nezávislá množina velikosti $m$ obsahuje z každé kliky právě jeden uzel; tyto literály nastavíme na 1 (bez sporu, protože nejsou komplementární) a každá klauzule je splněna."
+      - "Protože 3-SAT (resp. SAT) je NP-úplný, z tranzitivity redukcí plyne IND ∈ NPC."
+    examples:
+      - title: Redukce malé formule 3-SAT na IND
+        body: |
+          $f = (x_1 \vee x_2 \vee x_3) \wedge (\bar x_1 \vee \bar x_2 \vee x_3) \wedge (\bar x_1 \vee x_2 \vee \bar x_3)$, $m = k = 3$.
+
+          Uzly: $C_1$: $x_1, x_2, x_3$; $C_2$: $\bar x_1, \bar x_2, x_3$; $C_3$: $\bar x_1, x_2, \bar x_3$
+          (tři trojúhelníky). Komplementární hrany:
+          $x_1^{(1)} \bar x_1^{(2)}$, $x_1^{(1)} \bar x_1^{(3)}$, $x_2^{(1)} \bar x_2^{(2)}$,
+          $x_3^{(1)} \bar x_3^{(3)}$, $\bar x_2^{(2)} x_2^{(3)}$, $x_3^{(2)} \bar x_3^{(3)}$.
+
+          Nezávislá množina velikosti 3: $\{x_2^{(1)}, x_3^{(2)}, x_2^{(3)}\}$ – odpovídá
+          přiřazení $x_2 = 1$, $x_3 = 1$, $x_1$ libovolně. Ověření: $C_1$ splní $x_2$, $C_2$
+          splní $x_3$, $C_3$ splní $x_2$.
+
+          (Skripta mají podobný příklad pro SAT:
+          $f = (u_1 \vee \bar u_2 \vee u_3) \wedge (\bar u_1 \vee \bar u_2 \vee \bar u_3) \wedge (u_1 \vee u_2)$;
+          nezávislé množiny velikosti 3 tam odpovídají splňujícím vektorům.)
+        graph:
+          directed: false
+          nodes:
+            - { id: c1x1, x: 0, y: 4, label: "x1 (C1)" }
+            - { id: c1x2, x: 2, y: 4, label: "x2 (C1)" }
+            - { id: c1x3, x: 1, y: 2, label: "x3 (C1)" }
+            - { id: c2nx1, x: 4, y: 0, label: "¬x1 (C2)" }
+            - { id: c2nx2, x: 6, y: 0, label: "¬x2 (C2)" }
+            - { id: c2x3, x: 5, y: 2, label: "x3 (C2)" }
+            - { id: c3nx1, x: 8, y: 4, label: "¬x1 (C3)" }
+            - { id: c3x2, x: 10, y: 4, label: "x2 (C3)" }
+            - { id: c3nx3, x: 9, y: 2, label: "¬x3 (C3)" }
+          edges:
+            - { from: c1x1, to: c1x2 }
+            - { from: c1x2, to: c1x3 }
+            - { from: c1x1, to: c1x3 }
+            - { from: c2nx1, to: c2nx2 }
+            - { from: c2nx2, to: c2x3 }
+            - { from: c2nx1, to: c2x3 }
+            - { from: c3nx1, to: c3x2 }
+            - { from: c3x2, to: c3nx3 }
+            - { from: c3nx1, to: c3nx3 }
+            - { from: c1x1, to: c2nx1 }
+            - { from: c1x1, to: c3nx1 }
+            - { from: c1x2, to: c2nx2 }
+            - { from: c1x3, to: c3nx3 }
+            - { from: c2nx2, to: c3x2 }
+            - { from: c2x3, to: c3nx3 }
+    visualization: reduction-3sat-ind
+    related: [def-ind, rem-redukce-sat-na-ind, thm-3sat-npc, thm-cook, alg-ind-nedeterministicky, thm-cov-npc, thm-clique-npc, def-nezavisla-mnozina]
+    illustrations:
+      - title: Pravdivé literály dávají nezávislou množinu
+        for: proof
+        property: independent-set
+        graph:
+          directed: false
+          nodes:
+            - { id: c1x2, x: 2.1, y: 1.5, label: "x2" }
+            - { id: c1x1, x: 5, y: 0.5, label: "x1" }
+            - { id: c1x3, x: 7.9, y: 1.5, label: "x3" }
+            - { id: c3nx1, x: 9.4, y: 4.2, label: "¬x1" }
+            - { id: c3nx3, x: 8.9, y: 7.3, label: "¬x3" }
+            - { id: c3x2, x: 6.5, y: 9.2, label: "x2" }
+            - { id: c2x3, x: 3.5, y: 9.2, label: "x3" }
+            - { id: c2nx2, x: 1.1, y: 7.3, label: "¬x2" }
+            - { id: c2nx1, x: 0.6, y: 4.2, label: "¬x1" }
+          edges:
+            - { from: c1x1, to: c1x2 }
+            - { from: c1x2, to: c1x3 }
+            - { from: c1x1, to: c1x3 }
+            - { from: c2nx1, to: c2nx2 }
+            - { from: c2nx2, to: c2x3 }
+            - { from: c2nx1, to: c2x3 }
+            - { from: c3nx1, to: c3x2 }
+            - { from: c3x2, to: c3nx3 }
+            - { from: c3nx1, to: c3nx3 }
+            - { from: c1x1, to: c2nx1 }
+            - { from: c1x1, to: c3nx1 }
+            - { from: c1x2, to: c2nx2 }
+            - { from: c1x3, to: c3nx3 }
+            - { from: c2nx2, to: c3x2 }
+            - { from: c2x3, to: c3nx3 }
+        steps:
+          - caption: |
+              Graf redukce pro $f = (x_1 \vee x_2 \vee x_3) \wedge (\bar x_1 \vee \bar x_2 \vee x_3) \wedge (\bar x_1 \vee x_2 \vee \bar x_3)$: nahoře $C_1$, vpravo dole $C_3$, vlevo dole $C_2$. Každá klauzule je trojúhelník a komplementární výskyty spojuje hrana. Hledáme nezávislou množinu velikosti $k = m = 3$.
+          - caption: |
+              Směr ⇒: vezmeme splňující přiřazení $x_1 = 0$, $x_2 = x_3 = 1$ a u každého výskytu vyznačíme jeho hodnotu. Každý trojúhelník obsahuje aspoň jeden pravdivý výskyt – to je přesně splněnost klauzule.
+            nodes: { c1x2: active, c1x3: active, c2nx1: active, c2x3: active, c3nx1: active, c3x2: active }
+            labels: { c1x1: "0", c1x2: "1", c1x3: "1", c2nx1: "1", c2nx2: "0", c2x3: "1", c3nx1: "1", c3x2: "1", c3nx3: "0" }
+          - caption: |
+              Z každého trojúhelníku vybereme jeden pravdivý výskyt: $x_2$ z $C_1$, $x_3$ z $C_2$, $x_2$ z $C_3$. Žádné dva neleží v jedné klauzuli a nejsou komplementární (oba jsou pravdivé), takže množina je nezávislá a má velikost $m = 3$.
+            set: [c1x2, c2x3, c3x2]
+            labels: { c1x1: "0", c1x2: "1", c1x3: "1", c2nx1: "1", c2nx2: "0", c2x3: "1", c3nx1: "1", c3x2: "1", c3nx3: "0" }
+          - caption: |
+              Proč nejde vzít víc uzlů z jedné klauzule: dva výskyty v $C_1$ spojuje hrana trojúhelníku. Nezávislá množina má z každé klauzule nejvýše jeden uzel, takže velikost $m$ znamená právě jeden z každé.
+            set: [c1x2, c1x3, c2x3]
+          - caption: |
+              Druhý typ hran hlídá bezespornost: $x_1$ z $C_1$ a $\bar x_1$ z $C_2$ vybrat spolu nelze. Proto v nezávislé množině nikdy není $x$ i $\bar x$ a nastavením vybraných literálů na 1 dostaneme splňující přiřazení (směr ⇐).
+            set: [c1x1, c2nx1, c3x2]
+    source: "skripta str. 60–61 (redukce SAT ◁ IND), str. 69 (Věta 9.8); přednáška 12, str. 2"
+
+  - id: def-ind-rovno-a-ind-k
+    kind: definition
+    label: "Poznámka (za Větou 9.8)"
+    section: "9.8"
+    title: Varianty IND= a INDk
+    terms: [IND=, INDk, nezávislá množina velikosti právě k, pevné k]
+    statement: |
+      **IND$_=$**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech a přirozené číslo $k \le n$.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje nezávislá množina uzlů velikosti $k$.
+
+      **IND$_k$**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje nezávislá množina uzlů velikosti $k$.
+    intuition: |
+      IND$_=$ se od IND liší jen slovem „právě" místo „alespoň". IND$_k$ vypadá stejně,
+      ale $k$ **není součástí vstupních dat** – je pevně dané předem (hodnotu $k$ nám
+      nezadává „nepřítel", známe ji dopředu). Tento zdánlivě nepatrný rozdíl rozhoduje o
+      tom, zda je problém polynomiální, nebo NP-úplný.
+    related: [def-ind, prop-ind-rovno-npc, prop-ind-k-p, def-nezavisla-mnozina]
+    source: "skripta str. 69; přednáška 12, str. 2"
+
+  - id: prop-ind-rovno-npc
+    kind: proposition
+    label: "Tvrzení 9.1"
+    section: "9.8"
+    title: IND= je NP-úplný
+    terms: [IND= ∈ NPC]
+    statement: |
+      $\text{IND}_= \in \mathrm{NPC}$.
+    intuition: |
+      „Alespoň $k$" a „právě $k$" je u nezávislých množin totéž: podmnožina nezávislé
+      množiny je opět nezávislá.
+    proof: |
+      Problémy IND a IND$_=$ jsou ekvivalentní: každá nezávislá množina velikosti $k$ je
+      zároveň množinou velikosti alespoň $k$, a naopak, existuje-li v $G$ nezávislá množina
+      velikosti $k' > k$, je každá její $k$-prvková podmnožina také nezávislá.
+
+      Formálně: $\text{IND}_= \in \mathrm{NP}$ (uhodneme $k$ uzlů a ověříme nezávislost v
+      polynomiálním čase) a identický překlad $(G, k) \mapsto (G, k)$ je polynomiální
+      redukce $\text{IND} \triangleleft \text{IND}_=$, protože instance $(G,k)$ má odpověď ANO
+      v IND právě když v IND$_=$. Z $\text{IND} \in \mathrm{NPC}$ a tranzitivity plyne
+      $\text{IND}_= \in \mathrm{NPC}$. $\square$
+    proof_steps:
+      - "IND$_=$ ∈ NP: uhodneme $k$ uzlů a v polynomiálním čase ověříme, že jsou nezávislé."
+      - "Nezávislá množina velikosti alespoň $k$ existuje právě když existuje nezávislá množina velikosti právě $k$ (podmnožina nezávislé množiny je nezávislá)."
+      - "Identický překlad $(G,k) \\mapsto (G,k)$ je tedy polynomiální redukce IND ◁ IND$_=$, a z IND ∈ NPC plyne IND$_=$ ∈ NPC."
+    related: [def-ind-rovno-a-ind-k, thm-ind-npc]
+    source: "skripta str. 69–70; přednáška 12, str. 2"
+
+  - id: prop-ind-k-p
+    kind: proposition
+    label: "Tvrzení 9.2"
+    section: "9.8"
+    title: INDk je polynomiální
+    terms: [INDk ∈ P, hrubá síla pro pevné k, "O(n^k)"]
+    statement: |
+      $\text{IND}_k \in \mathrm{P}$.
+    intuition: |
+      Pro pevné $k$ stačí vyzkoušet všechny $k$-prvkové podmnožiny – je jich $O(n^k)$, což
+      je polynom, protože exponent $k$ je konstanta. Pro $k = 50$ je to ovšem $n^{50}$ –
+      polynomiální, ale prakticky nepoužitelné. Otázku, zda lze exponent „oddělit" od $n$
+      (čas $f(k) \cdot n^{c}$), řeší parametrizovaná složitost (kapitola o FPT).
+    proof: |
+      $n$-prvková množina má $\binom{n}{k}$ $k$-prvkových podmnožin a
+      $\binom{n}{k} \le n^k$, tj. $\binom{n}{k} = O(n^k)$. Algoritmus „hrubou silou" projde
+      všechny $k$-prvkové podmnožiny $X \subseteq U(G)$ a pro každou ověří (s maticí
+      sousednosti v čase $O(k^2)$), zda je nezávislá. Celkový čas je $O(k^2 n^k) = O(n^k)$, a
+      protože $k$ je konstanta, je to polynom v $n$. Tedy $\text{IND}_k \in \mathrm{P}$. $\square$
+    proof_steps:
+      - "Počet $k$-prvkových podmnožin $n$-prvkové množiny je $\\binom{n}{k} \\le n^k$."
+      - "Každou podmnožinu otestujeme na nezávislost v čase $O(k^2)$ pomocí matice sousednosti."
+      - "Celkový čas $O(k^2 n^k)$ je pro pevné (konstantní) $k$ polynomem v $n$, tedy IND$_k$ ∈ P."
+    complexity: '$O(k^2 n^k)$, pro pevné $k$ polynomiální'
+    related: [def-ind-rovno-a-ind-k, rem-hranice-ind-k, prop-ind-rovno-npc]
+    source: "skripta str. 70; přednáška 12, str. 2"
+
+  - id: rem-hranice-ind-k
+    kind: remark
+    label: "Poznámka (za Tvrzením 9.2)"
+    section: "9.8"
+    title: Proč „pevné k" mění složitost
+    terms: [hranice mezi P a NPC, k jako součást vstupu, exponenciální počet podmnožin]
+    statement: |
+      Je-li $k$ součástí vstupních dat, nemusí být konstantní – může záviset na $n$.
+      Představme si, že „nepřítel" zadává posloupnost grafů $G_1, G_2, \dots$ s
+      $|U(G_i)| = n = 2i$ a ke každému grafu $G_i$ hodnotu $k = i = \frac{n}{2}$. Pak počet
+      všech $k$-prvkových podmnožin $U(G_i)$ je
+      $$\binom{n}{k} = \binom{2i}{i} = \frac{2i(2i-1)\cdots(i+1)}{i(i-1)\cdots 1} = \frac{2i}{i} \cdot \frac{2i-1}{i-1} \cdots \frac{i+1}{1} > 2^i = 2^{n/2} = (\sqrt{2})^n,$$
+      takže algoritmus „hrubá síla" je na těchto vstupech alespoň exponenciální.
+
+      Hranice mezi polynomiálním a NP-úplným světem je velmi ostrá a často velmi záleží
+      na přesné formulaci problému. Totéž platí i pro následující problémy COV a CLIQUE.
+    intuition: |
+      Každý z $i$ zlomků $\frac{i+j}{j}$ ($j = 1, \dots, i$) je alespoň 2, proto je součin
+      větší než $2^i$. Polynomialita $O(n^k)$ tedy platí jen pro **pevné** $k$; když $k$
+      roste s $n$, exponent roste také.
+    related: [prop-ind-k-p, prop-ind-rovno-npc]
+    source: "skripta str. 70"
+
+  - id: def-cov
+    kind: definition
+    section: "9.8"
+    title: Problém COV (uzlové pokrytí)
+    terms: [COV, vertex cover, uzlové pokrytí, vrcholové pokrytí, pokrytí velikosti nejvýše k]
+    statement: |
+      **COV**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech a přirozené číslo $k \le n$.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje pokrytí velikosti nejvýše $k$.
+
+      **Poznámka.** Úloha je opět formulována jako rozhodovací problém (o převodu
+      optimalizačních úloh na rozhodovací viz IND).
+    intuition: |
+      [Pokrytí](#def-pokryti) je množina uzlů, která „zasáhne" každou hranu. Doplněk
+      nezávislé množiny je pokrytí a naopak – proto je COV „zrcadlem" IND.
+    related: [def-pokryti, thm-cov-npc, def-ind]
+    source: "skripta str. 70; přednáška 12, str. 3"
+
+  - id: thm-cov-npc
+    kind: theorem
+    label: "Věta 9.9"
+    section: "9.8"
+    title: COV je NP-úplný
+    terms: [COV ∈ NPC, redukce IND na COV, doplněk nezávislé množiny]
+    statement: |
+      $\text{COV} \in \mathrm{NPC}$.
+    intuition: |
+      Množina uzlů je nezávislá (žádná hrana uvnitř) právě když její doplněk zasahuje
+      každou hranu. Velká nezávislá množina = malé pokrytí.
+    proof: |
+      **1. COV ∈ NP.** Nedeterministický algoritmus: pro každý uzel nedeterministicky
+      rozhodni, zda patří do množiny $X$; je-li $|X| > k$, `REJECT`; pro každou hranu
+      $\{u, v\}$ ověř, že $u \in X$ nebo $v \in X$, jinak `REJECT`; nakonec `ACCEPT`. Každý
+      výpočet trvá $O(n^2)$.
+
+      **2. IND ◁ COV.** Pro $M \subseteq U(G)$ platí: $M$ je $k$-prvková nezávislá množina právě
+      když $U(G) \setminus M$ je $(n-k)$-prvkové pokrytí. (Hrana nemá oba konce v $M$ právě
+      když má aspoň jeden konec v $U(G) \setminus M$.) Překlad
+      $(G, k) \mapsto (G, n - k)$ je zřejmě polynomiální a $G$ má nezávislou množinu velikosti
+      alespoň $k$ právě když má pokrytí velikosti nejvýše $n - k$. Z $\text{IND} \in \mathrm{NPC}$
+      plyne $\text{COV} \in \mathrm{NPC}$. $\square$
+    proof_steps:
+      - "COV ∈ NP: uhodneme množinu nejvýše $k$ uzlů a v polynomiálním čase ověříme, že každá hrana má v ní aspoň jeden konec."
+      - "Konstrukce: instanci $(G,k)$ problému IND přeložíme na instanci $(G, n-k)$ problému COV – to je zřejmě polynomiální."
+      - "Klíčová ekvivalence: $M$ je nezávislá právě když $U(G) \\setminus M$ je pokrytí (hrana nemá oba konce v $M$ právě když má aspoň jeden konec mimo $M$)."
+      - "Směr ⇒: nezávislá množina velikosti $\\ge k$ dává pokrytí velikosti $\\le n-k$; směr ⇐: pokrytí velikosti $\\le n-k$ dává nezávislou množinu velikosti $\\ge k$."
+      - "Z IND ∈ NPC a tranzitivity redukcí plyne COV ∈ NPC."
+    examples:
+      - title: Doplněk nezávislé množiny
+        body: |
+          V cestě $x_1 x_2 x_3 x_4 x_5$ s přidanou hranou $x_2 x_4$ je $\{x_1, x_3, x_5\}$
+          nezávislá množina velikosti 3 a její doplněk $\{x_2, x_4\}$ pokrytí velikosti
+          $5 - 3 = 2$.
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 0, y: 2, in_set: true }
+            - { id: x2, x: 2, y: 2, cover: true }
+            - { id: x3, x: 4, y: 2, in_set: true }
+            - { id: x4, x: 6, y: 2, cover: true }
+            - { id: x5, x: 8, y: 2, in_set: true }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: x4 }
+            - { from: x4, to: x5 }
+            - { from: x2, to: x4 }
+    related: [def-cov, thm-ind-npc, def-pokryti, def-nezavisla-mnozina]
+    illustrations:
+      - title: Doplněk nezávislé množiny je pokrytí
+        for: proof
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 2.5, y: 0.5 }
+            - { id: x2, x: 7.5, y: 0.5 }
+            - { id: x3, x: 10, y: 5 }
+            - { id: x4, x: 7.5, y: 9.5 }
+            - { id: x5, x: 2.5, y: 9.5 }
+            - { id: x6, x: 0, y: 5 }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: x4 }
+            - { from: x4, to: x5 }
+            - { from: x5, to: x6 }
+            - { from: x6, to: x1 }
+            - { from: x2, to: x5 }
+        steps:
+          - caption: |
+              $N = \{x_1, x_3, x_5\}$ je nezávislá množina (popisek N). Její doplněk $\{x_2, x_4, x_6\}$ je pokrytí velikosti $n - |N| = 6 - 3 = 3$: žádná hrana nemá oba konce v $N$, takže aspoň jeden leží mimo $N$.
+            set: [x2, x4, x6]
+            labels: { x1: "N", x3: "N", x5: "N" }
+          - caption: |
+              Funguje to i obráceně: $\{x_2, x_4, x_6\}$ je také nezávislá, a proto je $\{x_1, x_3, x_5\}$ pokrytí. Překlad $(G, k) \mapsto (G, n - k)$ jen „prohodí“ množinu a její doplněk.
+            set: [x1, x3, x5]
+            labels: { x2: "N", x4: "N", x6: "N" }
+          - caption: |
+              Množina $N' = \{x_1, x_3, x_4\}$ nezávislá není – uvnitř leží hrana $x_3 x_4$. Doplněk $\{x_2, x_5, x_6\}$ selže právě na této hraně: hrana uvnitř $N'$ nemá žádný konec v doplňku.
+            set: [x2, x5, x6]
+            labels: { x1: "N'", x3: "N'", x4: "N'" }
+          - caption: |
+              Pokrytí velikosti 2 neexistuje (dva uzly stupně nejvýše 3 pokryjí nejvýše 6 ze 7 hran), proto v $G$ není ani nezávislá množina velikosti $6 - 2 = 4$. Odpovědi IND a COV si odpovídají.
+            set: [x2, x5]
+    source: "skripta str. 70; přednáška 12, str. 3"
+
+  - id: def-clique
+    kind: definition
+    section: "9.8"
+    title: Problém CLIQUE (klika předepsané velikosti)
+    terms: [CLIQUE, klika, existence kliky předepsané velikosti, clique problem, "ω(G)"]
+    statement: |
+      **CLIQUE**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech a přirozené číslo $k \le n$.
+
+      **Úkol:** zjistit, zda v grafu $G$ existuje klika velikosti alespoň $k$.
+    intuition: |
+      [Klika](#def-klika) je množina navzájem sousedních uzlů – opak nezávislé množiny.
+      V doplňku grafu se kliky a nezávislé množiny prohodí.
+    related: [def-klika, thm-clique-npc, def-ind]
+    source: "skripta str. 70; přednáška 12, str. 3"
+
+  - id: thm-clique-npc
+    kind: theorem
+    label: "Věta 9.10"
+    section: "9.8"
+    title: CLIQUE je NP-úplný
+    terms: [CLIQUE ∈ NPC, redukce IND na CLIQUE, doplněk grafu]
+    statement: |
+      $\text{CLIQUE} \in \mathrm{NPC}$.
+    intuition: |
+      Doplněk grafu $\bar G$ (hrany právě tam, kde v $G$ nejsou) promění nezávislé množiny v
+      kliky. Redukce je tedy jen „přehození hran a nehran".
+    proof: |
+      **1. CLIQUE ∈ NP.** Uhodneme množinu $X$ alespoň $k$ uzlů a v čase $O(n^2)$ ověříme, že
+      každé dva uzly $X$ jsou sousední.
+
+      **2. IND ◁ CLIQUE.** Pro $M \subseteq U(G)$ platí: $M$ je $k$-prvková nezávislá množina v
+      $G$ právě když $M$ je $k$-prvková klika v doplňku $\bar G$ (kde
+      $U(\bar G) = U(G)$ a $\{u, v\} \in H(\bar G) \Leftrightarrow \{u, v\} \notin H(G)$ pro
+      $u \ne v$). Překlad $(G, k) \mapsto (\bar G, k)$ se provede v čase $O(n^2)$ (prohození
+      nul a jedniček mimo diagonálu matice sousednosti). Z $\text{IND} \in \mathrm{NPC}$ plyne
+      $\text{CLIQUE} \in \mathrm{NPC}$. $\square$
+    proof_steps:
+      - "CLIQUE ∈ NP: uhodneme alespoň $k$ uzlů a v čase $O(n^2)$ ověříme, že jsou po dvou sousední."
+      - "Konstrukce: instanci $(G,k)$ problému IND přeložíme na $(\\bar G, k)$, kde $\\bar G$ je doplněk grafu $G$; to trvá $O(n^2)$."
+      - "Směr ⇒: nezávislá množina v $G$ nemá uvnitř žádnou hranu $G$, takže v $\\bar G$ jsou všechny její dvojice spojeny – je to klika."
+      - "Směr ⇐: klika v $\\bar G$ nemá uvnitř žádnou hranu $G$, je tedy nezávislá v $G$ (velikost se zachovává)."
+      - "Z IND ∈ NPC a tranzitivity redukcí plyne CLIQUE ∈ NPC."
+    related: [def-clique, thm-ind-npc, def-klika, def-nezavisla-mnozina]
+    illustrations:
+      - title: Nezávislá množina v G
+        for: proof
+        property: independent-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 0.5 }
+            - { id: b, x: 9.5, y: 3.8 }
+            - { id: c, x: 7.8, y: 9.3 }
+            - { id: d, x: 2.2, y: 9.3 }
+            - { id: e, x: 0.5, y: 3.8 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: e }
+        steps:
+          - caption: |
+              V grafu $G$ je $\{a, c, e\}$ nezávislá množina velikosti 3 – mezi jejími uzly není žádná hrana.
+            set: [a, c, e]
+          - caption: |
+              Jinak řečeno: všechny tři dvojice $ac$, $ae$, $ce$ jsou *nehrany* grafu $G$. V doplňku $\bar G$ se z nich stanou hrany.
+            set: [a, c, e]
+            nodes: { a: done, c: done, e: done }
+          - caption: |
+              Přidáme-li $d$, nezávislost poruší hrana $cd$. Větší nezávislá množina v $G$ neexistuje.
+            set: [a, c, d, e]
+      - title: Táž množina je klikou v doplňku
+        for: proof
+        property: clique
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 0.5 }
+            - { id: b, x: 9.5, y: 3.8 }
+            - { id: c, x: 7.8, y: 9.3 }
+            - { id: d, x: 2.2, y: 9.3 }
+            - { id: e, x: 0.5, y: 3.8 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: e }
+        steps:
+          - caption: |
+              V původním grafu $G$ tvoří $\{a, c, e\}$ pravý opak kliky – žádné dva z vybraných uzlů nesousedí.
+            set: [a, c, e]
+          - caption: |
+              Sestrojíme doplněk $\bar G$: hrany přesně tam, kde v $G$ nebyly (prohození 0 a 1 mimo diagonálu matice sousednosti, čas $O(n^2)$). Nezávislá množina $\{a, c, e\}$ je teď klika velikosti 3.
+            remove: [[a, b], [b, c], [c, d], [d, e], [b, e]]
+            add: [[a, c], [a, d], [a, e], [b, d], [c, e]]
+            set: [a, c, e]
+          - caption: |
+              A naopak: $\{a, c, d, e\}$ v $\bar G$ klika není, protože $cd$ je hranou $G$ – tatáž hrana kazila nezávislost v $G$. Velikost $k$ se zachovává, takže $(G, k) \mapsto (\bar G, k)$ je redukce IND ◁ CLIQUE.
+            set: [a, c, d, e]
+    source: "skripta str. 71; přednáška 12, str. 3"
+
+  - id: def-k-col
+    kind: definition
+    section: "9.8"
+    title: Problém k-COL (k-obarvitelnost)
+    terms: [k-COL, 3-COL, k-obarvitelnost, 3-obarvitelnost, graph coloring, obarvení grafu]
+    statement: |
+      **$k$-COL**
+
+      **Vstup:** neorientovaný graf $G$ na $n$ uzlech (a přirozené číslo $k \le n$).
+
+      **Úkol:** zjistit, zda je graf $G$ $k$-obarvitelný.
+
+      Pro $k = 1$ a $k = 2$ (1- a 2-obarvitelnost) víme z kapitoly 7, že
+      $\text{1-COL} \in \mathrm{P}$ a $\text{2-COL} \in \mathrm{P}$. Pro $k = 3$ je už vše jinak.
+    intuition: |
+      1-obarvitelný = bez hran, 2-obarvitelný = bipartitní (bez lichých kružnic), obojí
+      ověříme BFS v čase $O(n+m)$. Už pro 3 barvy je problém NP-úplný
+      ([Věta 9.11](#thm-3col-npc)) – další ostrá hranice podobná 2-SAT vs. 3-SAT.
+
+      *Pozn. ke znění:* ve skriptech je $k$ uvedeno jako součást vstupu, ve folii je vstupem
+      jen graf a $k$ je pevné (jako u IND$_k$). U 3-COL je $k = 3$ pevné.
+    related: [def-chromaticke-cislo, thm-3col-npc]
+    source: "skripta str. 71; přednáška 12, str. 4"
+
+  - id: lemma-gadgety-3col
+    kind: lemma
+    label: "Pozorování (důkaz Věty 9.11)"
+    section: "9.8"
+    title: Stavební kameny G1 a G2 pro redukci na 3-COL
+    terms: [gadget, stavební kámen, G1, G2, gadget pro klauzuli]
+    statement: |
+      Barvy značíme $0, 1, 2$.
+
+      **Graf $G_1$:** uzly $a, b$, trojúhelník $p, q, d$ a hrany $ap$, $bq$. V každém
+      3-obarvení $G_1$ platí:
+
+      * jsou-li $a, b$ obarveny stejnou barvou, pak $d$ má tutéž barvu;
+      * jsou-li $a, b$ obarveny různými barvami, pak $d$ může mít libovolnou barvu (pro
+        každou volbu barvy $d$ lze obarvení dokončit).
+
+      **Graf $G_2$:** uzly $a, b, c$; jedna kopie $G_1$ se vstupy $b, c$ a výstupem $e$ a
+      druhá kopie $G_1$ se vstupy $a, e$ a výstupem $d$. Pak:
+
+      * jsou-li $a, b, c$ obarveny stejnou barvou, pak $d$ má tutéž barvu;
+      * má-li alespoň jeden z uzlů $a, b, c$ jinou barvu než ostatní, pak $d$ může být
+        obarven barvou 1 (dokonce libovolnou barvou).
+    intuition: |
+      $G_1$ se chová jako „hradlo", které propustí barvu, když se vstupy shodují, a jinak
+      je volné. $G_2$ složené ze dvou hradel je „hradlo OR" pro klauzuli: výstup $d$ je
+      nucen na barvu 0 („nepravda") jen tehdy, když jsou všechny tři literály 0.
+    proof: |
+      *Ve skriptech „zřejmé"; doplněno.*
+
+      **$G_1$, stejné barvy.** Nechť $a, b$ mají barvu $\alpha$. Pak $p \ne \alpha$ a
+      $q \ne \alpha$, a protože $p, q, d$ tvoří trojúhelník, mají $p, q$ obě zbývající barvy a
+      na $d$ zbude jen $\alpha$.
+
+      **$G_1$, různé barvy.** Nechť $a$ má barvu $\alpha$, $b$ barvu $\beta \ne \alpha$ a
+      $\gamma$ je třetí barva. Chceme $d = \delta$:
+      pro $\delta = \alpha$ volíme $p = \beta$, $q = \gamma$;
+      pro $\delta = \beta$ volíme $p = \gamma$, $q = \alpha$;
+      pro $\delta = \gamma$ volíme $p = \beta$, $q = \alpha$.
+      Ve všech případech $p \ne \alpha$, $q \ne \beta$ a $p, q, d$ jsou různé.
+
+      **$G_2$, stejné barvy.** Mají-li $b, c$ barvu $\alpha$, je podle $G_1$ i $e = \alpha$;
+      pak $a, e$ mají barvu $\alpha$ a znovu podle $G_1$ je $d = \alpha$.
+
+      **$G_2$, ne všechny stejné.** Je-li $b \ne c$, je $e$ libovolné – zvolíme $e \ne a$, a pak
+      je $d$ libovolné. Je-li $b = c$, pak $a \ne b$ (ne všechny jsou stejné), $e = b \ne a$ a
+      $d$ je opět libovolné. Speciálně lze $d$ obarvit barvou 1. $\square$
+    proof_steps:
+      - "$G_1$ se stejnými barvami vstupů: $p$ i $q$ se liší od barvy vstupů, v trojúhelníku zabírají obě zbylé barvy, takže $d$ dostane barvu vstupů."
+      - "$G_1$ s různými barvami vstupů: rozborem tří případů pro barvu $d$ ukážeme, že $p$ a $q$ lze vždy obarvit."
+      - "$G_2$ se stejnými barvami $a, b, c$: první $G_1$ vynutí $e$ téže barvy, druhý $G_1$ pak i $d$."
+      - "$G_2$, kde ne všechny barvy jsou stejné: vždy lze dosáhnout $e \\ne a$, a pak je barva $d$ libovolná, speciálně 1."
+    examples:
+      - title: Gadget G2
+        body: |
+          Uzly $a, b, c$ jsou vstupy (v redukci literály klauzule), $d$ výstup.
+          Trojúhelník $p_1 q_1 e$ je první $G_1$ (vstupy $b, c$), trojúhelník $p_2 q_2 d$
+          druhý $G_1$ (vstupy $a, e$).
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 0 }
+            - { id: b, x: 0, y: 3 }
+            - { id: c, x: 0, y: 6 }
+            - { id: p1, x: 3, y: 3 }
+            - { id: q1, x: 3, y: 6 }
+            - { id: e, x: 5, y: 4.5 }
+            - { id: p2, x: 7, y: 0 }
+            - { id: q2, x: 7, y: 3 }
+            - { id: d, x: 9, y: 1.5 }
+          edges:
+            - { from: b, to: p1 }
+            - { from: c, to: q1 }
+            - { from: p1, to: q1 }
+            - { from: p1, to: e }
+            - { from: q1, to: e }
+            - { from: a, to: p2 }
+            - { from: e, to: q2 }
+            - { from: p2, to: q2 }
+            - { from: p2, to: d }
+            - { from: q2, to: d }
+    related: [thm-3col-npc]
+    illustrations:
+      - title: Hradlo G1 – shodné vstupy vynutí výstup
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 1.5 }
+            - { id: b, x: 0, y: 8.5 }
+            - { id: p, x: 4, y: 1.5 }
+            - { id: q, x: 4, y: 8.5 }
+            - { id: d, x: 8, y: 5 }
+          edges:
+            - { from: a, to: p }
+            - { from: b, to: q }
+            - { from: p, to: q }
+            - { from: p, to: d }
+            - { from: q, to: d }
+        steps:
+          - caption: |
+              Vstupy $a$, $b$ mají stejnou barvu 0. Uzly $p$, $q$ s nimi sousedí, musí tedy mít barvy 1 a 2 – a protože $p, q, d$ tvoří trojúhelník, na výstup $d$ zbude jen barva 0.
+            colors: { a: 0, b: 0, p: 1, q: 2, d: 0 }
+            labels: { a: "0", b: "0", p: "1", q: "2", d: "0" }
+          - caption: |
+              Zkusme $d = 1$: $p$ se musí lišit od $a = 0$ i od $d = 1$, takže $p = 2$; ze stejného důvodu $q = 2$. Hrana $pq$ je jednobarevná – při shodných vstupech je výstup nucen mít jejich barvu.
+            colors: { a: 0, b: 0, p: 2, q: 2, d: 1 }
+            labels: { a: "0", b: "0", p: "2", q: "2", d: "1" }
+          - caption: |
+              Různé vstupy $a = 0$, $b = 1$: výstup $d = 0$ lze dobarvit ($p = 1$, $q = 2$)…
+            colors: { a: 0, b: 1, p: 1, q: 2, d: 0 }
+            labels: { a: "0", b: "1", p: "1", q: "2", d: "0" }
+          - caption: |
+              …výstup $d = 1$ také ($p = 2$, $q = 0$)…
+            colors: { a: 0, b: 1, p: 2, q: 0, d: 1 }
+            labels: { a: "0", b: "1", p: "2", q: "0", d: "1" }
+          - caption: |
+              …i výstup $d = 2$ ($p = 1$, $q = 0$). Při různých vstupech je tedy barva výstupu zcela volná – $G_1$ „propustí“ barvu jen tehdy, když se vstupy shodují.
+            colors: { a: 0, b: 1, p: 1, q: 0, d: 2 }
+            labels: { a: "0", b: "1", p: "1", q: "0", d: "2" }
+    source: "skripta str. 71"
+
+  - id: thm-3col-npc
+    kind: theorem
+    label: "Věta 9.11"
+    section: "9.8"
+    title: 3-COL je NP-úplný
+    terms: [3-COL ∈ NPC, redukce 3-SAT na 3-COL, 3-obarvitelnost je NP-úplná]
+    statement: |
+      $\text{3-COL} \in \mathrm{NPC}$.
+    intuition: |
+      Barvy dostanou význam: trojúhelník $u, v, w$ „kalibruje" barvy (0 = nepravda,
+      1 = pravda, 2 = „ani jedno"). Literálové uzly sousedí s $w$, mají tedy barvu 0 nebo 1,
+      a hrana $x_i \bar x_i$ zajistí, že právě jeden z nich je pravdivý. Gadget $G_2$ pro
+      klauzuli má výstup $d$ spojený s $u$ (barva 0), takže $d$ nesmí být 0 – a to je možné
+      právě když klauzule obsahuje pravdivý literál.
+    proof: |
+      **1. 3-COL ∈ NP.** Nedeterministicky přiřadíme každému uzlu barvu z $\{0, 1, 2\}$ a pro
+      každou hranu ověříme, že její konce mají různé barvy – čas $O(n + m)$.
+
+      **2. 3-SAT ◁ 3-COL.** Nechť $f(x_1, \dots, x_n) = (a_1 \vee b_1 \vee c_1) \wedge \dots \wedge (a_k \vee b_k \vee c_k)$.
+      Sestrojíme graf $G$, který je 3-obarvitelný právě tehdy, je-li $f$ splnitelná.
+      Použijeme [stavební kameny $G_1$, $G_2$](#lemma-gadgety-3col).
+
+      *Konstrukce $G$:*
+
+      * pro každou proměnnou $x_i$ sestrojíme dvojici uzlů $x_i, \bar x_i$ a spojíme ji hranou,
+      * přidáme tři uzly $u, v, w$ tvořící trojúhelník,
+      * uzel $w$ spojíme se všemi uzly $x_i, \bar x_i$,
+      * pro každou klauzuli vytvoříme jednu kopii grafu $G_2$, přičemž uzly $a, b, c$ budou
+        totožné s uzly literálů této klauzule a uzel $d$ (označme ho $d_j$ pro $j$-tou
+        klauzuli) bude sousední s uzlem $u$.
+
+      *Polynomialita (doplněno):* $G$ má $2n + 3 + 6k$ uzlů a $n + 3 + 2n + 11k$ hran, sestrojí
+      se v lineárním čase.
+
+      *Ekvivalence:*
+
+      1. $G$ je 3-obarvitelný $\Leftrightarrow$ $G$ je 3-obarvitelný tak, že $u$ má barvu 0, $v$
+         barvu 1 a $w$ barvu 2 (jinak barvy vhodně přečíslujeme – $u, v, w$ tvoří
+         trojúhelník, takže mají tři různé barvy).
+      2. Uzel $w$ má barvu 2, takže uzly $x_i, \bar x_i$ mají barvy z $\{0, 1\}$, a to navzájem
+         různé (jsou spojeny hranou). Lze je tedy interpretovat jako hodnoty logických
+         proměnných (barva 1 = pravda) a hodnota $\bar x_i$ je skutečně negací hodnoty $x_i$.
+      3. Formule $f$ je 3-splnitelná $\Leftrightarrow$ existuje přiřazení hodnot 0, 1
+         proměnným $x_i$ tak, že v každé klauzuli je alespoň jedna jednička
+         $\Leftrightarrow$ všechny uzly $d_j$ mohou mít barvu různou od 0 (podle vlastností
+         $G_2$: jsou-li všechny tři literály 0, je $d_j$ nuceně 0; jinak lze $d_j$ obarvit
+         barvou 1, a vnitřní uzly gadgetu dobarvit) $\Leftrightarrow$ graf $G$ je
+         3-obarvitelný (uzel $d_j$ sousedí s $u$ barvy 0; vnitřní uzly různých gadgetů spolu
+         nesousedí, takže obarvení gadgetů jsou nezávislá). $\square$
+    proof_steps:
+      - "3-COL ∈ NP: uhodneme barvu každého uzlu a v lineárním čase ověříme, že každá hrana má konce různých barev."
+      - "Konstrukce: pro každou proměnnou hranu $x_i \\bar x_i$, trojúhelník $u, v, w$, hrany z $w$ do všech literálových uzlů a pro každou klauzuli gadget $G_2$ se vstupy = literály klauzule a výstupem $d_j$ spojeným s $u$."
+      - "Graf má lineárně mnoho uzlů a hran vzhledem k velikosti formule, konstrukce je polynomiální."
+      - "Bez újmy na obecnosti $u = 0$, $v = 1$, $w = 2$; literálové uzly mají pak barvy 0/1, navzájem komplementární – to je pravdivostní ohodnocení."
+      - "Směr ⇒: ze splňujícího přiřazení obarvíme literály (pravda = 1); v každé klauzuli je aspoň jedna 1, takže podle vlastnosti $G_2$ lze $d_j$ obarvit 1 ≠ 0 = barva $u$ a gadgety dobarvit."
+      - "Směr ⇐: v 3-obarvení má $d_j$ barvu různou od 0 (sousedí s $u$), takže podle $G_2$ nejsou všechny tři literály klauzule obarveny 0 – každá klauzule má pravdivý literál."
+      - "Z 3-SAT ∈ NPC a tranzitivity redukcí plyne 3-COL ∈ NPC."
+    examples:
+      - title: Graf pro formuli s jednou klauzulí
+        body: |
+          $f = (x_1 \vee x_2 \vee \bar x_3)$. Gadget $G_2$ má vstupy $a = x_1$, $b = x_2$,
+          $c = \bar x_3$ a výstup $d$ spojený s $u$.
+
+          Pro splňující přiřazení $x_1 = 1$, $x_2 = 0$, $x_3 = 1$ obarvíme: $u = 0$, $v = 1$,
+          $w = 2$; $x_1 = 1$, $\bar x_1 = 0$, $x_2 = 0$, $\bar x_2 = 1$, $x_3 = 1$, $\bar x_3 = 0$.
+          V gadgetu: $b = c = 0$ ⇒ $p_1, q_1 \in \{1, 2\}$ (třeba $p_1 = 1$, $q_1 = 2$) a
+          $e = 0$; dále $a = 1 \ne e = 0$, takže $d$ může být 1: $d = 1$, $q_2 = 2$, $p_2 = 0$.
+          Všechny hrany mají různobarevné konce a $d = 1 \ne 0 = u$.
+
+          Kdyby bylo $x_1 = 0$, $x_2 = 0$, $x_3 = 1$ (klauzule nepravdivá), byly by
+          $a = b = c = 0$, gadget by vynutil $d = 0$ a hrana $du$ by byla jednobarevná.
+
+          Skripta ilustrují konstrukci na formuli
+          $(x_1 \vee \bar x_2 \vee \bar x_3) \wedge (\bar x_1 \vee x_3 \vee \bar x_4) \wedge (\bar x_2 \vee x_3 \vee x_4)$
+          se třemi gadgety.
+        graph:
+          directed: false
+          nodes:
+            - { id: u, x: 0, y: 4 }
+            - { id: v, x: 0, y: 7 }
+            - { id: w, x: 1.5, y: 5.5 }
+            - { id: x1, x: 4, y: 7, label: "x1" }
+            - { id: nx1, x: 4, y: 4, label: "¬x1" }
+            - { id: x2, x: 6, y: 7, label: "x2" }
+            - { id: nx2, x: 6, y: 4, label: "¬x2" }
+            - { id: x3, x: 8, y: 7, label: "x3" }
+            - { id: nx3, x: 8, y: 4, label: "¬x3" }
+            - { id: p1, x: 6, y: 2 }
+            - { id: q1, x: 8, y: 2 }
+            - { id: e, x: 7, y: 1 }
+            - { id: p2, x: 4, y: 1 }
+            - { id: q2, x: 6, y: 0 }
+            - { id: d, x: 4, y: -1 }
+          edges:
+            - { from: u, to: v }
+            - { from: v, to: w }
+            - { from: u, to: w }
+            - { from: x1, to: nx1 }
+            - { from: x2, to: nx2 }
+            - { from: x3, to: nx3 }
+            - { from: w, to: x1 }
+            - { from: w, to: nx1 }
+            - { from: w, to: x2 }
+            - { from: w, to: nx2 }
+            - { from: w, to: x3 }
+            - { from: w, to: nx3 }
+            - { from: x2, to: p1 }
+            - { from: nx3, to: q1 }
+            - { from: p1, to: q1 }
+            - { from: p1, to: e }
+            - { from: q1, to: e }
+            - { from: x1, to: p2 }
+            - { from: e, to: q2 }
+            - { from: p2, to: q2 }
+            - { from: p2, to: d }
+            - { from: q2, to: d }
+            - { from: d, to: u }
+    visualization: reduction-3sat-3col
+    related: [def-k-col, lemma-gadgety-3col, thm-3sat-npc, def-chromaticke-cislo, rem-dalsi-npc-problemy]
+    illustrations:
+      - title: Trojúhelník u, v, w dává barvám význam
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: u, x: 2, y: 9.5 }
+            - { id: v, x: 8, y: 9.5 }
+            - { id: w, x: 5, y: 6 }
+            - { id: x1, x: 0.5, y: 1.5, label: "x1" }
+            - { id: nx1, x: 3.5, y: 0.5, label: "¬x1" }
+            - { id: x2, x: 6.5, y: 0.5, label: "x2" }
+            - { id: nx2, x: 9.5, y: 1.5, label: "¬x2" }
+          edges:
+            - { from: u, to: v }
+            - { from: v, to: w }
+            - { from: u, to: w }
+            - { from: x1, to: nx1 }
+            - { from: x2, to: nx2 }
+            - { from: w, to: x1 }
+            - { from: w, to: nx1 }
+            - { from: w, to: x2 }
+            - { from: w, to: nx2 }
+        steps:
+          - caption: |
+              Trojúhelník $u, v, w$ má ve 3-obarvení tři různé barvy; přečíslováním lze předpokládat $u = 0$, $v = 1$, $w = 2$. Literálové uzly sousedí s $w$, mají tedy barvu 0 nebo 1 – pravdivostní hodnotu (zde $x_1 = 1$, $x_2 = 0$).
+            colors: { u: 0, v: 1, w: 2, x1: 1, nx1: 0, x2: 0, nx2: 1 }
+            labels: { u: "0", v: "1", w: "2", x1: "1", nx1: "0", x2: "0", nx2: "1" }
+          - caption: |
+              Barvu 2 literál mít nemůže – je to barva uzlu $w$, se kterým sousedí. Literály proto nabývají jen „logických“ hodnot 0 a 1.
+            colors: { u: 0, v: 1, w: 2, x1: 2, nx1: 0, x2: 0, nx2: 1 }
+            labels: { u: "0", v: "1", w: "2", x1: "2", nx1: "0", x2: "0", nx2: "1" }
+          - caption: |
+              Hrana $x_1 \bar x_1$ zakazuje stejnou barvu: právě jeden z uzlů $x_1$, $\bar x_1$ má barvu 1, takže $\bar x_1$ je opravdu negací $x_1$.
+            colors: { u: 0, v: 1, w: 2, x1: 1, nx1: 1, x2: 0, nx2: 1 }
+            labels: { u: "0", v: "1", w: "2", x1: "1", nx1: "1", x2: "0", nx2: "1" }
+          - caption: |
+              Jiné obarvení ($u = 2$, $v = 0$, $w = 1$) je jen přejmenování barev: záměnou $2 \to 0$, $0 \to 1$, $1 \to 2$ dostaneme zpět $u = 0$, $v = 1$, $w = 2$ i původní hodnoty literálů. Proto smíme barvy trojúhelníku zafixovat.
+            colors: { u: 2, v: 0, w: 1, x1: 0, nx1: 2, x2: 2, nx2: 0 }
+            labels: { u: "2", v: "0", w: "1", x1: "0", nx1: "2", x2: "2", nx2: "0" }
+      - title: Gadget G2 jako „OR“ klauzule
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 1 }
+            - { id: b, x: 1, y: 5 }
+            - { id: c, x: 1, y: 9 }
+            - { id: p1, x: 3.5, y: 5 }
+            - { id: q1, x: 3.5, y: 9 }
+            - { id: e, x: 5.5, y: 7 }
+            - { id: p2, x: 6, y: 1 }
+            - { id: q2, x: 7.5, y: 4.5 }
+            - { id: d, x: 9.5, y: 1.5 }
+            - { id: u, x: 9.5, y: 7 }
+          edges:
+            - { from: b, to: p1 }
+            - { from: c, to: q1 }
+            - { from: p1, to: q1 }
+            - { from: p1, to: e }
+            - { from: q1, to: e }
+            - { from: a, to: p2 }
+            - { from: e, to: q2 }
+            - { from: p2, to: q2 }
+            - { from: p2, to: d }
+            - { from: q2, to: d }
+            - { from: d, to: u }
+        steps:
+          - caption: |
+              Gadget $G_2$ pro klauzuli se vstupy $a, b, c$ (literály; díky sousedství s $w$ mají barvu 0 nebo 1) a výstupem $d$ připojeným k $u$ barvy 0. Pro $a = 1$, $b = c = 0$ vynutí první $G_1$ barvu $e = 0$, ale $a \ne e$, takže $d$ smí dostat barvu 1 – obarvení existuje.
+            colors: { a: 1, b: 0, c: 0, p1: 1, q1: 2, e: 0, p2: 0, q2: 2, d: 1, u: 0 }
+            labels: { a: "1", b: "0", c: "0", e: "0", d: "1", u: "0" }
+          - caption: |
+              Pravdivý je jen $c$: vstupy $b \ne c$, takže výstup $e$ prvního $G_1$ je volný – zvolíme $e = 1 \ne a$. Pak je volný i $d$ a opět $d = 1$. Stačí jediný pravdivý literál.
+            colors: { a: 0, b: 0, c: 1, p1: 2, q1: 0, e: 1, p2: 2, q2: 0, d: 1, u: 0 }
+            labels: { a: "0", b: "0", c: "1", e: "1", d: "1", u: "0" }
+          - caption: |
+              Všechny tři literály nepravdivé ($a = b = c = 0$): první $G_1$ vynutí $e = 0$, druhý pak $d = 0$. Jenže $d$ sousedí s $u$ barvy 0 – hrana $du$ je jednobarevná.
+            colors: { a: 0, b: 0, c: 0, p1: 1, q1: 2, e: 0, p2: 1, q2: 2, d: 0, u: 0 }
+            labels: { a: "0", b: "0", c: "0", e: "0", d: "0", u: "0" }
+          - caption: |
+              Ani $d = 1$ nepomůže: $p_2$ i $q_2$ se musí lišit od 0 (sousedí s $a$ a $e$) i od 1 (sousedí s $d$), obě by měly barvu 2. Nesplněná klauzule = gadget nejde obarvit; tak redukce kóduje „aspoň jeden literál je pravdivý“.
+            colors: { a: 0, b: 0, c: 0, p1: 1, q1: 2, e: 0, p2: 2, q2: 2, d: 1, u: 0 }
+            labels: { a: "0", b: "0", c: "0", e: "0", d: "1", u: "0" }
+    source: "skripta str. 71–72; přednáška 12, str. 4"
+
+  - id: rem-dalsi-npc-problemy
+    kind: remark
+    label: "Poznámka (za Větou 9.11)"
+    section: "9.8"
+    title: Další NP-úplné problémy
+    terms: [k-COL pro k > 3, HAM je NP-úplný, chromatický index, Vizingova věta, NP-úplné problémy]
+    statement: |
+      1. NP-úplnost problému $k$-obarvitelnosti pro $k > 3$ se dokáže analogicky, ale důkaz
+         je složitější (základní konstrukce je obdobná, ale grafy používané jako „stavební
+         kameny" jsou komplikovanější).
+      2. Mezi základní NP-úplné problémy patří také problém **HAM** (existence
+         hamiltonovské kružnice). Příslušnost do NP jsme ukázali
+         [nedeterministickým algoritmem](#alg-ham-nedeterministicky); NP-úplnost dokazovat
+         nebudeme.
+      3. Rozhodnutí, zda pro daný neorientovaný graf $G$ platí $\chi'(G) = \Delta(G)$ nebo
+         $\chi'(G) = \Delta(G) + 1$ (viz Vizingova věta – Věta 7.8), je také NP-úplný problém.
+    intuition: |
+      *Doplněno:* $k$-COL pro $k > 3$ lze také snadno redukovat z 3-COL – stačí přidat
+      $k - 3$ nových uzlů spojených navzájem i se všemi původními uzly. Bod 3 je zajímavý
+      tím, že odpověď je vždy jedna ze dvou sousedních hodnot (Vizing), a přesto je
+      rozhodnout, která z nich, NP-úplné (Holyer, 1981).
+    related: [thm-3col-npc, alg-ham-nedeterministicky, def-k-col, def-chromaticke-cislo]
+    source: "skripta str. 72"
+
+quiz:
+  - id: q-np-01
+    question: |
+      Problém $X$ je NP-úplný a pro problém $Y$ jsme ukázali $Y \triangleleft X$. Co z toho plyne?
+    options:
+      - $Y$ je NP-úplný.
+      - $Y \in \mathrm{NP}$, ale o NP-úplnosti $Y$ nevíme nic.
+      - $Y \notin \mathrm{P}$.
+      - $X \triangleleft Y$.
+    correct: 1
+    explanation: |
+      Podle Věty 9.4 (bod 2) z $Y \triangleleft X$ a $X \in \mathrm{NP}$ plyne $Y \in \mathrm{NP}$.
+      Redukce *na* těžký problém ale o obtížnosti $Y$ nic neříká – $Y$ může být i triviální.
+      Pro NP-úplnost $Y$ bychom potřebovali opačný směr $X \triangleleft Y$.
+    related: [thm-vlastnosti-redukce, def-np-uplny]
+  - id: q-np-02
+    question: |
+      Chceme dokázat, že nový problém $Z \in \mathrm{NP}$ je NP-úplný. Co stačí ukázat?
+    options:
+      - $Z \triangleleft \text{SAT}$
+      - $Z \triangleleft K$ pro nějaký $K \in \mathrm{NPC}$
+      - $K \triangleleft Z$ pro nějaký $K \in \mathrm{NPC}$
+      - že $Z$ nemá polynomiální algoritmus hrubou silou
+    correct: 2
+    explanation: |
+      Podle poznámky za Cookovou větou: je-li $Z \in \mathrm{NP}$, stačí redukovat **známý**
+      NP-úplný problém $K$ **na** $Z$. Každý $J \in \mathrm{NP}$ pak splňuje $J \triangleleft K \triangleleft Z$ a
+      z tranzitivity $J \triangleleft Z$. Redukce $Z \triangleleft \text{SAT}$ platí pro každý problém z NP
+      (Cookova věta), takže nic nedokazuje.
+    related: [rem-po-cookove-vete, def-np-uplny, thm-vlastnosti-redukce]
+  - id: q-np-03
+    question: |
+      Formule 2-SAT má implikační graf $\vec{G}_f$. Kdy je $f$ **nesplnitelná**?
+    options:
+      - Když $\vec{G}_f$ obsahuje orientovaný cyklus.
+      - Když existuje cesta z $x_i$ do $\bar x_i$ pro nějaké $i$.
+      - Když $\vec{G}_f$ není silně souvislý.
+      - Když nějaká kvazikomponenta obsahuje současně $x_i$ i $\bar x_i$.
+    correct: 3
+    explanation: |
+      Lemma 9.4. Cyklus sám o sobě nevadí (jen sjednotí hodnoty literálů). Cesta z $x_i$ do
+      $\bar x_i$ jen vynucuje $x_i = 0$ – spor nastane, až když vede i cesta zpět, tj. oba
+      literály jsou v téže kvazikomponentě.
+    related: [lemma-2sat-splnitelnost, alg-2sat]
+  - id: q-np-04
+    question: |
+      Jaká je časová složitost algoritmu pro 2-SAT přes implikační graf (formule s $n$
+      proměnnými a $m$ klauzulemi)?
+    options:
+      - $O(n + m)$
+      - $O(2^n \cdot m)$
+      - $O(n^3)$, protože je nutné spočítat tranzitivní uzávěr
+      - $O(m \log m)$
+    correct: 0
+    explanation: |
+      Graf má $2n$ uzlů a $2m$ hran; kvazikomponenty i acyklické očíslování kondenzace
+      najdeme lineárním průchodem do hloubky (Tarjan). Tranzitivní uzávěr není potřeba.
+    related: [alg-2sat, thm-2sat-p]
+  - id: q-np-05
+    question: |
+      Proč nelze algoritmus pro 2-SAT jednoduše zobecnit na 3-SAT?
+    options:
+      - Protože 3-SAT má více proměnných.
+      - Protože klauzuli $(a \vee b \vee c)$ nelze zapsat jako implikace mezi dvojicemi literálů – nepravdivost $a$ vynutí jen „$b$ nebo $c$", ne konkrétní literál.
+      - Protože u 3-SAT implikační graf není orientovaný.
+      - Lze – 3-SAT je také v P.
+    correct: 1
+    explanation: |
+      U 2-SAT z $\bar a$ plyne přímo $b$, takže rozhodnutí se šíří jednoznačně po hranách
+      grafu. U 3 literálů vzniká skutečná volba a 3-SAT je NP-úplný (Věta 9.7); polynomiální
+      algoritmus by znamenal $\mathrm{P} = \mathrm{NP}$.
+    related: [thm-2sat-p, thm-3sat-npc]
+  - id: q-np-06
+    question: |
+      Které tvrzení o třídě NP je **pravdivé**?
+    options:
+      - NP je třída problémů, které nejsou řešitelné v polynomiálním čase.
+      - Do NP patří i optimalizační úlohy, např. určení $\alpha(G)$.
+      - Každý problém z P patří do NP.
+      - Do NP patří každý rozhodnutelný problém.
+    correct: 2
+    explanation: |
+      Věta 9.3: $\mathrm{P} \subseteq \mathrm{NP}$. „N" znamená nedeterministický, ne
+      „nepolynomiální". NP obsahuje jen rozhodovací problémy a existují i rozhodnutelné
+      problémy mimo NP.
+    related: [thm-p-podmnozina-np, def-trida-np]
+  - id: q-np-07
+    question: |
+      Nedeterministický přijímací počítač $M$ **odmítá** slovo $w$. Kdy podle Definice 9.7
+      zpracuje $w$ v čase nejvýše $t$?
+    options:
+      - Když každý přípustný výpočet na $w$ skončí po nejvýše $t$ krocích.
+      - Když alespoň jeden přípustný výpočet skončí `REJECT` po nejvýše $t$ krocích.
+      - Když počet přípustných výpočtů je nejvýše $t$.
+      - Když nejkratší přípustný výpočet má nejvýše $t$ kroků.
+    correct: 0
+    explanation: |
+      Při odmítnutí musíme ověřit, že žádný výpočet nekončí `ACCEPT`, tj. počkat na všechny –
+      rozhoduje nejdelší z nich. Při přijetí stačí jeden přijímající výpočet délky nejvýše $t$.
+    related: [def-cas-nedeterministickeho-vypoctu, def-prijimani-nedeterministickym-pocitacem]
+  - id: q-np-08
+    question: |
+      Kdyby někdo našel polynomiální algoritmus pro 3-COL, co by z toho plynulo?
+    options:
+      - Jen to, že 3-COL nebyl NP-úplný.
+      - Že $\mathrm{P} = \mathrm{NP}$, a tedy i SAT, IND, HAM … by byly v P.
+      - Že $\mathrm{P} \ne \mathrm{NP}$.
+      - Pouze to, že 4-COL je v P.
+    correct: 1
+    explanation: |
+      3-COL je NP-úplný (Věta 9.11). Podle Věty 9.5 platí buď $\mathrm{P} = \mathrm{NP}$, nebo
+      $\mathrm{P} \cap \mathrm{NPC} = \emptyset$; polynomiální algoritmus pro NP-úplný problém
+      by tedy znamenal $\mathrm{P} = \mathrm{NP}$.
+    related: [thm-p-np-npc, thm-3col-npc]
+  - id: q-np-09
+    question: |
+      Proč je $\text{IND}_k$ (pevné $k$) v P, zatímco IND je NP-úplný?
+    options:
+      - Protože pro pevné $k$ stačí projít $\binom{n}{k} = O(n^k)$ podmnožin, což je polynom; je-li $k$ součástí vstupu (např. $k = n/2$), počet podmnožin je exponenciální.
+      - Protože IND$_k$ hledá množinu velikosti právě $k$, zatímco IND alespoň $k$.
+      - Protože IND$_k$ je definován jen pro bipartitní grafy.
+      - Protože pro pevné $k$ lze použít algoritmus pro 2-SAT.
+    correct: 0
+    explanation: |
+      Rozdíl „právě/alespoň" je nepodstatný (IND$_=$ je také NP-úplný). Podstatné je, zda je
+      $k$ konstanta: $O(n^k)$ je polynom jen pro pevné $k$, pro $k = n/2$ je
+      $\binom{n}{n/2} > (\sqrt{2})^n$.
+    related: [prop-ind-k-p, rem-hranice-ind-k, prop-ind-rovno-npc]
+  - id: q-np-10
+    question: |
+      V redukci 3-SAT ◁ IND má formule $m$ klauzulí. Jaký graf a jaké $k$ sestrojíme?
+    options:
+      - Uzel za každou proměnnou, hrany mezi proměnnými ve společné klauzuli, $k = n$.
+      - Uzel za každý výskyt literálu, trojúhelník pro každou klauzuli, hrany mezi komplementárními literály, $k = m$.
+      - Uzel za každou klauzuli, hrany mezi klauzulemi se společnou proměnnou, $k = m$.
+      - Uzel za každý literál $x_i, \bar x_i$, hrany $x_i \bar x_i$, $k = n$.
+    correct: 1
+    explanation: |
+      Trojúhelník zajistí, že z klauzule vybereme nejvýše jeden literál, hrany mezi $x$ a $\bar x$
+      zajistí bezespornost. Nezávislá množina velikosti $m$ = jeden pravdivý literál v každé klauzuli.
+    related: [thm-ind-npc, rem-redukce-sat-na-ind]
+  - id: q-np-11
+    question: |
+      Graf má $n = 10$ uzlů. Jakou instanci COV dostaneme redukcí z instance $(G, k = 4)$ problému IND?
+    options:
+      - $(G, 4)$
+      - $(\bar G, 4)$
+      - $(G, 6)$
+      - $(\bar G, 6)$
+    correct: 2
+    explanation: |
+      $M$ je nezávislá právě když $U(G) \setminus M$ je pokrytí. Nezávislá množina velikosti
+      alespoň 4 existuje právě když existuje pokrytí velikosti nejvýše $10 - 4 = 6$. Doplněk
+      grafu $\bar G$ se používá v redukci IND ◁ CLIQUE.
+    related: [thm-cov-npc, thm-clique-npc]
+  - id: q-np-12
+    question: |
+      V redukci 3-SAT ◁ 3-COL je uzel $d$ každého gadgetu $G_2$ spojen s uzlem $u$ (barva 0).
+      K čemu to slouží?
+    options:
+      - Aby literálové uzly měly barvy 0 nebo 1.
+      - Aby $x_i$ a $\bar x_i$ měly různé barvy.
+      - Aby graf byl souvislý.
+      - Aby $d$ nesměl mít barvu 0, což je možné právě když aspoň jeden literál klauzule má barvu 1 (je pravdivý).
+    correct: 3
+    explanation: |
+      Gadget $G_2$ vynutí $d = 0$, jsou-li všechny tři vstupy 0; jinak může být $d$ obarven 1.
+      Hrana $du$ tedy zakazuje nepravdivé klauzule. Barvy literálů 0/1 zajišťuje hrana k $w$
+      (barva 2), komplementaritu hrana $x_i \bar x_i$.
+    related: [thm-3col-npc, lemma-gadgety-3col]
+  - id: q-np-13
+    question: |
+      Proč nemůže být úloha „urči $\chi(G)$" NP-úplná?
+    options:
+      - Protože je řešitelná v polynomiálním čase.
+      - Protože to není rozhodovací problém, a tedy nepatří do NP; je pouze NP-těžká.
+      - Protože 3-COL je v P.
+      - Protože chromatické číslo lze vždy určit Vizingovou větou.
+    correct: 1
+    explanation: |
+      NP-úplné jsou podle Definice 9.12 jen jazyky z NP, tj. rozhodovací problémy.
+      Optimalizační verze NP-úplných problémů ($\alpha(G)$, $\omega(G)$, $\chi(G)$) jsou NP-těžké.
+    related: [def-np-tezky, rem-npc-poznamky]
+  - id: q-np-14
+    question: |
+      Co je hlavní myšlenkou důkazu Cookovy věty?
+    options:
+      - Každý problém z NP lze převést na 2-SAT.
+      - SAT lze polynomiálně redukovat na každý problém z NP.
+      - Výpočet libovolného nedeterministického polynomiálního přijímacího počítače na slově $w$ lze popsat formulí $f_w$ v KNF polynomiální délky, která je splnitelná právě když počítač $w$ přijme.
+      - Pro SAT existuje nedeterministický algoritmus, a proto je NP-úplný.
+    correct: 2
+    explanation: |
+      Proměnné $a_i, b_{it}, c_{ijt}, d_{jt}$ popisují konfigurace v každém kroku a klauzule
+      vynucují korektní průběh výpočtu končící `ACCEPT`. Tím je dokázáno $J \triangleleft \text{SAT}$
+      pro každý $J \in \mathrm{NP}$. Samotná příslušnost SAT do NP k NP-úplnosti nestačí.
+    related: [thm-cook]
+  - id: q-np-15
+    question: |
+      Klauzuli $(x_1 \vee x_2 \vee x_3 \vee x_4)$ převádíme v důkazu Věty 9.7 na klauzule délky 3.
+      Který výsledek je správný ($v$ je nová proměnná)?
+    options:
+      - $(x_1 \vee x_2 \vee v) \wedge (x_3 \vee x_4 \vee \bar v)$
+      - $(x_1 \vee x_2 \vee x_3) \wedge (x_2 \vee x_3 \vee x_4)$
+      - $(x_1 \vee x_2 \vee v) \wedge (x_3 \vee x_4 \vee v)$
+      - $(x_1 \vee x_2) \wedge (x_3 \vee x_4)$
+    correct: 0
+    explanation: |
+      Platí $u_1 \vee \dots \vee u_m = 1 \iff \exists v: (u_1 \vee \dots \vee u_{m-2} \vee v) \wedge (u_{m-1} \vee u_m \vee \bar v) = 1$.
+      Bez negace $v$ ve druhé klauzuli by šlo zvolit $v = 1$ a splnit obě klauzule i při
+      $x_1 = \dots = x_4 = 0$. Zbylé dvě možnosti (bez nové proměnné) mění množinu
+      splňujících přiřazení – např. $x_1 = 1$, ostatní 0 splňuje původní klauzuli, ale ne
+      $(x_2 \vee x_3 \vee x_4)$ ani $(x_3 \vee x_4)$.
+    related: [thm-3sat-npc, alg-sat-na-3sat]

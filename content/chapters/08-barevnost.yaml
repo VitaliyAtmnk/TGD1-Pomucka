@@ -1,0 +1,1962 @@
+id: barevnost
+number: 8
+title: Barevnost grafu
+source: "TGD1 skripta kap. 7 (str. 44–51); přednáška TGD1-09 (folie 1–4, část o barevnosti)"
+exam_questions: [13]
+summary: |
+  Barvení grafu přiřazuje uzlům barvy tak, aby sousední uzly měly různé barvy;
+  nejmenší potřebný počet barev je chromatické číslo $\chi(G)$. Modeluje úlohy
+  jako rozvrh hodin nebo přidělování kanálů vysílačům. Kapitola dává dolní
+  odhady ($\chi\ge\omega$, $\chi\ge n/\alpha$), horní odhady ($\chi\le\Delta+1$,
+  Brooksova věta), charakterizaci 2-obarvitelných (bipartitních) grafů,
+  NP-úplnost 3-obarvitelnosti, heuristiky (sekvenční barvení), větu o čtyřech
+  barvách a Heawoodův vzorec. Závěr patří hranovému barvení (Vizingova věta,
+  $\chi'(K_n)$) a rozkladům grafů na faktory.
+sections:
+  - number: "7.1"
+    title: k-obarvitelnost a chromatické číslo grafu
+  - number: "7.2"
+    title: Barvení map
+  - number: "7.3"
+    title: Hranové barvení a rozklady grafů
+items:
+  # ------------------------------------------------------------------ 7.1
+  - id: rem-motivace-barveni
+    kind: remark
+    section: "7.1"
+    title: "Motivace: rozvrh hodin a síť vysílačů"
+    terms: [rozvrh hodin, síť vysílačů, přidělování kanálů, aplikace barvení, scheduling, frequency assignment]
+    statement: |
+      **Rozvrh hodin.** Kurz obsahuje několik přednášek, z nichž některé nemohou
+      probíhat současně (stejný učitel, stejní studenti, stejná speciální
+      učebna…). Přednáškám přiřadíme uzly grafu, konfliktním dvojicím hrany.
+      Vyučovací hodiny přidělíme tak, aby sousední uzly nedostaly stejné číslo –
+      nejkratší rozvrh odpovídá nejmenšímu počtu barev.
+
+      **Síť vysílačů.** Uzly jsou TV vysílače, hrany spojují dvojice, které se
+      navzájem ruší. Hledáme minimální počet kanálů, aby rušící se vysílače
+      nevysílaly na stejném kanálu.
+    intuition: |
+      Barva = časový slot / kanál / zdroj. Hrana = „tyto dva nesmí dostat
+      totéž". Úloha nalézt co nejmenší počet barev je přesně výpočet
+      [chromatického čísla](#def-chromaticke-cislo).
+    examples:
+      - title: Rozvrh, který se nevejde do 3 hodin
+        body: |
+          Předměty A, B, C, třídy 1, 2, 3, učitelé U, V, W; předmět C vyžaduje
+          speciální učebnu. Výuky: 1A (U), 1B (U), 1C (W), 2A (V), 2B (U),
+          2C (V), 3C (V). Konflikty: stejný učitel (U: 1A, 1B, 2B; V: 2A, 2C, 3C),
+          stejná třída (1A, 1B, 1C; 2A, 2B, 2C) a stejná učebna (1C, 2C, 3C).
+
+          Zkusme 3 barvy: trojúhelník 1A, 1B, 1C dostane barvy $a,b,c$. Uzel 2B
+          sousedí s 1A, 1B, tedy má barvu $c$. Uzly 2A, 2C sousedí s 2B a spolu,
+          takže mají barvy $a,b$. Uzel 3C sousedí s 2A, 2C, musí mít barvu $c$ –
+          ale sousedí i s 1C, který má barvu $c$. Spor: **3 hodiny nestačí**,
+          potřebujeme 4 (obarvení na obrázku). Přitom graf neobsahuje $K_4$.
+        graph:
+          directed: false
+          nodes:
+            - { id: 1C, x: 5, y: 9.5, color: 3 }
+            - { id: 1B, x: 3, y: 8, color: 2 }
+            - { id: 1A, x: 7, y: 8, color: 1 }
+            - { id: 2B, x: 5, y: 6, color: 3 }
+            - { id: 2A, x: 3.5, y: 4, color: 1 }
+            - { id: 2C, x: 7, y: 4, color: 2 }
+            - { id: 3C, x: 1, y: 1, color: 4 }
+          edges: &rozvrh
+            - { from: 1A, to: 1B }
+            - { from: 1A, to: 1C }
+            - { from: 1B, to: 1C }
+            - { from: 1A, to: 2B }
+            - { from: 1B, to: 2B }
+            - { from: 2A, to: 2B }
+            - { from: 2B, to: 2C }
+            - { from: 2A, to: 2C }
+            - { from: 2A, to: 3C }
+            - { from: 2C, to: 3C }
+            - { from: 1C, to: 2C }
+            - { from: 1C, to: 3C }
+    related: [def-k-obarvitelnost, def-chromaticke-cislo, prop-7-1-klika-dolni-odhad]
+    illustrations:
+      - title: Proč se rozvrh nevejde do 3 hodin
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: 1C, x: 5, y: 9.5 }
+            - { id: 1B, x: 3, y: 8 }
+            - { id: 1A, x: 7, y: 8 }
+            - { id: 2B, x: 5, y: 6 }
+            - { id: 2A, x: 3.5, y: 4 }
+            - { id: 2C, x: 7, y: 4 }
+            - { id: 3C, x: 1, y: 1 }
+          edges: *rozvrh
+        steps:
+          - caption: |
+              Trojúhelník $1A, 1B, 1C$ (stejná třída) potřebuje tři různé hodiny. Ostatní výuky zatím nemají přidělený čas.
+            colors: { 1A: 0, 1B: 1, 1C: 2 }
+          - caption: |
+              $2B$ sousedí s $1A$ a $1B$, při třech barvách tedy **musí** mít barvu uzlu $1C$. $2A$ a $2C$ sousedí s $2B$ i spolu, dostanou zbylé dvě barvy. Zbývá $3C$.
+            colors: { 1A: 0, 1B: 1, 1C: 2, 2B: 2, 2A: 0, 2C: 1 }
+          - caption: |
+              $3C$ sousedí s $2A$ a $2C$, takže by musel dostat třetí barvu – tu ale má i soused $1C$ (stejná učebna). Tři hodiny **nestačí**.
+            colors: { 1A: 0, 1B: 1, 1C: 2, 2B: 2, 2A: 0, 2C: 1, 3C: 2 }
+          - caption: |
+              Se čtvrtou hodinou pro $3C$ je rozvrh v pořádku, $\chi = 4$ – a to přesto, že graf neobsahuje $K_4$.
+            colors: { 1A: 0, 1B: 1, 1C: 2, 2B: 2, 2A: 0, 2C: 1, 3C: 3 }
+    source: "skripta str. 44, příklady (rozvrh hodin, síť vysílačů)"
+    supplemented: false
+
+  - id: def-k-obarvitelnost
+    kind: definition
+    label: "Definice 7.1"
+    section: "7.1"
+    title: k-obarvitelný graf
+    terms: [k-obarvitelnost, k-obarvitelný graf, obarvení grafu, barvení grafu, dobré obarvení, k-colorable, proper coloring, vertex coloring, uzlové barvení]
+    statement: |
+      Graf $G$ se nazývá **$k$-obarvitelný**, jestliže každému jeho uzlu lze
+      přiřadit jednu z „barev" $1,\dots,k$ tak, že žádné dva sousední uzly
+      nemají stejnou barvu.
+    intuition: |
+      Barvy jsou jen jména (čísla); záleží pouze na tom, že konce každé hrany
+      dostanou různé barvy. Každý graf je $|U(G)|$-obarvitelný (každý uzel
+      jinou barvou) a $k$-obarvitelný graf je i $(k+1)$-obarvitelný. Graf se
+      smyčkou obarvit nelze – v TGD1 pracujeme s grafy bez smyček.
+
+      Množina uzlů jedné barvy (*monochromatická třída*) je vždy
+      [nezávislá množina](#def-nezavisla-mnozina).
+    related: [def-chromaticke-cislo, rem-barveni-a-nezavisle-mnoziny, def-nezavisla-mnozina]
+    illustrations:
+      - title: Dobré a špatné obarvení domečku
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: t, x: 5, y: 9.5 }
+            - { id: a, x: 2, y: 6.5 }
+            - { id: b, x: 8, y: 6.5 }
+            - { id: c, x: 2, y: 1 }
+            - { id: d, x: 8, y: 1 }
+          edges:
+            - { from: t, to: a }
+            - { from: t, to: b }
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              Konce každé hrany mají různé barvy – domeček je **3-obarvitelný**. Barvy jsou jen jména, záleží jen na tom, aby se sousedé lišili.
+            colors: { t: 0, a: 1, b: 2, c: 2, d: 1 }
+          - caption: |
+              Stačí jediná hrana se stejně barevnými konci ($c$ a $d$) a obarvení **není** dobré.
+            colors: { t: 0, a: 1, b: 2, c: 0, d: 0 }
+          - caption: |
+              Dvěma barvami to nepůjde: trojúhelník $t, a, b$ potřebuje tři různé barvy, takže některá hrana trojúhelníku má vždy shodné konce.
+            colors: { t: 0, a: 1, b: 0, c: 0, d: 1 }
+          - caption: |
+              Odebereme hranu $tb$. Trojúhelník zmizí, zůstane sudá kružnice $a, b, d, c$ s „přívěskem“ $t$ – a ta je **2-obarvitelná**.
+            remove: [[t, b]]
+            colors: { t: 1, a: 0, b: 1, c: 1, d: 0 }
+    source: "skripta str. 44, Definice 7.1 + poznámka; folie TGD1-09 s. 1"
+    supplemented: false
+
+  - id: def-chromaticke-cislo
+    kind: definition
+    label: "Definice 7.2"
+    section: "7.1"
+    title: Chromatické číslo (barevnost)
+    terms: [chromatické číslo, barevnost grafu, "χ(G)", chí, chromatic number]
+    statement: |
+      Nejmenší přirozené číslo $k$, pro které je graf $G$ $k$-obarvitelný, se
+      nazývá **chromatické číslo** (**barevnost**) grafu $G$ a značí se $\chi(G)$.
+    intuition: |
+      Abychom ukázali $\chi(G)=k$, potřebujeme dvě věci: **obarvení $k$ barvami**
+      (horní odhad) a **důkaz, že $k-1$ barev nestačí** (dolní odhad – např.
+      klika $K_k$, lichá kružnice nebo argument $n/\alpha$).
+    examples:
+      - title: Základní hodnoty
+        body: |
+          - Kružnice sudé délky: $\chi=2$ (barvy se střídají).
+          - Kružnice liché délky: $\chi=3$ (střídání se „nezavře").
+          - Strom (s aspoň jednou hranou): $\chi=2$ (barvíme podle parity
+            vzdálenosti od kořene).
+          - Úplný graf $K_n$: $\chi=n$ (každé dva uzly sousedí).
+          - Graf z [rozvrhu hodin](#rem-motivace-barveni): $\chi=4$.
+    related: [def-k-obarvitelnost, prop-7-1-klika-dolni-odhad, thm-7-1-delta-plus-jedna, thm-brooks, rem-odhady-chromatickeho-cisla]
+    illustrations:
+      - title: "$\\chi(C_5) = 3$: horní a dolní odhad"
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9.5, y: 6.2 }
+            - { id: c, x: 7.8, y: 1 }
+            - { id: d, x: 2.2, y: 1 }
+            - { id: e, x: 0.5, y: 6.2 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: a }
+        steps:
+          - caption: |
+              Každý uzel jinou barvou – to jde vždy, takže triviálně $\chi(C_5) \le 5$. Otázka je, kolik barev **stačí**.
+            colors: { a: 0, b: 1, c: 2, d: 3, e: 4 }
+          - caption: |
+              Se dvěma barvami se barvy podél kružnice musí střídat. Na liché délce se střídání „nezavře“ – $e$ a $a$ dostanou stejnou barvu. Proto $\chi \ge 3$.
+            colors: { a: 0, b: 1, c: 0, d: 1, e: 0 }
+          - caption: |
+              Stačí ale změnit barvu jedinému uzlu na třetí: tři barvy stačí, $\chi \le 3$. Spolu s dolním odhadem $\chi(C_5) = 3$.
+            colors: { a: 0, b: 1, c: 0, d: 1, e: 2 }
+          - caption: |
+              Přidáme tětivu $ac$: vznikne trojúhelník $a, b, c$ (další důvod pro $\chi \ge 3$), ale tři barvy po přebarvení stále stačí.
+            add: [[a, c]]
+            colors: { a: 0, b: 1, c: 2, d: 0, e: 1 }
+    source: "skripta str. 44–45, Definice 7.2 + příklady; folie TGD1-09 s. 1"
+    supplemented: false
+
+  - id: rem-barveni-a-nezavisle-mnoziny
+    kind: remark
+    section: "7.1"
+    title: Barvení = rozklad na nezávislé množiny
+    terms: [rozklad na nezávislé množiny, monochromatická třída, barevná třída, color class]
+    statement: |
+      Úloha nalézt chromatické číslo grafu je ekvivalentní s úlohou rozložit
+      množinu uzlů grafu na minimální počet nezávislých podmnožin.
+    intuition: |
+      Z obarvení dostaneme rozklad: třídy uzlů stejné barvy jsou nezávislé.
+      Z rozkladu na nezávislé množiny $A_1,\dots,A_k$ dostaneme obarvení:
+      uzlům z $A_i$ dáme barvu $i$. Tento pohled vede k
+      [Větě 7.5](#thm-7-5-chi-a-alfa) a k heuristice
+      [barvení nezávislými množinami](#alg-barveni-nezavislymi-mnozinami).
+    related: [def-chromaticke-cislo, def-nezavisla-mnozina, thm-7-5-chi-a-alfa]
+    source: "skripta str. 45 a 46, poznámky"
+    supplemented: false
+
+  - id: prop-7-1-klika-dolni-odhad
+    kind: proposition
+    label: "Tvrzení 7.1"
+    section: "7.1"
+    title: Úplný podgraf dává dolní odhad
+    terms: [dolní odhad chromatického čísla, klika a barevnost, chí větší než omega, clique lower bound]
+    statement: |
+      Nechť $G$ obsahuje jako podgraf úplný graf $K_k$. Pak $\chi(G) \ge k$.
+      Speciálně $\chi(G)\ge\omega(G)$.
+    intuition: |
+      Uzly úplného podgrafu se navzájem všechny „vidí", každý potřebuje
+      vlastní barvu. Pozor, nerovnost může být ostrá: graf z
+      [rozvrhu hodin](#rem-motivace-barveni) neobsahuje $K_4$, a přesto
+      $\chi=4$; ještě jednodušší je $C_5$ s $\omega=2$ a $\chi=3$. Existují
+      dokonce grafy bez trojúhelníků s libovolně velkým chromatickým číslem
+      (Mycielského konstrukce – doplněno).
+    proof: |
+      Každé dobré obarvení grafu $G$ zúžené na uzly podgrafu $K_k$ je dobrým
+      obarvením $K_k$. V $K_k$ jsou každé dva uzly sousední, takže všech $k$
+      uzlů musí mít různé barvy – obarvení tedy používá aspoň $k$ barev.
+      Proto $\chi(G)\ge\chi(K_k)=k$. Volbou největší kliky dostaneme
+      $\chi(G)\ge\omega(G)$. $\square$
+    proof_steps:
+      - 'Vezmeme libovolné dobré obarvení grafu G.'
+      - 'Jeho zúžení na uzly podgrafu K_k je dobrým obarvením K_k.'
+      - 'V K_k jsou každé dva uzly sousední, takže potřebují k různých barev.'
+      - 'Obarvení G tedy má aspoň k barev, tj. χ(G) ≥ k; pro největší kliku χ(G) ≥ ω(G).'
+    related: [def-klikovost, def-chromaticke-cislo, rem-odhady-chromatickeho-cisla]
+    illustrations:
+      - title: Klika $K_4$ vynutí čtyři barvy
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 8 }
+            - { id: b, x: 1, y: 2 }
+            - { id: c, x: 4.5, y: 8 }
+            - { id: d, x: 4.5, y: 2 }
+            - { id: e, x: 7, y: 5 }
+            - { id: f, x: 9.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Uzly $a, b, c, d$ tvoří $K_4$ – každé dva sousedí, takže každý potřebuje vlastní barvu. Zbytek grafu barvy jen „recykluje“: dobré obarvení čtyřmi barvami.
+            colors: { a: 0, b: 1, c: 2, d: 3, e: 0, f: 1 }
+          - caption: |
+              Se třemi barvami musí dva uzly kliky sdílet barvu (zde $a$ a $d$) – a ty spolu sousedí. Proto $\chi(G) \ge 4 = \omega(G)$.
+            colors: { a: 0, b: 1, c: 2, d: 0, e: 1, f: 0 }
+          - caption: |
+              Odebereme hranu $ad$: největší úplný podgraf je už jen $K_3$ a $a$, $d$ smějí mít stejnou barvu. Tři barvy teď stačí.
+            remove: [[a, d]]
+            colors: { a: 0, b: 1, c: 2, d: 0, e: 1, f: 0 }
+    source: "skripta str. 45, Tvrzení 7.1 s důkazem + poznámka; folie TGD1-09 s. 1"
+    supplemented: false
+
+  - id: thm-7-1-delta-plus-jedna
+    kind: theorem
+    label: "Věta 7.1"
+    section: "7.1"
+    title: "χ(G) ≤ Δ(G) + 1"
+    terms: [horní odhad chromatického čísla, maximální stupeň, delta plus jedna, upper bound chromatic number]
+    statement: |
+      Pro každý graf $G$ platí $\chi(G) \le \Delta(G) + 1$, kde $\Delta(G)$ je
+      maximální stupeň grafu $G$.
+    intuition: |
+      Uzel má nejvýše $\Delta$ sousedů, ti „zablokují" nejvýše $\Delta$ barev,
+      takže z $\Delta+1$ barev vždy jedna zbude. Důkaz je přímo
+      [sekvenční (hladové) barvení](#alg-sekvencni-barveni) zapsané indukcí.
+      Rovnost nastává pro úplné grafy a liché kružnice – a podle
+      [Brooksovy věty](#thm-brooks) jen tehdy.
+    proof: |
+      Indukcí podle $n=|U(G)|$.
+
+      1. Pro $n=1$ je $\Delta(G)=0$ a $\chi(G)=1$.
+      2. Nechť tvrzení platí pro všechny grafy s $n-1$ uzly a $G$ má $n$ uzlů.
+         Odstraněním libovolného uzlu $u$ vznikne graf $G'=G-u$ s $n-1$ uzly
+         a maximálním stupněm $\Delta(G')\le\Delta(G)$. Podle indukčního
+         předpokladu lze $G'$ obarvit $\Delta(G')+1\le\Delta(G)+1$ barvami.
+         Uzel $u$ má nejvýše $\Delta(G)$ sousedů, ti používají nejvýše
+         $\Delta(G)$ různých barev, takže mezi $\Delta(G)+1$ barvami je aspoň
+         jedna, kterou žádný soused $u$ nemá – tou obarvíme $u$. $\square$
+    proof_steps:
+      - 'Indukce podle počtu uzlů; pro n = 1 je Δ = 0 a χ = 1.'
+      - 'Odstraníme libovolný uzel u; graf G − u má maximální stupeň nejvýše Δ(G).'
+      - 'Podle indukčního předpokladu obarvíme G − u nejvýše Δ(G) + 1 barvami.'
+      - 'Sousedé u (nejvýše Δ(G)) používají nejvýše Δ(G) barev, takže jedna z Δ(G) + 1 barev zbývá a obarvíme jí u.'
+    related: [thm-brooks, alg-sekvencni-barveni, rem-odhady-chromatickeho-cisla]
+    illustrations:
+      - title: Hladově nikdy víc než $\Delta + 1$ barev
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 1, y: 1.5 }
+            - { id: c, x: 9, y: 1.5 }
+            - { id: d, x: 5, y: 6.5 }
+            - { id: e, x: 3.3, y: 3.3 }
+            - { id: f, x: 6.7, y: 3.3 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: d }
+            - { from: a, to: d }
+            - { from: b, to: e }
+            - { from: c, to: f }
+        steps:
+          - caption: |
+              Hranol má $\Delta = 3$, k dispozici jsou tedy barvy $0$–$3$. Barvíme v pořadí $a, b, c, d, e, f$ vždy nejnižší volnou barvou: vnější trojúhelník dostane $0, 1, 2$.
+            colors: { a: 0, b: 1, c: 2 }
+          - caption: |
+              $d$ má obarveného jen souseda $a$ (barva 0), dostane $1$. Uzel $e$ vidí barvy $1$ ($b$) a $1$ ($d$), dostane $0$. Zbývá $f$.
+            colors: { a: 0, b: 1, c: 2, d: 1, e: 0 }
+          - caption: |
+              Sousedé $f$ blokují barvy $2, 1, 0$. Má ale jen $\Delta = 3$ sousedy, takže čtvrtá barva $3$ zbude **vždy** – proto $\chi \le \Delta + 1$.
+            colors: { a: 0, b: 1, c: 2, d: 1, e: 0, f: 3 }
+          - caption: |
+              Odhad je jen horní mez: při pořadí $a, b, c, f, e, d$ vyjdou hladově 3 barvy, což je optimum (graf obsahuje trojúhelník).
+            colors: { a: 0, b: 1, c: 2, f: 0, e: 2, d: 1 }
+    source: "skripta str. 45, Věta 7.1 s důkazem; folie TGD1-09 s. 1"
+    supplemented: false
+
+  - id: thm-brooks
+    kind: theorem
+    label: "Věta 7.2 (Brooks)"
+    section: "7.1"
+    title: Brooksova věta
+    terms: [Brooks, Brooksova věta, Brooks theorem, chí menší nebo rovno delta]
+    statement: |
+      Pro každý graf $G$ platí $\chi(G) \le \Delta(G)$ až na tyto dvě výjimky:
+
+      I. $G$ má komponentu $K_{\Delta(G)+1}$,
+
+      II. $\Delta(G)=2$ a $G$ má za komponentu kružnici liché délky.
+    intuition: |
+      Odhad $\Delta+1$ z [Věty 7.1](#thm-7-1-delta-plus-jedna) je skoro vždy
+      o jedna horší, než je nutné. Barva navíc je potřeba jen tehdy, když je
+      graf „zamčený" úplně – úplný graf, kde všichni sousedé každého uzlu
+      sousedí i mezi sebou, nebo lichá kružnice. Ve všech ostatních případech
+      lze uzly uspořádat tak, aby každý (kromě posledního) měl při barvení
+      volný aspoň jeden „později barvený" soused, a poslednímu uzlu se dvě
+      barvy sousedů „slijí" do jedné.
+    proof: |
+      *Důkaz ve skriptech není, doplněno – uvádíme jen myšlenku (podle
+      Lovásze); úplný důkaz přesahuje rámec předmětu.*
+
+      Komponenty barvíme zvlášť, stačí tedy uvažovat souvislý graf $G$, který
+      není úplný ani lichá kružnice, a ukázat $\chi(G)\le\Delta$.
+      Pro $\Delta\le2$ je $G$ cesta nebo sudá kružnice, stačí 2 barvy.
+      Nechť $\Delta\ge3$.
+
+      - *$G$ není $\Delta$-regulární.* Zvolíme uzel $r$ se stupněm $<\Delta$
+        a uzly uspořádáme podle klesající vzdálenosti od $r$ ($r$ poslední).
+        Při sekvenčním barvení má každý uzel $x\ne r$ souseda bližšího
+        k $r$, který ještě obarven není, takže barvy blokuje nejvýše
+        $\Delta-1$ sousedů; $r$ má méně než $\Delta$ sousedů. Stačí $\Delta$ barev.
+      - *$G$ je $\Delta$-regulární a má artikulaci.* Každý blok obsahuje
+        artikulaci se stupněm (v bloku) menším než $\Delta$, takže ho podle
+        předchozího případu obarvíme $\Delta$ barvami; barvy v blocích pak
+        permutujeme tak, aby souhlasily v artikulacích.
+      - *$G$ je $\Delta$-regulární a 2-souvislý.* Protože $G$ není úplný, lze
+        najít uzel $v$ se dvěma nesousedními sousedy $a,b$ tak, že $G-\{a,b\}$
+        je souvislý. Uzly $a,b$ obarvíme barvou 1, zbytek uspořádáme podle
+        klesající vzdálenosti od $v$ v $G-\{a,b\}$ ($v$ poslední) a barvíme
+        sekvenčně. Každý uzel $\ne v$ má později barveného souseda; uzel $v$
+        má $\Delta$ sousedů, ale $a,b$ mají stejnou barvu, takže sousedé
+        používají nejvýše $\Delta-1$ barev a pro $v$ barva zbude. $\square$
+    proof_steps:
+      - 'Stačí uvažovat souvislý graf, který není úplný ani lichá kružnice; případ Δ ≤ 2 (cesty, sudé kružnice) je triviální.'
+      - 'Není-li G regulární, uspořádáme uzly podle klesající vzdálenosti od uzlu r stupně < Δ a barvíme sekvenčně – každý uzel má neobarveného souseda, stačí Δ barev.'
+      - 'Má-li regulární G artikulaci, obarvíme bloky zvlášť předchozím postupem a sladíme barvy v artikulacích.'
+      - 'Je-li G regulární a 2-souvislý, najdeme uzel v s nesousedními sousedy a, b, pro něž je G − {a, b} souvislý, a obarvíme a, b stejnou barvou.'
+      - 'Zbytek barvíme sekvenčně podle klesající vzdálenosti od v; uzlu v se díky shodné barvě a, b uvolní jedna z Δ barev.'
+    examples:
+      - title: Kdy Brooks pomůže
+        body: |
+          - Petersenův graf: $\Delta=3$, není úplný ani lichá kružnice, takže
+            $\chi\le3$ (a protože obsahuje lichou kružnici $C_5$, je $\chi=3$).
+          - $K_4$: $\Delta=3$, ale $\chi=4$ – výjimka I.
+          - $C_7$: $\Delta=2$, $\chi=3$ – výjimka II.
+    related: [thm-7-1-delta-plus-jedna, cor-7-1-brooks-souvisly, alg-sekvencni-barveni]
+    illustrations:
+      - title: "Výjimka I: úplný graf"
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 9 }
+            - { id: b, x: 9, y: 9 }
+            - { id: c, x: 9, y: 1 }
+            - { id: d, x: 1, y: 1 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              $K_4$ má $\Delta = 3$, ale potřebuje 4 barvy: $\chi = \Delta + 1$. To je výjimka I Brooksovy věty.
+            colors: { a: 0, b: 1, c: 2, d: 3 }
+          - caption: |
+              Se třemi barvami by dva uzly sdílely barvu – v úplném grafu ale sousedí každé dva.
+            colors: { a: 0, b: 1, c: 2, d: 0 }
+          - caption: |
+              Odebereme hranu $ad$. Graf už není úplný, $\Delta$ zůstává $3$ (uzly $b$, $c$) a podle Brookse stačí $\Delta = 3$ barvy – $a$ a $d$ smějí sdílet barvu.
+            remove: [[a, d]]
+            colors: { a: 0, b: 1, c: 2, d: 0 }
+      - title: "Výjimka II: lichá kružnice"
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 4.5, y: 9 }
+            - { id: b, x: 8.3, y: 6.2 }
+            - { id: c, x: 6.9, y: 1.5 }
+            - { id: d, x: 2.1, y: 1.5 }
+            - { id: e, x: 0.7, y: 6.2 }
+            - { id: f, x: 9.5, y: 9.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: a }
+        steps:
+          - caption: |
+              Komponenta $C_5$ má $\Delta = 2$, ale dvě barvy nestačí – střídání se na liché kružnici nezavře.
+            colors: { a: 0, b: 1, c: 0, d: 1, e: 0, f: 0 }
+          - caption: |
+              Je potřeba třetí barva, $\chi = 3 = \Delta + 1$. To je výjimka II.
+            colors: { a: 0, b: 1, c: 0, d: 1, e: 2, f: 0 }
+          - caption: |
+              Připojíme uzel $f$ hranou k $a$: $\Delta = 3$ a graf už není kružnice ani úplný. Brooks dává $\chi \le 3$ – a tři barvy opravdu stačí. Výjimka je „křehká“.
+            add: [[f, a]]
+            colors: { a: 0, b: 1, c: 0, d: 1, e: 2, f: 1 }
+    source: "skripta str. 45, Věta 7.2 (bez důkazu); folie TGD1-09 s. 2"
+    supplemented: false
+
+  - id: cor-7-1-brooks-souvisly
+    kind: corollary
+    label: "Důsledek 7.1"
+    section: "7.1"
+    title: Brooks pro souvislé grafy
+    terms: [důsledek Brooksovy věty, souvislý graf chromatické číslo]
+    statement: |
+      Je-li $G$ souvislý graf, který není úplným grafem ani kružnicí liché
+      délky, pak $\chi(G) \le \Delta(G)$.
+    intuition: |
+      Pro souvislý graf jsou obě výjimky Brooksovy věty totéž co „$G$ je úplný"
+      nebo „$G$ je lichá kružnice". Odhad $\chi\le\Delta$ ale může být hodně
+      hrubý: krychle $Q_3$ má $\Delta=3$ a $\chi=2$. Jindy je těsný –
+      ve skriptech je příklad grafu s $\chi=\Delta=4$.
+    proof: |
+      *Důkaz ve skriptech není, doplněno.* Podle [Brooksovy věty](#thm-brooks)
+      platí $\chi(G)\le\Delta(G)$, pokud nenastane některá výjimka. Graf $G$ je
+      souvislý, má tedy jedinou komponentu – sebe sama. Výjimka I by znamenala
+      $G=K_{\Delta(G)+1}$, tj. $G$ je úplný; výjimka II by znamenala, že $G$
+      je kružnice liché délky. Obojí je předpokladem vyloučeno. $\square$
+    proof_steps:
+      - 'Souvislý graf má jedinou komponentu, a to sebe sama.'
+      - 'Výjimka I Brooksovy věty by znamenala, že G je úplný graf K_{Δ+1}.'
+      - 'Výjimka II by znamenala, že G je lichá kružnice.'
+      - 'Obě výjimky jsou vyloučeny předpokladem, proto χ(G) ≤ Δ(G).'
+    examples:
+      - title: Krychle $Q_3$ – χ = 2, Δ = 3
+        body: |
+          Krychle je bipartitní (obarvení na obrázku), takže $\chi=2$, ačkoli
+          $\Delta=3$. Důsledek 7.1 dává jen $\chi\le3$.
+        graph:
+          directed: false
+          nodes: &krychle-uzly
+            - { id: o1, x: 1, y: 9, color: 1 }
+            - { id: o2, x: 9, y: 9, color: 2 }
+            - { id: o3, x: 9, y: 1, color: 1 }
+            - { id: o4, x: 1, y: 1, color: 2 }
+            - { id: i1, x: 3.5, y: 6.5, color: 2 }
+            - { id: i2, x: 6.5, y: 6.5, color: 1 }
+            - { id: i3, x: 6.5, y: 3.5, color: 2 }
+            - { id: i4, x: 3.5, y: 3.5, color: 1 }
+          edges: &krychle-hrany
+            - { from: o1, to: o2 }
+            - { from: o2, to: o3 }
+            - { from: o3, to: o4 }
+            - { from: o4, to: o1 }
+            - { from: i1, to: i2 }
+            - { from: i2, to: i3 }
+            - { from: i3, to: i4 }
+            - { from: i4, to: i1 }
+            - { from: o1, to: i1 }
+            - { from: o2, to: i2 }
+            - { from: o3, to: i3 }
+            - { from: o4, to: i4 }
+    related: [thm-brooks]
+    illustrations:
+      - title: Krychle – odhad $\chi \le \Delta$ může být hrubý
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: o1, x: 1, y: 9 }
+            - { id: o2, x: 9, y: 9 }
+            - { id: o3, x: 9, y: 1 }
+            - { id: o4, x: 1, y: 1 }
+            - { id: i1, x: 3.5, y: 6.5 }
+            - { id: i2, x: 6.5, y: 6.5 }
+            - { id: i3, x: 6.5, y: 3.5 }
+            - { id: i4, x: 3.5, y: 3.5 }
+          edges: *krychle-hrany
+        steps:
+          - caption: |
+              Krychle $Q_3$ je souvislá, není úplná ani lichá kružnice, takže Důsledek 7.1 dává $\chi \le \Delta = 3$. Ve skutečnosti stačí 2 barvy.
+            colors: { o1: 0, o2: 1, o3: 0, o4: 1, i1: 1, i2: 0, i3: 1, i4: 0 }
+          - caption: |
+              Přidáme úhlopříčku $o_1 o_3$ – její konce mají stejnou barvu a vznikl trojúhelník $o_1, o_2, o_3$. Dvě barvy už nestačí.
+            add: [[o1, o3]]
+            colors: { o1: 0, o2: 1, o3: 0, o4: 1, i1: 1, i2: 0, i3: 1, i4: 0 }
+          - caption: |
+              Přebarvíme $o_3$ třetí barvou. Teď je $\Delta = 4$ a $\chi = 3 \le \Delta$ – Brooksův odhad platí, jen není těsný.
+            colors: { o1: 0, o2: 1, o3: 2, o4: 1, i1: 1, i2: 0, i3: 1, i4: 0 }
+    source: "skripta str. 45, Důsledek 7.1 + příklad; folie TGD1-09 s. 2"
+    supplemented: false
+
+  - id: thm-7-3-bipartitni-grafy
+    kind: theorem
+    label: "Věta 7.3"
+    section: "7.1"
+    title: Grafy barevnosti 2 (bipartitní grafy)
+    terms: [bipartitní graf, bigraf, 2-obarvitelnost, dvoubarevný graf, kružnice liché délky, Königova věta o bipartitních grafech, bipartite graph]
+    statement: |
+      Nechť $G$ je graf. Pak $\chi(G) = 2$ právě když $H(G) \ne \emptyset$
+      a $G$ neobsahuje kružnici liché délky.
+    intuition: |
+      Triviální případ: $\chi(G)=1 \iff H(G)=\emptyset$. Grafy barevnosti 2
+      tvoří bohatou a důležitou třídu. Lichá kružnice je **jediná překážka**
+      dvoubarevnosti: dvě barvy se podél každé cesty musí střídat, takže barva
+      uzlu je dána paritou vzdálenosti – a ta je konzistentní právě tehdy,
+      když se nikde „nezavře" lichý cyklus. Důkaz je zároveň
+      [lineárním algoritmem](#alg-test-bipartitnosti).
+    proof: |
+      **($\Rightarrow$)** Je-li $\chi(G)=2$, má $G$ hranu (jinak $\chi=1$).
+      Kdyby obsahoval kružnici liché délky $v_1v_2\dots v_{2k+1}$, barvy by se
+      na ní při dvou barvách musely střídat, takže $v_1$ a $v_{2k+1}$ by měly
+      stejnou barvu, přestože sousedí – spor.
+
+      **($\Leftarrow$)** Nechť $G$ má hranu a nemá lichou kružnici. V každé
+      komponentě zvolme kořen $r$ a uzlu $v$ dejme barvu podle parity
+      vzdálenosti $d(r,v)$ (sudá → 1, lichá → 2). Pro hranu $\{u,v\}$ ve
+      stejné komponentě je $|d(r,u)-d(r,v)|\le1$. Kdyby $d(r,u)=d(r,v)=d$,
+      daly by nejkratší cesty z $r$ do $u$ a do $v$ spolu s hranou $uv$
+      uzavřený sled liché délky $2d+1$, a ten obsahuje kružnici liché délky –
+      spor. Konce každé hrany tedy mají různou paritu, obarvení je dobré
+      a používá 2 barvy; protože $G$ má hranu, je $\chi(G)=2$.
+
+      (Skripta postupují jinak – indukcí podle počtu kružnic: odebráním hrany
+      $\{x,y\}$ ze sudé kružnice $C$ dostaneme 2-obarvitelný graf a $x,y$ jsou
+      spojeny cestou $C-xy$ liché délky, takže mají různé barvy a hranu lze
+      vrátit.) $\square$
+    proof_steps:
+      - '(⇒) Při dvou barvách se barvy podél kružnice střídají, takže lichá kružnice by měla dva sousední uzly stejné barvy; navíc graf s χ = 2 má hranu.'
+      - '(⇐) V každé komponentě zvolíme kořen r a uzel v obarvíme podle parity vzdálenosti d(r, v).'
+      - 'Pro hranu {u, v} je |d(r, u) − d(r, v)| ≤ 1.'
+      - 'Kdyby d(r, u) = d(r, v), nejkratší cesty z r a hrana uv by tvořily uzavřený sled liché délky, který obsahuje lichou kružnici – spor.'
+      - 'Konce každé hrany mají tedy různé barvy, graf je 2-obarvitelný, a protože má hranu, χ(G) = 2.'
+    related: [rem-bipartitni-grafy, alg-test-bipartitnosti, thm-7-4-3col, prop-lichy-cyklus-nema-jadro]
+    illustrations:
+      - title: Jedna tětiva rozhodne o bipartitnosti
+        for: statement
+        property: bipartite
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9, y: 7.25 }
+            - { id: c, x: 9, y: 2.75 }
+            - { id: d, x: 5, y: 0.5 }
+            - { id: e, x: 1, y: 2.75 }
+            - { id: f, x: 1, y: 7.25 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: a }
+        steps:
+          - caption: |
+              Sudá kružnice $C_6$: barvy se kolem dokola pravidelně střídají a vyjde to – graf je bipartitní, $\chi = 2$.
+          - caption: |
+              Tětiva $ac$ spojí dva uzly **stejné** barvy (vzdálenost 2) a uzavře lichou kružnici $a, b, c$. Dvě barvy už nestačí.
+            add: [[a, c]]
+          - caption: |
+              Místo ní přidáme tětivu $ad$ mezi uzly **opačných** barev (vzdálenost 3). Vzniklé kružnice $a, b, c, d$ a $a, d, e, f$ jsou sudé, graf zůstává bipartitní.
+            remove: [[a, c]]
+            add: [[a, d]]
+          - caption: |
+              Tětiva $ce$ opět spojí uzly stejné barvy (vzdálenost 2) a vzniknou liché kružnice, např. $c, d, e$. Lichá kružnice je **jediná** překážka dvoubarevnosti.
+            add: [[c, e]]
+      - title: Barva = parita vzdálenosti od kořene
+        for: proof
+        property: bipartite
+        graph:
+          directed: false
+          nodes:
+            - { id: r, x: 5, y: 9.5 }
+            - { id: a, x: 2.5, y: 6.5 }
+            - { id: b, x: 7.5, y: 6.5 }
+            - { id: c, x: 2.5, y: 3.5 }
+            - { id: d, x: 7.5, y: 3.5 }
+            - { id: e, x: 2.5, y: 0.5 }
+          edges:
+            - { from: r, to: a }
+            - { from: r, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: e }
+        steps:
+          - caption: |
+              Strom: uzlu dáme barvu podle parity vzdálenosti od kořene $r$. Každá hrana spojuje sousední „vrstvy“, takže její konce mají různou paritu.
+            labels: { r: "d=0", a: "d=1", b: "d=1", c: "d=2", d: "d=2", e: "d=3" }
+          - caption: |
+              Hrana $ad$ spojuje vrstvy 1 a 2 – parity se liší, obarvení zůstává dobré. Vznikla jen sudá kružnice $r, a, d, b$.
+            add: [[a, d]]
+            labels: { r: "d=0", a: "d=1", b: "d=1", c: "d=2", d: "d=2", e: "d=3" }
+          - caption: |
+              Místo ní hrana $cd$ **uvnitř** vrstvy 2: nejkratší cesty $r, a, c$ a $r, b, d$ spolu s $cd$ uzavřou kružnici liché délky $2 \cdot 2 + 1 = 5$. Přesně tento případ důkaz vylučuje.
+            remove: [[a, d]]
+            add: [[c, d]]
+            labels: { r: "d=0", a: "d=1", b: "d=1", c: "d=2", d: "d=2", e: "d=3" }
+    source: "skripta str. 46, Věta 7.3 s důkazem indukcí (zde hlavní důkaz přes vzdálenosti); folie TGD1-09 s. 2"
+    supplemented: false
+
+  - id: rem-bipartitni-grafy
+    kind: remark
+    section: "7.1"
+    title: Bipartitní grafy
+    terms: [bipartitní graf, úplný bipartitní graf, "K_{m,n}", partity, bipartite]
+    statement: |
+      Každý graf barevnosti 2 je podgrafem některého úplného bipartitního
+      grafu $K_{m,n}$ (každou monochromatickou třídu uzlů grafu $G$ umístíme do
+      jedné partity $K_{m,n}$). Proto se těmto grafům říká **bipartitní**.
+      O tom, zda je daný graf bipartitní, lze rozhodnout v polynomiálním čase
+      (například hladovým algoritmem).
+    intuition: |
+      Pro $\chi(G)\ge3$ je situace podstatně horší: už rozhodnout, zda je graf
+      3-obarvitelný, je NP-úplné ([Věta 7.4](#thm-7-4-3col)). Mezi „2" a „3"
+      tedy leží hranice mezi snadným a (pravděpodobně) těžkým.
+    related: [thm-7-3-bipartitni-grafy, alg-test-bipartitnosti, thm-7-4-3col]
+    source: "skripta str. 46, poznámka za Větou 7.3"
+    supplemented: false
+
+  - id: alg-test-bipartitnosti
+    kind: algorithm
+    section: "7.1"
+    title: Test bipartitnosti (2-obarvení prohledáváním do šířky)
+    terms: [test bipartitnosti, 2-obarvení, BFS barvení, rozpoznání bipartitního grafu, bipartiteness test, 2-COL]
+    statement: |
+      Vstup: graf $G$. Výstup: obarvení dvěma barvami, nebo lichá kružnice
+      dokazující, že $G$ bipartitní není.
+    pseudocode: |
+      1. Všechny uzly označ jako neobarvené.
+      2. Pro každý neobarvený uzel $r$: obarvi $r$ barvou 1 a vlož ho do fronty.
+      3. Dokud fronta není prázdná: vyjmi $u$; pro každého souseda $v$ uzlu $u$:
+         - je-li $v$ neobarvený, dej mu opačnou barvu než $u$ a vlož ho do fronty;
+         - má-li $v$ stejnou barvu jako $u$, **skonči**: $G$ není bipartitní
+           (cesty stromu BFS do $u$ a $v$ s hranou $uv$ uzavírají lichou kružnici).
+      4. Vrať obarvení – $G$ je bipartitní.
+    complexity: "$O(n+m)$"
+    intuition: |
+      Jde o algoritmickou podobu důkazu [Věty 7.3](#thm-7-3-bipartitni-grafy):
+      barva = parita vzdálenosti od kořene. Ve 2-obarvení není žádná volba
+      (po obarvení kořene je vše vynucené), proto hladový postup nikdy nemusí
+      couvat – na rozdíl od 3 barev. Každý uzel a hrana se zpracují $O(1)$-krát.
+    examples:
+      - title: Krychle je bipartitní, $C_5$ ne
+        body: |
+          Na krychli $Q_3$ algoritmus z uzlu $o_1$ obarví sousedy $o_2,o_4,i_1$
+          barvou 2, jejich sousedy barvou 1 atd. a nenarazí na konflikt (obrázek).
+          Na $C_5$ s uzly $1,\dots,5$ z kořene 1: $2,5$ dostanou barvu 2,
+          $3,4$ barvu 1 – hrana $\{3,4\}$ spojuje dvě jedničky, nalezená lichá
+          kružnice je $1\,2\,3\,4\,5$.
+        graph:
+          directed: false
+          nodes: *krychle-uzly
+          edges: *krychle-hrany
+    visualization: coloring
+    related: [thm-7-3-bipartitni-grafy, rem-bipartitni-grafy]
+    source: "skripta str. 46 zmiňuje polynomiální rozhodnutí „hladovým algoritmem“; pseudokód doplněn"
+    supplemented: true
+
+  - id: thm-7-4-3col
+    kind: theorem
+    label: "Věta 7.4"
+    section: "7.1"
+    title: 3-obarvitelnost je NP-úplná
+    terms: [3-COL, 3-obarvitelnost, NP-úplnost barvení, three-colorability NP-complete, k-COL]
+    statement: |
+      Úloha „určete, zda je daný graf $G$ 3-obarvitelný" je NP-úplná.
+    intuition: |
+      Zatímco 2-obarvitelnost rozhodneme v lineárním čase, pro 3 barvy už
+      nejsou známy polynomiální algoritmy. Odtud plyne, že i výpočet $\chi(G)$
+      je NP-těžký (kdo umí $\chi$, umí rozhodnout $\chi\le3$). Prakticky
+      používáme heuristiky ([sekvenční barvení](#alg-sekvencni-barveni))
+      nebo exponenciální přesné metody ([backtracking](#alg-barveni-backtracking)).
+    proof: |
+      Větu dokážeme v kapitole 9 – viz [NP-úplnost 3-COL](#thm-3col-npc)
+      (redukce z problému 3-SAT). $\square$
+    proof_steps:
+      - '3-COL patří do NP: navržené obarvení třemi barvami ověříme v polynomiálním čase kontrolou všech hran.'
+      - 'Polynomiálně redukujeme na 3-COL známý NP-úplný problém 3-SAT.'
+      - 'Konstrukce: trojúhelník „pravda–nepravda–báze", pro každou proměnnou dvojice uzlů x, ¬x a pro každou klauzuli gadget, který je 3-obarvitelný právě když je některý literál pravdivý.'
+      - 'Formule je splnitelná právě když je sestrojený graf 3-obarvitelný; podrobnosti viz kapitola 9.'
+    related: [thm-3col-npc, thm-7-3-bipartitni-grafy, rem-3col-rovinne-grafy]
+    source: "skripta str. 46, Věta 7.4 (důkaz v kap. 9); folie TGD1-09 s. 2"
+    supplemented: false
+
+  - id: rem-3col-rovinne-grafy
+    kind: remark
+    section: "7.1"
+    title: 3-obarvitelnost rovinných grafů
+    terms: [3-COL rovinné grafy, planar 3-coloring, NP-úplnost rovinné grafy]
+    statement: |
+      Úloha 3-obarvitelnosti je NP-úplná dokonce i pro rovinné grafy, a dokonce
+      i pro rovinné grafy s $\Delta(G)\le4$ (které jsou 4-obarvitelné podle
+      Brooksovy věty).
+    intuition: |
+      Paradox: víme, že rovinné grafy jsou vždy 4-obarvitelné
+      ([věta o čtyřech barvách](#thm-ctyri-barvy)), takže otázka „stačí 4?"
+      má triviální odpověď ANO – ale otázka „stačí 3?" je i pro ně těžká.
+    related: [thm-7-4-3col, thm-ctyri-barvy, thm-brooks, thm-3col-npc]
+    source: "skripta str. 46, poznámka za Větou 7.4"
+    supplemented: false
+
+  - id: thm-7-5-chi-a-alfa
+    kind: theorem
+    label: "Věta 7.5"
+    section: "7.1"
+    title: Chromatické číslo a nezávislost
+    terms: [chromatické číslo a nezávislost, chí krát alfa, odhad n lomeno alfa, chi alpha inequality]
+    statement: |
+      Pro graf $G$ s chromatickým číslem $\chi(G)$ a nezávislostí $\alpha(G)$ platí:
+
+      1. $\chi(G)\,\alpha(G) \ge |U(G)|$,
+      2. $\chi(G) + \alpha(G) \le |U(G)| + 1$.
+    intuition: |
+      Barevné třídy jsou nezávislé, každá má tedy nejvýše $\alpha$ uzlů – proto
+      potřebujeme aspoň $n/\alpha$ tříd (dolní odhad $\chi\ge\lceil n/\alpha\rceil$).
+      Naopak velká nezávislá množina „ušetří" barvy: dáme jí jednu barvu
+      a zbytek obarvíme jakkoli (horní odhad $\chi\le n-\alpha+1$).
+    proof: |
+      1. V optimálním obarvení grafu $G$ pomocí $\chi(G)$ barev je každá
+         monochromatická třída nezávislou množinou, má tedy nejvýše
+         $\alpha(G)$ prvků. Třídy pokrývají všech $|U(G)|$ uzlů, proto
+         $|U(G)|\le\chi(G)\,\alpha(G)$.
+      2. Největší nezávislou množinu obarvíme barvou 1 a každý ze zbylých
+         $|U(G)|-\alpha(G)$ uzlů vlastní novou barvou. Jde o dobré obarvení
+         s $1+|U(G)|-\alpha(G)$ barvami; optimální obarvení nemůže mít víc,
+         tedy $\chi(G)\le|U(G)|-\alpha(G)+1$. $\square$
+    proof_steps:
+      - 'V optimálním obarvení je každá barevná třída nezávislá, takže má nejvýše α(G) uzlů.'
+      - 'χ(G) tříd pokrývá všech |U(G)| uzlů, proto χ(G)·α(G) ≥ |U(G)|.'
+      - 'Největší nezávislou množinu obarvíme jednou barvou a ostatní uzly každý jinou novou barvou.'
+      - 'Vznikne dobré obarvení s |U(G)| − α(G) + 1 barvami, proto χ(G) + α(G) ≤ |U(G)| + 1.'
+    examples:
+      - title: Použití odhadu
+        body: |
+          Graf má 10 uzlů a $\alpha(G)=3$. Pak $\chi(G)\ge\lceil 10/3\rceil=4$
+          a $\chi(G)\le 10-3+1=8$. Pro $C_5$: $n=5$, $\alpha=2$ dává
+          $\chi\ge\lceil5/2\rceil=3$ – tedy přesně $\chi(C_5)=3$, ačkoli
+          $\omega(C_5)=2$.
+    related: [rem-barveni-a-nezavisle-mnoziny, def-nezavislost-grafu, alg-barveni-nezavislymi-mnozinami, rem-odhady-chromatickeho-cisla]
+    illustrations:
+      - title: Barevné třídy jsou nezávislé množiny
+        for: proof
+        property: independent-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9.5, y: 6.2 }
+            - { id: c, x: 7.8, y: 1 }
+            - { id: d, x: 2.2, y: 1 }
+            - { id: e, x: 0.5, y: 6.2 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: a }
+        steps:
+          - caption: |
+              Obarvení $C_5$ třemi barvami. Třída barvy 1 je $\{a, c\}$ – jako každá barevná třída je to nezávislá množina.
+            set: [a, c]
+            labels: { a: "1", b: "2", c: "1", d: "2", e: "3" }
+          - caption: |
+              Třída barvy 2 je $\{b, d\}$, opět nezávislá. V $C_5$ má každá nezávislá množina nejvýše $\alpha = 2$ uzly.
+            set: [b, d]
+            labels: { a: "1", b: "2", c: "1", d: "2", e: "3" }
+          - caption: |
+              Třída barvy 3 je $\{e\}$. Dvě třídy by pokryly nejvýše $2 \cdot \alpha = 4 < 5$ uzlů, proto $\chi \ge \lceil n / \alpha \rceil = 3$.
+            set: [e]
+            labels: { a: "1", b: "2", c: "1", d: "2", e: "3" }
+          - caption: |
+              Třída se třemi uzly nezávislá být nemůže – třeba $\{a, c, e\}$ obsahuje hranu $ea$. Proto žádné obarvení dvěma barvami neexistuje.
+            set: [a, c, e]
+      - title: Velká nezávislá množina šetří barvy
+        for: proof
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 5, y: 5 }
+            - { id: a, x: 2, y: 9 }
+            - { id: b, x: 8, y: 9 }
+            - { id: c, x: 9.5, y: 3 }
+            - { id: d, x: 5, y: 0.5 }
+            - { id: e, x: 0.5, y: 3 }
+          edges:
+            - { from: s, to: a }
+            - { from: s, to: b }
+            - { from: s, to: c }
+            - { from: s, to: d }
+            - { from: s, to: e }
+            - { from: a, to: b }
+        steps:
+          - caption: |
+              Největší nezávislou množinu $\{a, c, d, e\}$ ($\alpha = 4$) obarvíme jedinou barvou. Zbývají $n - \alpha = 2$ uzly.
+            colors: { a: 0, c: 0, d: 0, e: 0 }
+          - caption: |
+              Každý zbylý uzel dostane vlastní novou barvu. Celkem $n - \alpha + 1 = 6 - 4 + 1 = 3$ barvy, tedy $\chi + \alpha \le n + 1$.
+            colors: { a: 0, c: 0, d: 0, e: 0, s: 1, b: 2 }
+    source: "skripta str. 46, Věta 7.5 s důkazem; folie TGD1-09 s. 2"
+    supplemented: false
+
+  - id: alg-barveni-nezavislymi-mnozinami
+    kind: algorithm
+    section: "7.1"
+    title: Heuristika barvení postupným odebíráním nezávislých množin
+    terms: [heuristika barvení, barvení nezávislými množinami, RLF, coloring by independent sets]
+    statement: |
+      Vstup: graf $G$. Výstup: dobré obarvení (ne nutně optimální).
+    pseudocode: |
+      1. $c := 0$.
+      2. Dokud $G$ není prázdný:
+         1. hledej v $G$ (velkou) nezávislou množinu $A$ – např.
+            [hladovým algoritmem](#alg-maximalni-nezavisla-mnozina);
+         2. $c := c+1$, obarvi všechny uzly z $A$ barvou $c$;
+         3. vyhoď $A$ z grafu: $G := G - A$.
+      3. Vrať obarvení s $c$ barvami.
+    complexity: "$O(c\\cdot(n+m))$, kde $c$ je počet použitých barev; nejhůře $O(n(n+m))$"
+    intuition: |
+      Myšlenka pochází z druhé části důkazu [Věty 7.5](#thm-7-5-chi-a-alfa):
+      čím větší nezávislou množinu jednou barvou „spotřebujeme", tím méně
+      uzlů zbude. Každá třída je nezávislá, takže obarvení je vždy dobré.
+      Heuristika je přes svou jednoduchost používaná a dává slušné výsledky;
+      optimum ale zaručit nemůže (nalezení $\chi(G)$ je NP-těžké).
+    related: [thm-7-5-chi-a-alfa, alg-maximalni-nezavisla-mnozina, alg-sekvencni-barveni]
+    source: "skripta str. 46–47, poznámka za Větou 7.5"
+    supplemented: false
+
+  - id: alg-sekvencni-barveni
+    kind: algorithm
+    section: "7.1"
+    title: Sekvenční (hladové) barvení
+    terms: [sekvenční barvení, hladové barvení, hladový algoritmus barvení, greedy coloring, first fit, Welsh-Powell, barvení podle stupňů]
+    statement: |
+      Vstup: graf $G$ a pořadí uzlů $v_1,\dots,v_n$. Výstup: dobré obarvení
+      nejvýše $\Delta(G)+1$ barvami.
+    pseudocode: |
+      1. Uspořádej uzly do posloupnosti $v_1,\dots,v_n$ (náhodně, podle
+         klesajících stupňů, …).
+      2. Pro $i=1,\dots,n$:
+         - označ barvy již obarvených sousedů uzlu $v_i$,
+         - přiřaď $v_i$ **nejnižší** barvu, kterou žádný z jeho sousedů nemá.
+      3. Vrať obarvení.
+    complexity: "$O(n+m)$ pro dané pořadí (řazení podle stupňů přidá $O(n\\log n)$, resp. $O(n)$ přihrádkově)"
+    intuition: |
+      Algoritmus je založen na myšlence důkazu [Věty 7.1](#thm-7-1-delta-plus-jedna):
+      uzel $v_i$ má nejvýše $\deg(v_i)\le\Delta$ obarvených sousedů, takže
+      dostane barvu nejvýše $\deg(v_i)+1\le\Delta+1$.
+
+      **Složitost:** pro $v_i$ stačí pole příznaků velikosti $\deg(v_i)+1$,
+      takže práce je $O(\deg(v_i)+1)$ a celkem $O(n+m)$.
+
+      **Kvalita závisí na pořadí** (doplněno):
+
+      - vždy existuje pořadí, při kterém algoritmus použije přesně $\chi(G)$
+        barev – stačí uzly seřadit podle barevných tříd optimálního obarvení;
+      - špatné pořadí může být katastrofální: v grafu $K_{n,n}$ bez perfektního
+        párování (uzly $a_i,b_j$ sousedí pro $i\ne j$) při pořadí
+        $a_1,b_1,a_2,b_2,\dots$ dostane dvojice $a_i,b_i$ barvu $i$, celkem
+        $n$ barev, ačkoli $\chi=2$;
+      - varianty: náhodné pořadí, od největších stupňů (Welsh–Powell),
+        „smallest last".
+    examples:
+      - title: Rozvrh hodin hladově
+        body: |
+          Graf z [rozvrhu hodin](#rem-motivace-barveni), pořadí
+          1A, 1B, 1C, 2B, 2A, 2C, 3C:
+
+          - 1A → 1; 1B (soused 1A) → 2; 1C (sousedé 1, 2) → 3;
+          - 2B (sousedé 1A = 1, 1B = 2) → 3; 2A (soused 2B = 3) → 1;
+          - 2C (sousedé 2A = 1, 2B = 3, 1C = 3) → 2;
+          - 3C (sousedé 2A = 1, 2C = 2, 1C = 3) → 4.
+
+          Výsledek: 4 barvy, což je optimum ($\chi=4$).
+        graph:
+          directed: false
+          nodes:
+            - { id: 1C, x: 5, y: 9.5, color: 3 }
+            - { id: 1B, x: 3, y: 8, color: 2 }
+            - { id: 1A, x: 7, y: 8, color: 1 }
+            - { id: 2B, x: 5, y: 6, color: 3 }
+            - { id: 2A, x: 3.5, y: 4, color: 1 }
+            - { id: 2C, x: 7, y: 4, color: 2 }
+            - { id: 3C, x: 1, y: 1, color: 4 }
+          edges: *rozvrh
+    visualization: coloring
+    related: [thm-7-1-delta-plus-jedna, thm-brooks, alg-barveni-nezavislymi-mnozinami, alg-barveni-backtracking]
+    illustrations:
+      - title: Špatné pořadí, zbytečná barva
+        for: statement
+        property: proper-coloring
+        graph:
+          directed: false
+          nodes:
+            - { id: a1, x: 1, y: 8.5 }
+            - { id: a2, x: 5, y: 8.5 }
+            - { id: a3, x: 9, y: 8.5 }
+            - { id: b1, x: 1, y: 1.5 }
+            - { id: b2, x: 5, y: 1.5 }
+            - { id: b3, x: 9, y: 1.5 }
+          edges:
+            - { from: a1, to: b2 }
+            - { from: a1, to: b3 }
+            - { from: a2, to: b1 }
+            - { from: a2, to: b3 }
+            - { from: a3, to: b1 }
+            - { from: a3, to: b2 }
+        steps:
+          - caption: |
+              $K_{3,3}$ bez perfektního párování: $a_i$ a $b_j$ sousedí, právě když $i \ne j$. Barvíme hladově v pořadí $a_1, b_1, a_2, b_2, \dots$ – $a_1$ a $b_1$ nesousedí, oba dostanou barvu 0.
+            colors: { a1: 0, b1: 0 }
+          - caption: |
+              $a_2$ sousedí s $b_1$ (barva 0), dostane 1; $b_2$ sousedí s $a_1$ (barva 0), dostane také 1.
+            colors: { a1: 0, b1: 0, a2: 1, b2: 1 }
+          - caption: |
+              $a_3$ i $b_3$ vidí barvy 0 i 1, dostanou 2. Obarvení je dobré, ale má **3** barvy, ačkoli graf je bipartitní.
+            colors: { a1: 0, b1: 0, a2: 1, b2: 1, a3: 2, b3: 2 }
+          - caption: |
+              Pořadí $a_1, a_2, a_3, b_1, b_2, b_3$ dá 2 barvy. Kvalita hladového barvení závisí na pořadí – pro $K_{n,n}$ bez párování vede špatné pořadí až k $n$ barvám.
+            colors: { a1: 0, a2: 0, a3: 0, b1: 1, b2: 1, b3: 1 }
+    source: "skripta str. 47 (sekvenční barvení, varianty volby uzlu); složitost a příklady doplněny"
+    supplemented: false
+
+  - id: alg-barveni-backtracking
+    kind: algorithm
+    section: "7.1"
+    title: Přesné barvení prohledáváním s návratem (backtracking)
+    terms: [backtracking barvení, přesný algoritmus barvení, k-COL algoritmus, exact coloring, prohledávání s návratem]
+    statement: |
+      Vstup: graf $G$ s uzly $v_1,\dots,v_n$ a číslo $k$. Výstup: obarvení
+      $k$ barvami, nebo odpověď „$G$ není $k$-obarvitelný".
+      Pro $\chi(G)$ zkoušíme $k$ od dolního odhadu (např. $\omega$) po horní
+      odhad (výsledek sekvenčního barvení).
+    pseudocode: |
+      1. Volej $\mathrm{Barvi}(1)$.
+      2. $\mathrm{Barvi}(i)$:
+         - je-li $i>n$, vrať nalezené obarvení;
+         - pro každou barvu $c\in\{1,\dots,k\}$, kterou nemá žádný již obarvený
+           soused $v_i$: přiřaď $v_i$ barvu $c$ a volej $\mathrm{Barvi}(i+1)$;
+           uspěje-li, vrať výsledek;
+         - zruš barvu $v_i$ a vrať „neúspěch" (návrat o úroveň výš).
+      3. Neuspěje-li $\mathrm{Barvi}(1)$, graf není $k$-obarvitelný.
+    complexity: "$O(k^n\\cdot(n+m))$ v nejhorším případě – exponenciální"
+    intuition: |
+      Strom prohledávání má až $k^n$ listů. Prořezávání pomáhá: barvu
+      testujeme hned proti obarveným sousedům, uzly řadíme od největších
+      stupňů a symetrii barev lámeme tím, že uzel smí dostat nejvýše „první
+      dosud nepoužitou" barvu. Polynomiální algoritmus nečekáme, protože
+      3-COL je NP-úplná ([Věta 7.4](#thm-7-4-3col)); nejlepší známé přesné
+      algoritmy pro $\chi(G)$ mají složitost řádu $2^n\cdot\mathrm{poly}(n)$.
+    visualization: coloring
+    related: [thm-7-4-3col, alg-sekvencni-barveni, rem-odhady-chromatickeho-cisla]
+    source: "doplněno mimo skripta (přesný exponenciální algoritmus k NP-úplné úloze)"
+    supplemented: true
+
+  - id: rem-odhady-chromatickeho-cisla
+    kind: remark
+    section: "7.1"
+    title: Přehled odhadů chromatického čísla
+    terms: [odhady chromatického čísla, dolní odhad, horní odhad, bounds on chromatic number]
+    statement: |
+      Pro každý graf $G$ s $n$ uzly platí
+      $$
+      \max\left\{\omega(G),\ \left\lceil \frac{n}{\alpha(G)} \right\rceil\right\}
+      \ \le\ \chi(G)\ \le\ \min\left\{\Delta(G)+1,\ n-\alpha(G)+1\right\},
+      $$
+      a mimo výjimky Brooksovy věty dokonce $\chi(G)\le\Delta(G)$.
+      Dále $\chi(G)=1\iff H(G)=\emptyset$ a $\chi(G)\le2\iff G$ nemá lichou
+      kružnici; pro rovinné grafy $\chi(G)\le4$.
+    intuition: |
+      Dolní odhady dokazují, že méně barev nestačí ([Tvrzení 7.1](#prop-7-1-klika-dolni-odhad),
+      [Věta 7.5](#thm-7-5-chi-a-alfa)); horní odhady jsou konstruktivní –
+      dává je konkrétní obarvení ([Věta 7.1](#thm-7-1-delta-plus-jedna),
+      [Brooks](#thm-brooks), Věta 7.5). Pozor: $\omega$ a $\alpha$ jsou samy
+      NP-těžké, takže v praxi se dolní odhad často bere z *nějaké* nalezené
+      kliky. Shoduje-li se dolní a horní odhad, známe $\chi$ přesně.
+    related: [prop-7-1-klika-dolni-odhad, thm-7-1-delta-plus-jedna, thm-brooks, thm-7-5-chi-a-alfa, thm-7-3-bipartitni-grafy, thm-ctyri-barvy]
+    source: "shrnutí výsledků skript str. 45–47"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 7.2
+  - id: rem-barveni-map
+    kind: remark
+    section: "7.2"
+    title: Barvení map
+    terms: [barvení map, politická mapa, duální graf, rovinný graf, map coloring]
+    statement: |
+      Mapu chceme obarvit tak, aby sousední státy měly různé barvy (sousední =
+      sdílejí hranici v nekonečně mnoha bodech, nestačí dotyk v bodě), a to co
+      nejmenším počtem barev. Úlohu převedeme na barvení (duálního) rovinného
+      grafu: každému státu přiřadíme uzel a sousední státy spojíme hranou, kterou
+      lze nakreslit přes jejich společnou hranici. Vzniklý graf lze nakreslit
+      do roviny bez křížení hran.
+    intuition: |
+      Na příkladu mapy ze skript jsou potřeba 4 barvy. Že 4 barvy stačí
+      *vždy*, tvrdí [věta o čtyřech barvách](#thm-ctyri-barvy). Rovinnost
+      zatím chápeme intuitivně, přesná definice přijde později.
+    related: [thm-ctyri-barvy, thm-heawood]
+    source: "skripta str. 47, příklad; folie TGD1-09 s. 3–4"
+    supplemented: false
+
+  - id: thm-ctyri-barvy
+    kind: theorem
+    label: "Věta 7.6 (Haken, Appel)"
+    section: "7.2"
+    title: Věta o čtyřech barvách
+    terms: [věta o čtyřech barvách, problém čtyř barev, Haken, Appel, four color theorem, rovinný graf 4-obarvitelný]
+    statement: |
+      Každý rovinný graf je 4-obarvitelný.
+    intuition: |
+      Řešení jednoho z nejproslulejších problémů celé historie teorie grafů –
+      tzv. *problému čtyř barev* (formulován 1852). Mez je těsná: $K_4$ je
+      rovinný a potřebuje 4 barvy. V rovině tedy stačí 4 barvy; jak je tomu
+      na plochách vyšších rodů, říká [Heawoodův vzorec](#thm-heawood).
+    proof: |
+      *Důkaz přesahuje rámec předmětu – ve skriptech ani na foliích není.*
+      Poznámka k historii a myšlence (doplněno): Appel a Haken (1976) větu
+      dokázali s rozsáhlou pomocí počítače. Uvažuje se minimální protipříklad
+      (lze předpokládat, že jde o triangulaci). Pomocí Eulerovy formule se
+      ukáže, že každá rovinná triangulace obsahuje některou konfiguraci
+      z pevné *nevyhnutelné množiny* (téměř dvou tisíc konfigurací),
+      a počítačem se ověří, že každá z nich je *redukovatelná* – minimální
+      protipříklad ji obsahovat nemůže. Robertson, Sanders, Seymour a Thomas
+      (1997) důkaz zjednodušili (633 konfigurací), Gonthier (2005) jej formálně
+      ověřil v systému Coq.
+
+      Snadné je dokázat slabší tvrzení „každý rovinný graf je 6-obarvitelný":
+      z Eulerovy formule plyne $m\le3n-6$, takže rovinný graf má uzel stupně
+      nejvýše 5; ten odebereme, zbytek obarvíme indukcí a uzlu zbude jedna
+      ze 6 barev. S Kempeho řetězci (záměna dvou barev na souvislé části)
+      se tento postup vylepší na 5 barev (Heawood, 1890). $\square$
+    proof_steps:
+      - 'Uvažujeme minimální rovinný graf, který není 4-obarvitelný (lze předpokládat triangulaci).'
+      - 'Z Eulerovy formule plyne, že každá triangulace obsahuje některou konfiguraci z nevyhnutelné množiny.'
+      - 'Počítačem se ověří, že každá konfigurace je redukovatelná – minimální protipříklad ji obsahovat nemůže.'
+      - 'Spor ukazuje, že protipříklad neexistuje; každý rovinný graf je 4-obarvitelný.'
+    related: [rem-barveni-map, thm-heawood, rem-3col-rovinne-grafy]
+    source: "skripta str. 47, Věta 7.6; folie TGD1-09 s. 4 (jména Haken, Appel); historické poznámky doplněny"
+    supplemented: false
+
+  - id: thm-heawood
+    kind: theorem
+    label: "Věta 7.7 (Heawoodův vzorec)"
+    section: "7.2"
+    title: Heawoodův vzorec
+    terms: [Heawood, Heawoodův vzorec, rod plochy, barvení na ploše, toroid, Heawood formula, Ringel-Youngs]
+    statement: |
+      Je-li $G$ uložitelný na plochu rodu $\gamma$, pak
+      $$
+      \chi(G) \le \left\lfloor \frac{7+\sqrt{1+48\gamma}}{2} \right\rfloor .
+      $$
+      (Ve skriptech je celá část zapsána hranatými závorkami.)
+    intuition: |
+      Plocha rodu $\gamma$ je sféra s $\gamma$ „uchy" (torus má rod 1).
+      Čím víc uch, tím složitější grafy se na plochu vejdou a tím víc barev
+      může být potřeba. Pro torus vychází $\lfloor(7+7)/2\rfloor=7$ – a $K_7$
+      na torus nakreslit lze. Pro $\gamma=0$ (rovina) dává vzorec 4, což je
+      přesně [věta o čtyřech barvách](#thm-ctyri-barvy).
+
+      Vzorec uvedl Heawood už roku 1890; pro $\gamma\ge1$ je horní odhad
+      poměrně snadný (viz důkaz), těžké bylo ukázat, že je **dosažen**
+      (Ringel a Youngs, 1968). Pro rovinu je to věta o čtyřech barvách (1976).
+    proof: |
+      *Důkaz ve skriptech není, doplněno – pro $\gamma\ge1$.* Označme
+      $h=\left\lfloor\frac{7+\sqrt{1+48\gamma}}{2}\right\rfloor$; pro $\gamma\ge1$
+      je $h\ge7$.
+
+      Předpokládejme sporem, že nějaký graf na ploše rodu $\gamma$ má
+      $\chi>h$, a vezměme jeho minimální podgraf $G'$ s $\chi(G')>h$
+      (tzv. kritický podgraf). Každý uzel $G'$ má stupeň aspoň $h$ (jinak bychom
+      ho odebrali, zbytek obarvili $h$ barvami a uzlu by barva zbyla), takže
+      $G'$ má $n\ge h+1$ uzlů a $2m\ge hn$ (je souvislý).
+
+      Pro graf uložený na plochu rodu $\gamma$ dává Eulerova formule
+      $n-m+f\ge2-2\gamma$ a každá stěna je omezena aspoň třemi hranami
+      ($3f\le2m$); odtud $m\le3n-6+6\gamma$. Spolu s $hn\le2m$:
+      $$
+      (h-6)\,n\le12(\gamma-1).
+      $$
+      Protože $h\ge7$ a $n\ge h+1$, je $(h-6)(h+1)\le12(\gamma-1)$, neboli
+      $h^2-5h+6\le12\gamma$.
+
+      Z definice dolní celé části ale $h+1>\frac{7+\sqrt{1+48\gamma}}{2}$, tj.
+      $2h-5>\sqrt{1+48\gamma}$, a umocněním $4h^2-20h+25>1+48\gamma$, tedy
+      $h^2-5h+6>12\gamma$ – spor. $\square$
+    proof_steps:
+      - 'Sporem vezmeme minimální graf G'' na ploše rodu γ ≥ 1 s χ(G'') > h; každý jeho uzel má stupeň aspoň h a uzlů je aspoň h + 1.'
+      - 'Eulerova formule pro plochu rodu γ a odhad 3f ≤ 2m dávají m ≤ 3n − 6 + 6γ.'
+      - 'Spojením s 2m ≥ hn dostaneme (h − 6)n ≤ 12(γ − 1), a protože n ≥ h + 1, platí h² − 5h + 6 ≤ 12γ.'
+      - 'Z definice h jako dolní celé části plyne 2h − 5 > √(1 + 48γ), tedy h² − 5h + 6 > 12γ – spor.'
+    examples:
+      - title: Hodnoty vzorce
+        body: |
+          | rod $\gamma$ | 0 | 1 | 2 | 3 |
+          |---|---|---|---|---|
+          | mez | 4 | 7 | 8 | 9 |
+    related: [thm-ctyri-barvy, rem-barveni-map]
+    source: "skripta str. 47, Věta 7.7 (bez důkazu)"
+    supplemented: false
+
+  - id: rem-rozklad-na-rovinne-vrstvy
+    kind: remark
+    section: "7.2"
+    title: "Aplikace: rozklad grafu na vrstvy rovinných grafů"
+    terms: [rozklad na rovinné vrstvy, tloušťka grafu, plošné spoje, graf křížení, thickness, conflict graph]
+    statement: |
+      Je dán graf $G$ a jeho nakreslení v rovině, v němž se některé hrany
+      křižují mimo uzly (např. vodiče na plošném spoji). Hrany $G$ očíslujeme
+      a sestrojíme graf $G'$: uzly $G'$ jsou hrany $G$ a dva uzly $G'$ jsou
+      sousední právě když se odpovídající hrany $G$ v nakreslení protínají.
+      Každá barevná třída dobrého obarvení $G'$ je množina navzájem se
+      nekřížících hran, tj. rovinný podgraf. Tím je $H(G)$ rozložena na
+      $\chi(G')$ rovinných „vrstev".
+    intuition: |
+      Barvy = vrstvy desky, konflikt = křížení. Výsledek závisí na nakreslení
+      – v praxi se nejprve snažíme nakreslit $G$ s co nejméně průsečíky
+      a teprve pak konstruujeme $G'$. Při vhodném nakreslení lze $K_{3,3}$
+      (dokonce i $K_6$ nebo $K_{4,4}$) rozložit jen na dvě vrstvy.
+    examples:
+      - title: Graf křížení pro $K_{3,3}$
+        body: |
+          $K_{3,3}$ nakreslíme s horními uzly $T_1,T_2,T_3$ a dolními
+          $B_1,B_2,B_3$ v řadě; hrana $T_aB_b$ má číslo $3(a-1)+b$. Dvě hrany
+          $T_aB_b$, $T_cB_d$ s $a<c$ se kříží právě když $b>d$. Graf $G'$ má
+          hrany $2\text{–}4$, $2\text{–}7$, $3\text{–}4$, $3\text{–}5$,
+          $3\text{–}7$, $3\text{–}8$, $5\text{–}7$, $6\text{–}7$, $6\text{–}8$;
+          uzly 1 a 9 jsou izolované.
+
+          Obarvení na obrázku má 3 barvy (trojúhelník $3,5,7$ ukazuje, že méně
+          nejde): vrstvy $\{1,4,7\}$, $\{2,5,8\}$, $\{3,6,9\}$ – každá je
+          „hvězda" hran do jednoho dolního uzlu. Při tomto nakreslení tedy
+          potřebujeme 3 vrstvy; lepší nakreslení vystačí se dvěma.
+        graph:
+          directed: false
+          nodes:
+            - { id: "2", x: 2, y: 9, color: 2 }
+            - { id: "8", x: 7, y: 9, color: 2 }
+            - { id: "4", x: 2, y: 6, color: 1 }
+            - { id: "6", x: 7, y: 6, color: 3 }
+            - { id: "1", x: 0.5, y: 5, color: 1 }
+            - { id: "9", x: 9, y: 5, color: 3 }
+            - { id: "3", x: 2, y: 3, color: 3 }
+            - { id: "7", x: 7, y: 3, color: 1 }
+            - { id: "5", x: 4.5, y: 0.5, color: 2 }
+          edges:
+            - { from: "2", to: "4" }
+            - { from: "2", to: "7" }
+            - { from: "3", to: "4" }
+            - { from: "3", to: "5" }
+            - { from: "3", to: "7" }
+            - { from: "3", to: "8" }
+            - { from: "5", to: "7" }
+            - { from: "6", to: "7" }
+            - { from: "6", to: "8" }
+    related: [def-chromaticke-cislo, rem-barveni-map]
+    source: "skripta str. 47–48, příklad (rozklad grafu na vrstvy rovinných grafů)"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 7.3
+  - id: def-hranove-obarveni
+    kind: definition
+    label: "Definice 7.3"
+    section: "7.3"
+    title: Hranové obarvení
+    terms: [hranové obarvení, dobré hranové obarvení, přípustné hranové obarvení, hranově k-obarvitelný, edge coloring, proper edge coloring]
+    statement: |
+      **Hranové obarvení** grafu $G$ je zobrazení $H(G)\to\mathbb N$.
+      **Dobré hranové obarvení** grafu $G$ je takové hranové obarvení, při němž
+      žádné dvě hrany téže barvy nemají společný uzel. Graf $G$ je
+      **hranově $k$-obarvitelný**, jestliže existuje jeho dobré hranové
+      obarvení $k$ barvami.
+    intuition: |
+      Hranová analogie uzlového barvení: konflikt tvoří hrany se společným
+      koncem. Každá barevná třída je tedy **párování** (množina hran bez
+      společných uzlů). Někdy se místo „dobré" říká „přípustné hranové
+      obarvení" (angl. *proper edge coloring*). Hranové barvení grafu $G$
+      je totéž co uzlové barvení jeho hranového grafu $L(G)$ (doplněno).
+
+      Aplikace: rozvrh zápasů turnaje (hrana = zápas, barva = kolo; hráč hraje
+      v jednom kole nejvýše jednou).
+    related: [def-chromaticky-index, thm-vizing, def-k-obarvitelnost]
+    illustrations:
+      - title: Každá barva hran je párování
+        for: statement
+        property: matching
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 9 }
+            - { id: b, x: 9, y: 9 }
+            - { id: c, x: 9, y: 1 }
+            - { id: d, x: 1, y: 1 }
+          edges:
+            - { from: a, to: b }
+            - { from: c, to: d }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: a, to: d }
+            - { from: b, to: c }
+        steps:
+          - caption: |
+              Hrany $K_4$ obarvíme barvami 1–3 (čísla u hran). Třída barvy 1, $\{ab, cd\}$: žádné dvě hrany nemají společný uzel – je to párování.
+            edge_set: [a-b, c-d]
+            edge_labels: { a-b: "1", c-d: "1", a-c: "2", b-d: "2", a-d: "3", b-c: "3" }
+          - caption: |
+              Třída barvy 2, $\{ac, bd\}$, je také párování (dokonce perfektní).
+            edge_set: [a-c, b-d]
+            edge_labels: { a-b: "1", c-d: "1", a-c: "2", b-d: "2", a-d: "3", b-c: "3" }
+          - caption: |
+              Třída barvy 3, $\{ad, bc\}$. Tři barvy pro $\Delta = 3$ – méně nejde, protože tři hrany v každém uzlu se navzájem dotýkají.
+            edge_set: [a-d, b-c]
+            edge_labels: { a-b: "1", c-d: "1", a-c: "2", b-d: "2", a-d: "3", b-c: "3" }
+          - caption: |
+              Kdyby $ab$ a $ac$ měly stejnou barvu, sdílely by uzel $a$ – taková třída párováním **není** a obarvení by nebylo dobré.
+            edge_set: [a-b, a-c]
+    source: "skripta str. 48, Definice 7.3 + poznámka"
+    supplemented: false
+
+  - id: def-chromaticky-index
+    kind: definition
+    label: "Definice 7.3"
+    section: "7.3"
+    title: Chromatický index
+    terms: [chromatický index, hranová barevnost, "χ'(G)", chromatic index, edge chromatic number]
+    statement: |
+      **Chromatický index** $\chi'(G)$ grafu $G$ je nejmenší číslo $k$, pro
+      něž je graf $G$ hranově $k$-obarvitelný.
+    intuition: |
+      Všechny hrany v uzlu maximálního stupně se navzájem dotýkají, proto
+      vždy $\chi'(G)\ge\Delta(G)$; podle [Vizingovy věty](#thm-vizing) je
+      $\chi'(G)$ buď $\Delta$, nebo $\Delta+1$.
+    examples:
+      - title: "$\\chi'(K_4)=3$"
+        body: |
+          $K_4$ má $\Delta=3$ a jeho 6 hran se rozpadne na 3 perfektní párování
+          $\{ab,cd\}$, $\{ac,bd\}$, $\{ad,bc\}$ (atribut `color` u hran).
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 9 }
+            - { id: b, x: 9, y: 9 }
+            - { id: c, x: 9, y: 1 }
+            - { id: d, x: 1, y: 1 }
+          edges:
+            - { from: a, to: b, color: 1 }
+            - { from: c, to: d, color: 1 }
+            - { from: a, to: c, color: 2 }
+            - { from: b, to: d, color: 2 }
+            - { from: a, to: d, color: 3 }
+            - { from: b, to: c, color: 3 }
+    related: [def-hranove-obarveni, thm-vizing, thm-7-9-chromaticky-index-kn]
+    source: "skripta str. 48, Definice 7.3"
+    supplemented: false
+
+  - id: thm-vizing
+    kind: theorem
+    label: "Věta 7.8 (Vizing)"
+    section: "7.3"
+    title: Vizingova věta
+    terms: [Vizing, Vizingova věta, chromatický index a maximální stupeň, Vizing theorem, třída 1, třída 2]
+    statement: |
+      Pro každý graf $G$ platí
+      $$
+      \Delta(G) \le \chi'(G) \le \Delta(G) + 1.
+      $$
+    intuition: |
+      Pro *uzlové* barvení neexistuje dolní mez jako funkce $\Delta$:
+      $K_{n,n}$ má $\Delta=n$, ale $\chi=2$. U hranového barvení je situace
+      úplně jiná – $\chi'$ je určeno až na jedničku. Grafy s $\chi'=\Delta$
+      se nazývají *třídy 1*, s $\chi'=\Delta+1$ *třídy 2* (doplněno); rozhodnout,
+      do které třídy graf patří, je ovšem NP-úplné (Holyer, 1981 – doplněno).
+      Příklad třídy 2: $K_3$ ($\Delta=2$, $\chi'=3$), obecně $K_{2n-1}$
+      ([Věta 7.9](#thm-7-9-chromaticky-index-kn)).
+    proof: |
+      **Dolní odhad** je zřejmý: všech $\Delta(G)$ hran incidentních s uzlem
+      maximálního stupně má společný uzel, musí mít tedy různé barvy.
+
+      **Horní odhad** skripta nedokazují; myšlenka (doplněno): indukcí podle
+      počtu hran. Odebereme hranu $uv$ a zbytek obarvíme $\Delta+1$ barvami.
+      Každý uzel má nejvýše $\Delta$ hran, takže mu aspoň jedna z $\Delta+1$
+      barev „chybí". Chybí-li $u$ i $v$ stejná barva, obarvíme jí $uv$.
+      Jinak sestrojíme tzv. *Vizingův vějíř* – posloupnost sousedů $u$, v níž
+      každá další hrana z $u$ má barvu chybějící u předchozího souseda – a
+      postupným „posouváním" barev ve vějíři a záměnou dvou barev na
+      střídavé cestě (Kempeho řetězci) uvolníme pro $uv$ volnou barvu.
+      Důkaz dává i polynomiální algoritmus (např. Misra–Gries, $O(nm)$). $\square$
+    proof_steps:
+      - 'Dolní odhad: hrany v uzlu maximálního stupně mají společný konec, takže potřebují Δ(G) různých barev.'
+      - 'Horní odhad indukcí podle počtu hran: odebereme hranu uv a zbytek obarvíme Δ + 1 barvami.'
+      - 'Každému uzlu chybí aspoň jedna z Δ + 1 barev; chybí-li u i v táž barva, obarvíme jí uv.'
+      - 'Jinak pomocí Vizingova vějíře a záměny barev na střídavé cestě dvou barev upravíme obarvení tak, aby se pro uv uvolnila barva.'
+    related: [def-chromaticky-index, thm-7-9-chromaticky-index-kn, rem-konig-hranove-barveni, thm-brooks]
+    source: "skripta str. 48–49, Věta 7.8 (důkaz jen dolní nerovnosti) + příklad $K_{n,n}$"
+    supplemented: false
+
+  - id: rem-konig-hranove-barveni
+    kind: remark
+    section: "7.3"
+    title: Kőnigova věta o hranovém barvení bipartitních grafů
+    terms: [Kőnig, Königova věta, Kőnigova věta o hranovém barvení, bipartitní graf chromatický index, Konig edge coloring theorem]
+    statement: |
+      Pro každý bipartitní graf $G$ platí $\chi'(G)=\Delta(G)$.
+    intuition: |
+      *Doplněno mimo skripta.* Bipartitní grafy jsou tedy vždy „třídy 1".
+      Myšlenka: indukcí podle počtu hran; po odebrání hrany $uv$ obarvíme
+      zbytek $\Delta$ barvami. Uzlu $u$ chybí barva $a$, uzlu $v$ barva $b$.
+      Je-li $a\ne b$, uvažujeme střídavou cestu barev $a,b$ začínající v $v$.
+      V bipartitním grafu nemůže skončit v $u$ (měla by špatnou paritu délky),
+      proto na ní barvy $a,b$ prohodíme a hranu $uv$ obarvíme barvou $a$.
+      Důsledek: $\chi'(K_{n,n})=n$; ekvivalentně každý $\Delta$-regulární
+      bipartitní graf se rozkládá na $\Delta$ perfektních párování.
+    related: [thm-vizing, def-chromaticky-index, thm-7-3-bipartitni-grafy]
+    source: "doplněno mimo materiály TGD1 (klasický výsledek k hranovému barvení)"
+    supplemented: true
+
+  - id: thm-7-9-chromaticky-index-kn
+    kind: theorem
+    label: "Věta 7.9"
+    section: "7.3"
+    title: Chromatický index úplných grafů
+    terms: [chromatický index úplného grafu, hranové barvení K_n, rozpis turnaje, round robin, 1-faktorizace]
+    statement: |
+      $\chi'(K_{2n-1}) = \chi'(K_{2n}) = 2n-1$.
+    intuition: |
+      Úplný graf se sudým počtem uzlů $2n$ lze rozepsat jako turnaj „každý
+      s každým" na $2n-1$ kol, v každém kole hraje každý (perfektní párování).
+      Při lichém počtu $2n-1$ hráčů jeden v každém kole stojí, a proto nestačí
+      $\Delta=2n-2$ kol: každé kolo pojme nejvýše $n-1$ zápasů a zápasů je
+      příliš mnoho. $K_{2n}$ je tedy třídy 1, $K_{2n-1}$ třídy 2.
+    proof: |
+      **a) $K_{2n}$.** Uzly označíme prvky $\mathbb Z_{2n-1}=\{0,\dots,2n-2\}$
+      a symbolem $\infty$. Pro $t\in\mathbb Z_{2n-1}$ definujme třídu
+      $$
+      M_t=\{\{t,\infty\}\}\cup\{\{t+i,\ t-i\};\ i=1,\dots,n-1\}\quad(\text{mod }2n-1).
+      $$
+      Protože $2n-1$ je liché, jsou čísla $t\pm i$ ($1\le i\le n-1$) navzájem
+      různá a různá od $t$ ($t+i\equiv t-j$ by vyžadovalo $i+j\equiv0$, ale
+      $2\le i+j\le2n-2$), takže $M_t$ je perfektní párování. Každá hrana
+      $\{a,b\}$ s $a,b$ konečnými leží v právě jedné třídě – té s
+      $2t\equiv a+b$ (dvojka je modulo liché číslo invertibilní) – a hrana
+      $\{a,\infty\}$ v třídě $M_a$. Třídy $M_0,\dots,M_{2n-2}$ tedy dávají
+      dobré hranové obarvení $2n-1$ barvami. Podle Vizingovy věty je
+      $\chi'(K_{2n})\ge\Delta=2n-1$, tedy rovnost.
+
+      **b) $K_{2n-1}$.** Vynecháním uzlu $\infty$ z obarvení v a) dostaneme
+      dobré obarvení $K_{2n-1}$ pomocí $2n-1$ barev, tedy
+      $\chi'(K_{2n-1})\le2n-1$. Zbývá ukázat, že $\Delta=2n-2$ barev nestačí.
+      Kdyby ano, rozpadla by se $H(K_{2n-1})$ na $2n-2$ monochromatických
+      tříd; každá je párování na $2n-1$ uzlech, má tedy nejvýše $n-1$ hran.
+      Pak by $|H(K_{2n-1})|\le(2n-2)(n-1)$, ale
+      $$
+      |H(K_{2n-1})|=\binom{2n-1}{2}=(2n-1)(n-1)>(2n-2)(n-1),
+      $$
+      spor. $\square$
+    proof_steps:
+      - 'Uzly K_{2n} označíme prvky Z_{2n−1} a symbolem ∞.'
+      - 'Pro každé t tvoří hrany {t, ∞} a {t + i, t − i}, i = 1, …, n − 1, perfektní párování M_t.'
+      - 'Každá hrana {a, b} leží v právě jedné třídě (té s 2t ≡ a + b), hrana {a, ∞} v M_a; máme tedy obarvení 2n − 1 barvami, a s Vizingovou dolní mezí χ''(K_{2n}) = 2n − 1.'
+      - 'Vynecháním uzlu ∞ dostaneme obarvení K_{2n−1} pomocí 2n − 1 barev.'
+      - 'Při 2n − 2 barvách by každá třída (párování na 2n − 1 uzlech) měla nejvýše n − 1 hran, celkem nejvýše (2n − 2)(n − 1) hran.'
+      - 'Ale K_{2n−1} má (2n − 1)(n − 1) hran, což je víc – spor, tedy χ''(K_{2n−1}) = 2n − 1.'
+    examples:
+      - title: "$\\chi'(K_8)=7$ – dvě konstrukce"
+        body: |
+          Podle Vizingovy věty je $\chi'(K_8)\ge\Delta(K_8)=7$; ukážeme obarvení
+          7 barvami.
+
+          *Geometricky:* uzly $1,\dots,7$ rozmístíme do pravidelného sedmiúhelníku
+          a uzel 8 doprostřed. Jedna barevná třída: hrana $1\text{–}8$ a tři
+          hrany kolmé na ni ($7\text{–}2$, $6\text{–}3$, $5\text{–}4$). Obrázek
+          sedmkrát pootočíme, při každém otočení dáme hranám další barvu.
+          Každá třída je perfektní párování.
+
+          *Algebraicky (modulo 7, uzly $0,\dots,6,\infty$):*
+
+          | třída | hrany |
+          |---|---|
+          | 1 | $\{1,\infty\},\{2,0\},\{3,6\},\{4,5\}$ |
+          | 2 | $\{2,\infty\},\{3,1\},\{4,0\},\{5,6\}$ |
+          | 3 | $\{3,\infty\},\{4,2\},\{5,1\},\{6,0\}$ |
+          | 4 | $\{4,\infty\},\{5,3\},\{6,2\},\{0,1\}$ |
+          | 5 | $\{5,\infty\},\{6,4\},\{0,3\},\{1,2\}$ |
+          | 6 | $\{6,\infty\},\{0,5\},\{1,4\},\{2,3\}$ |
+          | 7 | $\{0,\infty\},\{1,6\},\{2,5\},\{3,4\}$ |
+
+          Další třída vzniká z předchozí přičtením jedničky. Definujeme-li
+          *délku hrany* $\{i,j\}$ jako $\min\{i-j,\ j-i\}\pmod 7$ (a délku hrany
+          s $\infty$ jako $\infty$), obsahuje každá třída po jedné hraně délek
+          $1,2,3,\infty$ – to je klíč k zobecnění na $K_{2n}$.
+    related: [thm-vizing, rem-1-faktorizace, thm-7-10-rozklad-k2n, def-chromaticky-index]
+    illustrations:
+      - title: "$\\chi'(K_5) = 5$: barevné třídy jsou příliš malé"
+        for: proof
+        property: matching
+        graph:
+          directed: false
+          nodes:
+            - { id: p0, x: 5, y: 9.5 }
+            - { id: p1, x: 9.5, y: 6.2 }
+            - { id: p2, x: 7.8, y: 1 }
+            - { id: p3, x: 2.2, y: 1 }
+            - { id: p4, x: 0.5, y: 6.2 }
+          edges:
+            - { from: p0, to: p1 }
+            - { from: p0, to: p2 }
+            - { from: p0, to: p3 }
+            - { from: p0, to: p4 }
+            - { from: p1, to: p2 }
+            - { from: p1, to: p3 }
+            - { from: p1, to: p4 }
+            - { from: p2, to: p3 }
+            - { from: p2, to: p4 }
+            - { from: p3, to: p4 }
+        steps:
+          - caption: |
+              Třída $M_0 = \{p_1p_4,\ p_2p_3\}$ (součet indexů $\equiv 0 \pmod 5$) je párování. Uzel $p_0$ v ní „stojí“ – v $K_6$ by hrál s uzlem $\infty$.
+            edge_set: [p1-p4, p2-p3]
+          - caption: |
+              Třetí hranu do třídy přidat nejde: na 5 uzlech má párování nejvýše 2 hrany, každá další hrana sdílí uzel s některou z nich.
+            edge_set: [p1-p4, p2-p3, p0-p1]
+          - caption: |
+              Třída $M_1 = \{p_0p_2,\ p_3p_4\}$ vznikne z $M_0$ přičtením jedničky; stojí uzel $p_1$.
+            edge_set: [p0-p2, p3-p4]
+          - caption: |
+              Hran je $\binom{5}{2} = 10$, ale $\Delta = 4$ tříd po nejvýše 2 hranách pojme jen 8 – proto $\chi'(K_5) = 5$. Čísla u hran ukazují celé obarvení třídami $M_0, \dots, M_4$, vybrána je $M_4$.
+            edge_set: [p0-p3, p1-p2]
+            edge_labels: { p1-p4: "0", p2-p3: "0", p0-p2: "1", p3-p4: "1", p1-p3: "2", p0-p4: "2", p2-p4: "3", p0-p1: "3", p0-p3: "4", p1-p2: "4" }
+    source: "skripta str. 49, příklad $\\chi'(K_8)$ a Věta 7.9 s důkazem (konstrukce v a) zde zapsána explicitně)"
+    supplemented: false
+
+  - id: rem-1-faktorizace
+    kind: remark
+    section: "7.3"
+    title: Rozklad K₂ₙ na 1-faktory
+    terms: [1-faktor, perfektní párování, 1-faktorizace, rozklad úplného grafu, one-factorization, perfect matching]
+    statement: |
+      Je-li graf $K_{2n}$ hranově obarven $2n-1$ barvami, je každá
+      monochromatická třída hran **1-faktorem** (perfektním párováním – faktorem,
+      v němž má každý uzel stupeň 1). Dostáváme tak **rozklad grafu $K_{2n}$
+      na $2n-1$ 1-faktorů**. Tuto konstrukci rozkladu $K_{2n}$ na izomorfní
+      grafy lze dále zobecnit (Věta 7.10).
+    intuition: |
+      $K_{2n}$ má $n(2n-1)$ hran a každý 1-faktor má $n$ hran – počet tříd
+      $2n-1$ přesně sedí. Rozklad na izomorfní kopie jednoho grafu je obecná
+      otázka; 1-faktor je nejjednodušší případ.
+    related: [thm-7-9-chromaticky-index-kn, thm-7-10-rozklad-k2n, thm-7-11-rozklad-4-pravidelneho]
+    source: "skripta str. 49, odstavec za Větou 7.9"
+    supplemented: false
+
+  - id: thm-7-10-rozklad-k2n
+    kind: theorem
+    label: "Věta 7.10"
+    section: "7.3"
+    title: Rozklad K₂ₙ na kopie grafu s „půvabným" ohodnocením
+    terms: [rozklad úplného grafu na izomorfní kopie, rozklad K_2n, cyklický rozklad, graph decomposition, délka hrany]
+    statement: |
+      Buď $G$ graf o $n$ hranách. Existuje-li (prosté) ohodnocení uzlů grafu
+      $G$ čísly $0,1,\dots,n-1,\infty$ takové, že
+
+      (i) pro každé dvě různé hrany $h_1,h_2\in H(G)$ je $\ell(h_1)\ne\ell(h_2)$,
+
+      (ii) $\{\ell(h_1),\dots,\ell(h_n)\}=\{1,\dots,n-1,\infty\}$,
+
+      pak existuje rozklad grafu $K_{2n}$ na $2n-1$ kopií grafu $G$.
+      (Zde $\ell(h)$ je délka hrany: pro hranu $\{i,j\}$ s konečnými čísly
+      $\ell=|i-j|$, pro hranu s uzlem $\infty$ je $\ell=\infty$.)
+    intuition: |
+      Stejný trik jako u $\chi'(K_8)$: graf $G$ „položíme" do $K_{2n}$
+      (uzly $\mathbb Z_{2n-1}\cup\{\infty\}$) a otáčíme ho přičítáním
+      $t=0,1,\dots,2n-2$. Otáčení zachovává délky hran a hran každé délky je
+      v $K_{2n}$ přesně $2n-1$ – každou délku $G$ obsahuje právě jednou,
+      takže $2n-1$ otočení pokryje každou hranu právě jednou.
+    proof: |
+      *Ve skriptech je jen myšlenka (z příkladu), doplněno.* Uzly $K_{2n}$
+      označme $\mathbb Z_{2n-1}\cup\{\infty\}$ a délku hrany $\{a,b\}$ s
+      konečnými konci definujme $\min\{a-b,\ b-a\}\bmod(2n-1)\in\{1,\dots,n-1\}$.
+      Protože ohodnocení používá čísla $0,\dots,n-1$ a $n-1<\frac{2n-1}{2}$,
+      shoduje se pro hrany $G$ tato délka s $|i-j|$; ohodnocení je prosté,
+      takže $G$ je podgrafem $K_{2n}$ (kopie $G_0$).
+
+      Pro $t\in\mathbb Z_{2n-1}$ nechť $G_t$ vznikne z $G_0$ posunutím
+      $x\mapsto x+t$ ($\infty+t=\infty$). Posunutí je izomorfismus a délky hran
+      zachovává.
+
+      Pevně zvolme délku $d\in\{1,\dots,n-1\}$. V $K_{2n}$ je přesně $2n-1$ hran
+      délky $d$, totiž $\{a,a+d\}$, $a\in\mathbb Z_{2n-1}$ (jsou různé, protože
+      $2d\not\equiv0$ modulo liché číslo). $G_0$ obsahuje podle (i), (ii)
+      právě jednu hranu $\{a_0,a_0+d\}$ délky $d$ a jejími posunutími vznikne
+      všech $2n-1$ hran délky $d$, každá právě jednou. Totéž platí pro délku
+      $\infty$: jediná hrana $\{a_0,\infty\}$ v $G_0$ se posune na všech
+      $2n-1$ hran $\{a,\infty\}$.
+
+      Každá hrana $K_{2n}$ tedy leží v právě jedné kopii $G_t$ (kontrola:
+      $(2n-1)\cdot n=\binom{2n}{2}$). Kopie $G_0,\dots,G_{2n-2}$ tvoří
+      rozklad $K_{2n}$. $\square$
+    proof_steps:
+      - 'Uzly K_{2n} označíme Z_{2n−1} ∪ {∞}; díky ohodnocení je G podgrafem K_{2n} a délky jeho hran jsou navzájem různé a tvoří {1, …, n − 1, ∞}.'
+      - 'Posunutím x ↦ x + t (∞ zůstává) vzniknou kopie G_0, …, G_{2n−2}; posunutí zachovává délky hran.'
+      - 'V K_{2n} je pro každou délku d ∈ {1, …, n − 1, ∞} přesně 2n − 1 hran této délky.'
+      - 'Jediná hrana délky d v G_0 se posunutími zobrazí právě na všech 2n − 1 hran délky d.'
+      - 'Každá hrana K_{2n} tedy leží v právě jedné kopii, kopie tvoří rozklad (kontrola: (2n − 1)·n hran).'
+    examples:
+      - title: "Rozklad $K_8$ na 7 kopií cesty $P_4$"
+        body: |
+          Cesta se 4 hranami a ohodnocením uzlů $3,0,2,1,\infty$ (v tomto
+          pořadí) má délky hran $3,2,1,\infty$ – každou z množiny
+          $\{1,2,3,\infty\}$ právě jednou. Přičítáním $t=0,\dots,6$ (mod 7)
+          dostaneme 7 kopií, které rozkládají $K_8$.
+        graph:
+          directed: false
+          nodes:
+            - { id: "3", x: 1, y: 5 }
+            - { id: "0", x: 3, y: 5 }
+            - { id: "2", x: 5, y: 5 }
+            - { id: "1", x: 7, y: 5 }
+            - { id: inf, x: 9, y: 5 }
+          edges:
+            - { from: "3", to: "0", w: 3 }
+            - { from: "0", to: "2", w: 2 }
+            - { from: "2", to: "1", w: 1 }
+            - { from: "1", to: inf, w: "∞" }
+    related: [rem-graceful-labelling, thm-7-9-chromaticky-index-kn, rem-1-faktorizace]
+    source: "skripta str. 50, příklad ($K_8$ na 7 kopií $P_4$) a Věta 7.10 (bez důkazu)"
+    supplemented: false
+
+  - id: rem-graceful-labelling
+    kind: remark
+    section: "7.3"
+    title: Půvabné ohodnocení (graceful labelling)
+    terms: [graceful labelling, půvabné ohodnocení, graceful tree conjecture, Ringel-Kotzigova hypotéza, hypotéza o půvabných stromech]
+    statement: |
+      Uzlové ohodnocení s vlastnostmi z [Věty 7.10](#thm-7-10-rozklad-k2n) se
+      ve skriptech nazývá *graceful labelling* (česky snad „půvabné
+      ohodnocení"). Jedna ze známých a dosud otevřených hypotéz říká, že
+      **každý strom má půvabné ohodnocení**.
+    intuition: |
+      Upřesnění (doplněno): v literatuře se termín *graceful labelling* obvykle
+      používá pro prosté ohodnocení uzlů grafu s $m$ hranami čísly
+      $0,\dots,m$, při němž rozdíly $|f(u)-f(v)|$ na hranách dávají přesně
+      $1,\dots,m$ (Rosa, 1967); takové ohodnocení stromu vede k rozkladu
+      $K_{2m+1}$ na kopie stromu. Ohodnocení s bodem $\infty$ z Věty 7.10 je
+      jeho variantou pro $K_{2n}$. Hypotéza o půvabných stromech
+      (Ringel–Kotzig) zůstává otevřená.
+    related: [thm-7-10-rozklad-k2n]
+    source: "skripta str. 50, poznámka za Větou 7.10"
+    supplemented: false
+
+  - id: thm-7-11-rozklad-4-pravidelneho
+    kind: theorem
+    label: "Věta 7.11"
+    section: "7.3"
+    title: Rozklad 4-pravidelného grafu na dva 2-faktory
+    terms: [kvadratický faktor, 2-faktor, rozklad pravidelného grafu, 4-regular graph decomposition, Petersenova věta o 2-faktorech, eulerovský tah]
+    statement: |
+      Každý pravidelný graf 4. stupně se dá rozložit na dva kvadratické
+      (= pravidelné 2. stupně) faktory.
+    intuition: |
+      Faktor = podgraf obsahující všechny uzly. Kvadratický faktor je
+      disjunktní sjednocení kružnic pokrývajících všechny uzly. Graf
+      4. stupně je eulerovský (všechny stupně sudé), a když jeho uzavřený
+      eulerovský tah „obarvujeme" střídavě 1, 2, každý průchod uzlem spotřebuje
+      jednu hranu každé barvy. Obecněji (Petersen, 1891 – doplněno): každý
+      $2k$-pravidelný graf se rozkládá na $k$ kvadratických faktorů.
+    proof: |
+      Ve skriptech je důkaz jednou větou; rozepíšeme ho. Stačí uvažovat každou
+      komponentu zvlášť, nechť je tedy $G$ souvislý 4-pravidelný s $n$ uzly.
+
+      Všechny stupně jsou sudé a $G$ je souvislý, je tedy eulerovský – má
+      uzavřený eulerovský tah $T=(e_1,e_2,\dots,e_m)$. Počet hran je
+      $m=\frac{4n}{2}=2n$, tedy sudý. Hrany očíslujeme podle pořadí v tahu
+      střídavě $1,2,1,2,\dots$ ($e_i$ dostane 1 pro lichá $i$, 2 pro sudá).
+
+      Každý průchod tahu uzlem $v$ použije dvě po sobě jdoucí hrany
+      $e_i,e_{i+1}$, které mají různá čísla. Totéž platí pro „přechod" přes
+      počáteční uzel: $e_m$ má číslo 2 (protože $m$ je sudé) a $e_1$ číslo 1.
+      Uzlem stupně 4 projde tah dvakrát, takže v každém uzlu jsou přesně dvě
+      hrany s číslem 1 a dvě s číslem 2. Hrany s číslem 1 tvoří kvadratický
+      faktor, hrany s číslem 2 také. $\square$
+    proof_steps:
+      - 'Stačí uvažovat souvislou komponentu; graf se všemi stupni sudými je eulerovský, vezmeme uzavřený eulerovský tah.'
+      - 'Počet hran je 4n/2 = 2n, tedy sudý.'
+      - 'Hrany tahu očíslujeme střídavě 1, 2, 1, 2, …; první hrana má 1 a poslední 2.'
+      - 'Každý průchod uzlem (i přechod přes počátek) použije dvě po sobě jdoucí hrany s různými čísly.'
+      - 'Každým uzlem projde tah dvakrát, takže v něm jsou dvě hrany čísla 1 a dvě čísla 2 – obě třídy jsou kvadratické faktory.'
+    examples:
+      - title: Osmistěn
+        body: |
+          Osmistěn (vnější trojúhelník $A,B,C$, vnitřní trojúhelník $P,Q,R$,
+          hrany $AP,AQ,BP,BR,CQ,CR$) je 4-pravidelný. Jeden kvadratický faktor
+          je hamiltonovská kružnice $A\,P\,B\,R\,C\,Q\,A$ (barva 1), druhý
+          tvoří dva trojúhelníky $ABC$ a $PQR$ (barva 2). Skripta uvádějí jiný
+          rozklad – rozklad není jednoznačný.
+        graph:
+          directed: false
+          nodes:
+            - { id: A, x: 5, y: 9.5 }
+            - { id: B, x: 0.5, y: 1 }
+            - { id: C, x: 9.5, y: 1 }
+            - { id: P, x: 4, y: 5 }
+            - { id: Q, x: 6, y: 5 }
+            - { id: R, x: 5, y: 3 }
+          edges:
+            - { from: A, to: P, color: 1 }
+            - { from: P, to: B, color: 1 }
+            - { from: B, to: R, color: 1 }
+            - { from: R, to: C, color: 1 }
+            - { from: C, to: Q, color: 1 }
+            - { from: Q, to: A, color: 1 }
+            - { from: A, to: B, color: 2 }
+            - { from: B, to: C, color: 2 }
+            - { from: C, to: A, color: 2 }
+            - { from: P, to: Q, color: 2 }
+            - { from: Q, to: R, color: 2 }
+            - { from: R, to: P, color: 2 }
+    related: [rem-1-faktorizace, rem-instant-insanity]
+    source: "skripta str. 50, příklad (osmistěn) a Věta 7.11 s důkazem (rozepsán)"
+    supplemented: false
+
+  - id: rem-instant-insanity
+    kind: remark
+    section: "7.3"
+    title: "Aplikace: hlavolam se čtyřmi kostkami"
+    terms: [hlavolam se kostkami, Instant Insanity, kostky čtyři barvy, aplikace rozkladu grafu]
+    statement: |
+      Máme 4 kostky se stěnami obarvenými čtyřmi barvami (žlutá, modrá,
+      červená, zelená). Úkolem je postavit je do sloupečku tak, aby na žádné
+      ze čtyř bočních stran sloupečku nebyly dvě stěny stejné barvy (každá
+      barva tedy bude na každé straně právě jednou).
+
+      Pro každou kostku nakreslíme graf na uzlech = barvách, v němž jsou dvě
+      barvy spojeny hranou, jsou-li na protilehlých stěnách (3 hrany, mohou
+      vzniknout smyčky). Grafy sloučíme do jednoho multigrafu a hrany označíme
+      číslem kostky. Hledáme **dva hranově disjunktní podgrafy, pravidelné
+      2. stupně, z nichž každý obsahuje právě jednu hranu od každé kostky**.
+      Jeden určí barvy přední a zadní strany, druhý levé a pravé.
+    intuition: |
+      Hrana kostky $i$ mezi barvami $x,y$ v prvním podgrafu znamená „kostku $i$
+      otočím tak, aby $x$ byla vpředu a $y$ vzadu". Stupeň 2 v každém uzlu
+      zaručí, že každá barva je vpředu i vzadu dohromady právě dvakrát –
+      jednou vpředu a jednou vzadu (při vhodném směru oběhu kružnic).
+      Ve skriptech má úloha řešení: podgraf s hranami
+      ž–m (kostka 4), m–z (3), z–č (1), č–ž (2) a podgraf
+      ž–m (2), m–z (1), z–č (4), č–ž (3) – obě jsou kružnice ž, m, z, č.
+      Název *Instant Insanity* (doplněno) je obchodní název hlavolamu.
+    related: [thm-7-11-rozklad-4-pravidelneho]
+    source: "skripta str. 50–51, příklad (hlavolam se čtyřmi kostkami)"
+    supplemented: false
+
+quiz:
+  - id: q-barevnost-01
+    question: |
+      Jaké je chromatické číslo kružnice $C_9$?
+    options:
+      - '2'
+      - '3'
+      - '4'
+      - '9'
+    correct: 1
+    explanation: |
+      Kružnice liché délky není bipartitní (Věta 7.3), takže $\chi\ge3$,
+      a třemi barvami ji obarvíme snadno. Sudé kružnice mají $\chi=2$.
+    related: [def-chromaticke-cislo, thm-7-3-bipartitni-grafy]
+
+  - id: q-barevnost-02
+    question: |
+      Petersenův graf je souvislý, 3-pravidelný, není úplný a obsahuje $C_5$.
+      Co plyne z Brooksovy věty a dalších znalostí?
+    options:
+      - '$\chi=4$'
+      - '$\chi=3$'
+      - '$\chi=2$'
+      - 'Brooksova věta na něj nelze použít.'
+    correct: 1
+    explanation: |
+      Není úplný ani lichá kružnice, tedy $\chi\le\Delta=3$. Obsahuje lichou
+      kružnici, tedy $\chi\ge3$. Celkem $\chi=3$.
+    related: [thm-brooks, cor-7-1-brooks-souvisly]
+
+  - id: q-barevnost-03
+    question: |
+      Co zaručuje sekvenční (hladové) barvení pro libovolné pořadí uzlů?
+    options:
+      - 'Použije přesně χ(G) barev v čase O(n + m).'
+      - 'Použije nejvýše Δ(G) + 1 barev v čase O(n + m).'
+      - 'Použije nejvýše Δ(G) barev v čase O(n²).'
+      - 'Použije nejvýše ω(G) barev v exponenciálním čase.'
+    correct: 1
+    explanation: |
+      Každý uzel má nejvýše $\Delta$ obarvených sousedů, takže dostane barvu
+      nejvýše $\Delta+1$; s polem příznaků je práce na uzel $O(\deg+1)$.
+      Optimum nezaručuje – při špatném pořadí může být výsledek mnohem horší
+      než $\chi$.
+    related: [alg-sekvencni-barveni, thm-7-1-delta-plus-jedna]
+
+  - id: q-barevnost-04
+    question: |
+      Které tvrzení o složitosti barvení je správné?
+    options:
+      - 'Rozhodnout 2-obarvitelnost je NP-úplné, 3-obarvitelnost polynomiální.'
+      - 'Obojí je polynomiální.'
+      - '2-obarvitelnost lze rozhodnout v O(n + m), 3-obarvitelnost je NP-úplná.'
+      - 'Obojí je NP-úplné.'
+    correct: 2
+    explanation: |
+      2-obarvitelnost = bipartitnost, test prohledáváním do šířky v lineárním
+      čase. 3-COL je NP-úplná (Věta 7.4, důkaz v kap. 9), dokonce i pro
+      rovinné grafy.
+    related: [alg-test-bipartitnosti, thm-7-4-3col]
+
+  - id: q-barevnost-05
+    question: |
+      Graf má 20 uzlů a největší nezávislá množina má 6 uzlů. Jaký dolní odhad
+      chromatického čísla plyne z Věty 7.5?
+    options:
+      - '$\chi\ge3$'
+      - '$\chi\ge4$'
+      - '$\chi\ge6$'
+      - '$\chi\ge15$'
+    correct: 1
+    explanation: |
+      $\chi\cdot\alpha\ge n$, tedy $\chi\ge20/6\approx3{,}33$, a protože je
+      $\chi$ celé, $\chi\ge4$. Druhá část věty dává horní odhad
+      $\chi\le20-6+1=15$.
+    related: [thm-7-5-chi-a-alfa]
+
+  - id: q-barevnost-06
+    question: |
+      Platí vždy $\chi(G)=\omega(G)$?
+    options:
+      - 'Ano, z Tvrzení 7.1.'
+      - 'Ano, pro souvislé grafy.'
+      - 'Ne, například C_5 má ω = 2, ale χ = 3.'
+      - 'Ne, vždy platí χ(G) < ω(G).'
+    correct: 2
+    explanation: |
+      Tvrzení 7.1 dává jen $\chi\ge\omega$. Nerovnost může být ostrá – $C_5$
+      nebo graf z rozvrhu hodin (bez $K_4$, ale $\chi=4$).
+    related: [prop-7-1-klika-dolni-odhad]
+
+  - id: q-barevnost-07
+    question: |
+      Graf má maximální stupeň 5. Jaké hodnoty může nabývat jeho chromatický index?
+    options:
+      - 'Libovolné od 2 do 6.'
+      - 'Jen 5 nebo 6.'
+      - 'Jen 6.'
+      - 'Libovolné od 5 do 10.'
+    correct: 1
+    explanation: |
+      Vizingova věta: $\Delta\le\chi'\le\Delta+1$. Na rozdíl od uzlového
+      barvení je hranové barvení určeno maximálním stupněm až na jedničku.
+    related: [thm-vizing]
+
+  - id: q-barevnost-08
+    question: |
+      Kolik je $\chi'(K_7)$?
+    options:
+      - '6'
+      - '7'
+      - '8'
+      - '3'
+    correct: 1
+    explanation: |
+      $K_7=K_{2n-1}$ pro $n=4$, podle Věty 7.9 je $\chi'=2n-1=7$, ačkoli
+      $\Delta=6$. Každá barevná třída má nejvýše 3 hrany a hran je 21 > 6·3.
+    related: [thm-7-9-chromaticky-index-kn]
+
+  - id: q-barevnost-09
+    question: |
+      Proč nelze hrany $K_{2n-1}$ obarvit $2n-2$ barvami?
+    options:
+      - 'Protože K_{2n−1} obsahuje lichou kružnici.'
+      - 'Protože každá barevná třída je párování s nejvýše n − 1 hranami a hran je (2n − 1)(n − 1).'
+      - 'Protože maximální stupeň je 2n − 1.'
+      - 'Protože K_{2n−1} není rovinný.'
+    correct: 1
+    explanation: |
+      Párování na lichém počtu $2n-1$ uzlů má nejvýše $n-1$ hran, takže
+      $2n-2$ tříd pokryje nejvýše $(2n-2)(n-1)<(2n-1)(n-1)$ hran. Maximální
+      stupeň $K_{2n-1}$ je jen $2n-2$.
+    related: [thm-7-9-chromaticky-index-kn]
+
+  - id: q-barevnost-10
+    question: |
+      Jak se v důkazu Věty 7.11 rozloží 4-pravidelný graf na dva kvadratické faktory?
+    options:
+      - 'Najdeme perfektní párování a jeho doplněk.'
+      - 'Hrany uzavřeného eulerovského tahu očíslujeme střídavě 1 a 2.'
+      - 'Uzly obarvíme dvěma barvami a hrany rozdělíme podle barev konců.'
+      - 'Použijeme hladové hranové barvení.'
+    correct: 1
+    explanation: |
+      Graf je eulerovský a má sudý počet hran $2n$. Při střídavém číslování
+      každý průchod uzlem spotřebuje jednu hranu každého čísla, takže v každém
+      uzlu jsou dvě hrany čísla 1 a dvě čísla 2.
+    related: [thm-7-11-rozklad-4-pravidelneho]
+
+  - id: q-barevnost-11
+    question: |
+      Které tvrzení o rovinných grafech je pravdivé?
+    options:
+      - 'Každý rovinný graf je 3-obarvitelný.'
+      - 'Rozhodnout 3-obarvitelnost rovinného grafu je polynomiální, protože všechny jsou 4-obarvitelné.'
+      - 'Každý rovinný graf je 4-obarvitelný, ale rozhodnout jeho 3-obarvitelnost je NP-úplné.'
+      - 'Existují rovinné grafy s χ = 5.'
+    correct: 2
+    explanation: |
+      Věta o čtyřech barvách (Haken, Appel) zaručuje $\chi\le4$ ($K_4$ ukazuje,
+      že 3 nestačí vždy). Otázka „stačí 3?" zůstává NP-úplná i pro rovinné
+      grafy s $\Delta\le4$.
+    related: [thm-ctyri-barvy, rem-3col-rovinne-grafy]
+
+  - id: q-barevnost-12
+    question: |
+      Jakou horní mez chromatického čísla dává Heawoodův vzorec pro grafy
+      uložitelné na torus (rod $\gamma=1$)?
+    options:
+      - '4'
+      - '5'
+      - '6'
+      - '7'
+    correct: 3
+    explanation: |
+      $\left\lfloor\frac{7+\sqrt{1+48}}{2}\right\rfloor=\left\lfloor\frac{7+7}{2}\right\rfloor=7$.
+      Mez je dosažena – $K_7$ lze na torus nakreslit.
+    related: [thm-heawood]
+
+  - id: q-barevnost-13
+    question: |
+      Graf $K_{n,n}$ má $\Delta=n$. Co to vypovídá o vztahu $\chi$ a $\Delta$?
+    options:
+      - 'Že χ ≥ Δ pro každý graf.'
+      - 'Že pro uzlové barvení neexistuje dolní mez χ jako funkce Δ, protože χ(K_{n,n}) = 2.'
+      - 'Že K_{n,n} je výjimkou Brooksovy věty.'
+      - 'Že χ''(K_{n,n}) = 2.'
+    correct: 1
+    explanation: |
+      $K_{n,n}$ je bipartitní, takže $\chi=2$ při libovolně velkém $\Delta$.
+      U hranového barvení naopak vždy $\chi'\ge\Delta$ (a pro bipartitní grafy
+      podle Kőniga $\chi'=\Delta$, tedy $\chi'(K_{n,n})=n$).
+    related: [thm-vizing, rem-konig-hranove-barveni]
+
+  - id: q-barevnost-14
+    question: |
+      Které tvrzení o sekvenčním barvení je pravdivé?
+    options:
+      - 'Pro každé pořadí uzlů dá optimální obarvení.'
+      - 'Existuje pořadí uzlů, při kterém dá optimální obarvení, ale nalézt ho je obecně stejně těžké jako najít χ.'
+      - 'Řazení uzlů podle klesajících stupňů vždy dá optimum.'
+      - 'Výsledek nikdy nepřekročí 2χ(G).'
+    correct: 1
+    explanation: |
+      Seřadíme-li uzly podle tříd optimálního obarvení, hladový algoritmus
+      použije $\chi$ barev. Pro jiná pořadí může být libovolně špatný – např.
+      $K_{n,n}$ bez perfektního párování s pořadím $a_1,b_1,a_2,b_2,\dots$
+      dostane $n$ barev místo 2.
+    related: [alg-sekvencni-barveni]
+
+  - id: q-barevnost-15
+    question: |
+      Kdy je $\chi(G)=1$?
+    options:
+      - 'Když G je strom.'
+      - 'Když G nemá žádnou hranu.'
+      - 'Když G nemá lichou kružnici.'
+      - 'Když G má jediný uzel.'
+    correct: 1
+    explanation: |
+      Jedna barva stačí, právě když žádné dva uzly nesousedí, tj.
+      $H(G)=\emptyset$ (počet uzlů nehraje roli). Strom s hranou má $\chi=2$.
+    related: [thm-7-3-bipartitni-grafy, def-chromaticke-cislo]

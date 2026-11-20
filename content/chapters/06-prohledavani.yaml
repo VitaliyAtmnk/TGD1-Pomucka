@@ -1,0 +1,2054 @@
+id: prohledavani
+number: 6
+title: Prohledávání grafů a algoritmy k-souvislosti
+source: "TGD1 skripta kap. 5 (str. 29–36); přednáška 7 (TGD1-07-folie)"
+exam_questions: [9, 10]
+summary: |
+  Obecný algoritmus prohledávání grafu projde všechny uzly a hrany v lineárním čase
+  $O(n + m)$; podle toho, jak volí další zpracovávaný uzel, dostaneme prohledávání
+  do šířky (BFS) nebo do hloubky (DFS, backtracking). Na prohledávání stojí řada
+  dalších algoritmů: komponenty, artikulace a bloky (Tarjan), mosty, test acykličnosti.
+  Pro vyšší souvislost se používají toky v sítích. Druhá část se věnuje hamiltonovským
+  kružnicím: exponenciálnímu backtrackingu, heuristikám a postačujícím podmínkám
+  (Dirac, Ore, uzávěr grafu podle Bondyho a Chvátala). U zkoušky je důraz na algoritmy
+  a jejich složitost.
+sections:
+  - number: "5.1"
+    title: Algoritmus prohledávání grafu
+  - number: "5.2"
+    title: Použití backtrackingu
+  - number: "5.3"
+    title: Algoritmy zjišťování k-souvislosti
+  - number: "5.4"
+    title: Backtracking pro generování hamiltonovských cest a cyklů
+  - number: "5.5"
+    title: Heuristiky pro hledání hamiltonovské kružnice
+items:
+  # ------------------------------------------------------------------ 5.1
+  - id: alg-prohledavani
+    kind: algorithm
+    label: "Algoritmus 5.1"
+    section: "5.1"
+    title: Obecný algoritmus prohledávání grafu
+    terms:
+      - prohledávání grafu
+      - procházení grafu
+      - graph search
+      - graph traversal
+      - množiny N, M, D
+    statement: |
+      Úkolem je systematicky probrat všechny uzly a hrany (neorientovaného) grafu $G$
+      a případně na nich provést nějaký úkol. Algoritmus udržuje tři množiny:
+
+      * $N$ – uzly, které ještě nebyly probrány (nedosažené),
+      * $M$ – hrany, které ještě nebyly probrány,
+      * $D$ – uzly, kterých již bylo dosaženo, ale ze kterých ještě mohou vést
+        neprobrané hrany („aktivní“ uzly).
+    intuition: |
+      Představte si průzkum bludiště s křídou: $D$ jsou rozcestí, odkud ještě vedou
+      neprošlé chodby. Pokaždé vyberete jedno takové rozcestí, projdete z něj jednu novou
+      chodbu, a pokud vede na nové místo, přidáte ho k aktivním. Rozcestí bez neprošlých
+      chodeb vyškrtnete. Když už aktivní nic není, ale v grafu zbyly neobjevené uzly,
+      začnete znovu v nové komponentě.
+
+      Algoritmus je záměrně **nedeterministický** v kroku 4 (volba $w \in D$) – konkrétní
+      volbou z něj vznikne BFS ($D$ jako fronta) nebo DFS ($D$ jako zásobník).
+    pseudocode: |
+      1. **Inicializace:** $N := U(G)$, $M := H(G)$, $D := \emptyset$.
+      2. **Test ukončení:** je-li $N = \emptyset$, výpočet končí.
+      3. **Volba prvního uzlu v komponentě:** zvol $v \in N$ a polož $N := N \setminus \{v\}$, $D := \{v\}$.
+      4. **Volba počátečního uzlu hrany:** zvol libovolně $w \in D$.
+      5. **Test použitelnosti $w$:** hledej hranu v $M$ obsahující $w$.
+         * neexistuje: $D := D \setminus \{w\}$; je-li $D = \emptyset$, jdi na 2, jinak jdi na 4;
+         * existuje: jdi na 6.
+      6. Zvol takovou hranu $h = \{w, z\} \in M$, „projdi“ ji (proveď na ní určený úkol)
+         a polož $M := M \setminus \{h\}$; je-li $z \in N$, polož $N := N \setminus \{z\}$,
+         $D := D \cup \{z\}$. Jdi na 4.
+    complexity: |
+      $O(n + m)$ při reprezentaci grafu seznamy sousedů (viz [Věta 5.1](#thm-prohledavani-linearni)).
+      Každý uzel vstoupí do $D$ a opustí ho jen jednou, každá hrana se z $M$ odebere jen
+      jednou. S maticí sousednosti by hledání hran v kroku 5 stálo celkem $O(n^2)$.
+    examples:
+      - title: Co znamená „projít hranu“
+        body: |
+          Úkol v kroku 6 je libovolný: označit hranu jako stromovou / chordu, zapsat uzlu
+          $z$ číslo komponenty, vzdálenost od počátku, pořadové číslo $p(z)$, aktualizovat
+          dolní čísla $r(\cdot)$ apod. Tak vznikají všechny algoritmy této kapitoly.
+    visualization: graph-search
+    related: [thm-prohledavani-linearni, rem-prohledavani-implementace, alg-bfs, alg-dfs, prop-komponenty-linearne]
+    source: "skripta str. 29; přednáška 7, fólie 1"
+
+  - id: thm-prohledavani-linearni
+    kind: theorem
+    label: "Věta 5.1"
+    section: "5.1"
+    title: Prohledávání grafu v lineárním čase
+    terms:
+      - složitost prohledávání
+      - O(n+m)
+      - lineární čas
+      - časová složitost BFS
+      - časová složitost DFS
+    statement: |
+      Algoritmus 5.1 prohledá graf $G$ v čase $O(n + m)$, kde $n$ je počet uzlů
+      a $m$ počet hran grafu $G$.
+    intuition: |
+      Lineární čas je nejlepší možný – každý uzel a každou hranu se musíme aspoň jednou
+      „podívat“. Předpokladem je rozumná reprezentace: seznamy sousedů a u každého uzlu
+      ukazatel na první dosud neprozkoumaného souseda, takže krok 5 nikdy neprochází
+      tutéž položku seznamu dvakrát.
+    proof: |
+      *Důkaz ve skriptech není („snadno se ověří“), doplněno.*
+
+      Předpokládejme, že graf je zadán seznamy sousedů, každý uzel má ukazatel na první
+      dosud nezkoumanou položku svého seznamu a u hran si pamatujeme příznak „probrána“
+      (odebrání z $M$ je $O(1)$).
+
+      * Kroky 2 a 3 se provedou nejvýše $(n + 1)$-krát, protože každé provedení kroku 3
+        odebere uzel z $N$.
+      * Každý uzel vstoupí do $D$ právě jednou (v kroku 3 nebo 6, a to při odebrání z $N$)
+        a právě jednou z něj odejde (v kroku 5). Neúspěšný test v kroku 5 tedy nastane
+        nejvýše $n$-krát.
+      * Úspěšný test v kroku 5 vede na krok 6, který odebere hranu z $M$; to nastane
+        nejvýše $m$-krát.
+      * Hledání v kroku 5 posouvá ukazatel v seznamu sousedů uzlu $w$ a přeskakuje už
+        probrané hrany; každá položka seznamu se přeskočí nejvýše jednou. Součet délek
+        všech seznamů je $2m$.
+
+      Kroky 4–6 se tedy provedou $O(n + m)$-krát, s celkovou prací na hledání $O(n + m)$,
+      a celkový čas je $O(n + m)$.
+    proof_steps:
+      - Graf reprezentujeme seznamy sousedů s ukazatelem na první nezkoumaného souseda u každého uzlu.
+      - Krok 3 odebírá uzel z $N$, takže kroky 2–3 proběhnou nejvýše $n+1$-krát.
+      - Každý uzel do $D$ vstoupí i z něj odejde jen jednou, takže neúspěšných testů v kroku 5 je nejvýše $n$.
+      - Každý úspěšný test vede ke kroku 6, který odebere hranu z $M$, takže úspěšných testů je nejvýše $m$.
+      - Ukazatele v seznamech sousedů se jen posouvají vpřed, celkem o nejvýše $2m$ položek, a celkový čas je $O(n+m)$.
+    related: [alg-prohledavani, prop-komponenty-linearne]
+    source: "skripta str. 29 (bez důkazu); přednáška 7, fólie 2"
+
+  - id: rem-prohledavani-implementace
+    kind: remark
+    label: "Poznámka (str. 29)"
+    section: "5.1"
+    title: Ukončení a možné implementace volby uzlu
+    terms:
+      - fronta
+      - zásobník
+      - queue
+      - stack
+      - volba uzlu z D
+    statement: |
+      1. Krok 2 je skutečně testem ukončení: v tomto bodě je vždy $D = \emptyset$, takže
+         není co dál prohledávat.
+      2. V kroku 4 jsou v zásadě tři možné implementace volby $w \in D$:
+         * volit náhodně,
+         * brát uzel, který je v $D$ **nejdéle** – $D$ je **fronta**; vznikne
+           **prohledávání do šířky**,
+         * brát uzel, který je v $D$ **nejkratší dobu** – $D$ je **zásobník**; vznikne
+           **prohledávání do hloubky**.
+    intuition: |
+      Fronta = „kdo dřív přijde, ten dřív mele“ – prohledávání se šíří ve vlnách od
+      počátku. Zásobník = „naposledy objevený jde první na řadu“ – prohledávání se noří
+      co nejhlouběji a vrací se, až když nemůže dál. Oba postupy dávají o grafu mnoho
+      informací (vzdálenosti, resp. artikulace a bloky).
+    related: [alg-prohledavani, alg-bfs, alg-dfs]
+    source: "skripta str. 29"
+
+  - id: alg-bfs
+    kind: algorithm
+    section: "5.1"
+    title: Prohledávání do šířky (BFS)
+    terms:
+      - prohledávání do šířky
+      - BFS
+      - breadth-first search
+      - fronta
+      - vlna
+      - vzdálenost od počátečního uzlu
+    statement: |
+      Prohledávání do šířky je Algoritmus 5.1, v němž je množina $D$ realizována jako
+      **fronta**: v kroku 4 se vždy volí uzel, který je v $D$ nejdéle, a nově dosažené
+      uzly se zařazují na konec. (Jsou-li možnosti volby, budeme pro jednoznačnost volit
+      uzel s nejmenším číslem.)
+    intuition: |
+      BFS probírá uzly postupně **podle vzdálenosti** od počátečního uzlu: nejprve všechny
+      uzly ve vzdálenosti 1, pak ve vzdálenosti 2 atd. Proto se hodí na hledání nejkratších
+      cest v neohodnoceném grafu (počet hran) – vzdálenost uzlu $z$ je o 1 větší než
+      vzdálenost uzlu $w$, z něhož byl objeven. Hrany, po nichž byly uzly objeveny, tvoří
+      strom nejkratších cest.
+    pseudocode: |
+      1. Všechny uzly jsou neobjevené; fronta $D$ je prázdná.
+      2. Pokud neobjevený uzel neexistuje, konec. Jinak vezmi neobjevený uzel $v$, označ ho jako objevený a vlož do $D$.
+      3. Dokud $D \ne \emptyset$: nechť $w$ je **první** uzel fronty.
+         * Má-li $w$ neprobranou hranu $\{w, z\}$: projdi ji, označ jako probranou; je-li $z$ neobjevený, označ ho a **zařaď na konec** fronty.
+         * Jinak $w$ z fronty odeber.
+      4. Jdi na 2 (další komponenta).
+    complexity: |
+      $O(n + m)$ – je to speciální případ Algoritmu 5.1 (fronta má operace v čase $O(1)$).
+    examples:
+      - title: BFS na grafu se 13 uzly
+        body: |
+          Začínáme v uzlu 1, při více možnostech volíme nejmenší číslo. Stav fronty $D$,
+          zpracovávaný uzel $w$ a procházená hrana:
+
+          | $D$ | $w$ | hrana |
+          |---|---|---|
+          | 1 | 1 | 12 |
+          | 1, 2 | 1 | 13 |
+          | 1, 2, 3 | 1 | 18 |
+          | 1, 2, 3, 8 | 1 | 19 |
+          | 1, 2, 3, 8, 9 | 1 | – (odeber 1) |
+          | 2, 3, 8, 9 | 2 | 23, 24, 25 |
+          | 2, 3, 8, 9, 4, 5 | 2 | – |
+          | 3, 8, 9, 4, 5 | 3 | 35, pak – |
+          | 8, 9, 4, 5 | 8 | 89, 8 10, 8 11, pak – |
+          | 9, 4, 5, 10, 11 | 9 | 9 10, pak – |
+          | 4, 5, 10, 11 | 4 | 45, pak – |
+          | 5, 10, 11 | 5 | 56, 57, pak – |
+          | 10, 11, 6, 7 | 10, 11 | – |
+          | 6, 7 | 6 | 67, pak – |
+          | 7 | 7 | – |
+          | $\emptyset$ | | |
+
+          Fronta je prázdná, ale uzly 12 a 13 nebyly probrány: krok 2 zvolí uzel 12,
+          projde se hrana 12 13 a výpočet skončí. Pořadí objevení
+          $1, 2, 3, 8, 9, 4, 5, 10, 11, 6, 7$ odpovídá vzdálenostem od uzlu 1:
+          vzdálenost 1 mají $2, 3, 8, 9$, vzdálenost 2 mají $4, 5, 10, 11$,
+          vzdálenost 3 mají $6, 7$.
+        graph:
+          directed: false
+          nodes:
+            - { id: 12, x: 4, y: 10 }
+            - { id: 13, x: 7, y: 9 }
+            - { id: 10, x: 4, y: 7.8 }
+            - { id: 9, x: 1, y: 6.8 }
+            - { id: 8, x: 4, y: 5.8 }
+            - { id: 1, x: 1, y: 4.8 }
+            - { id: 11, x: 7, y: 4.8 }
+            - { id: 3, x: 4, y: 3.6 }
+            - { id: 2, x: 1, y: 2.6 }
+            - { id: 7, x: 7, y: 2.6 }
+            - { id: 5, x: 4, y: 1.6 }
+            - { id: 4, x: 1, y: 0.4 }
+            - { id: 6, x: 7, y: 0.4 }
+          edges:
+            - { from: 12, to: 13 }
+            - { from: 10, to: 9 }
+            - { from: 10, to: 8 }
+            - { from: 9, to: 1 }
+            - { from: 9, to: 8 }
+            - { from: 8, to: 1 }
+            - { from: 8, to: 11 }
+            - { from: 1, to: 3 }
+            - { from: 1, to: 2 }
+            - { from: 3, to: 2 }
+            - { from: 3, to: 5 }
+            - { from: 2, to: 4 }
+            - { from: 2, to: 5 }
+            - { from: 4, to: 5 }
+            - { from: 5, to: 6 }
+            - { from: 5, to: 7 }
+            - { from: 6, to: 7 }
+    visualization: graph-search
+    related: [alg-prohledavani, alg-dfs, rem-prohledavani-implementace, thm-prohledavani-linearni]
+    illustrations:
+      - title: BFS postupuje po vlnách
+        property: spanning-tree
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 0, y: 5 }
+            - { id: a, x: 3, y: 8.5 }
+            - { id: b, x: 3, y: 1.5 }
+            - { id: c, x: 6.5, y: 8.5 }
+            - { id: d, x: 6.5, y: 1.5 }
+            - { id: e, x: 10, y: 8.5 }
+            - { id: f, x: 10, y: 1.5 }
+          edges:
+            - { from: s, to: a }
+            - { from: s, to: b }
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: f }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              BFS začíná v $s$ (vzdálenost 0), fronta $D = (s)$. Strom prohledávání zatím nemá žádnou hranu.
+            nodes: { s: active }
+            labels: { s: "0" }
+          - caption: |
+              Z $s$ objevíme $a$ a $b$ (vzdálenost 1) a zařadíme je na konec fronty. Hrana $\{a, b\}$ pak vede mezi dvěma už objevenými uzly – je to chorda.
+            nodes: { s: done, a: frontier, b: frontier }
+            edges: { a-b: back }
+            labels: { s: "0", a: "1", b: "1" }
+            edge_set: [s-a, s-b]
+          - caption: |
+              Druhá vlna: z $a$ objevíme $c$, z $b$ uzel $d$ – vzdálenost 2. Fronta je teď $(c, d)$; uzly se zpracovávají v pořadí, v jakém byly objeveny.
+            nodes: { s: done, a: done, b: done, c: frontier, d: frontier }
+            edges: { a-b: back }
+            labels: { s: "0", a: "1", b: "1", c: "2", d: "2" }
+            edge_set: [s-a, s-b, a-c, b-d]
+          - caption: |
+              Třetí vlna $e, f$. Hrany objevení tvoří **kostru** – strom nejkratších cest ze $s$. Chordy spojují uzly ve stejné nebo sousední vlně, nikdy „ob vlnu“.
+            nodes: { s: done, a: done, b: done, c: done, d: done, e: done, f: done }
+            edges: { a-b: back, c-d: back, e-f: back }
+            labels: { s: "0", a: "1", b: "1", c: "2", d: "2", e: "3", f: "3" }
+            edge_set: [s-a, s-b, a-c, b-d, c-e, d-f]
+    source: "skripta str. 29–30"
+
+  - id: alg-dfs
+    kind: algorithm
+    section: "5.1"
+    title: Prohledávání do hloubky (DFS, backtracking)
+    terms:
+      - prohledávání do hloubky
+      - DFS
+      - depth-first search
+      - backtracking
+      - zásobník
+      - zpětný krok
+    statement: |
+      Prohledávání do hloubky je Algoritmus 5.1, v němž je množina $D$ realizována jako
+      **zásobník**: v kroku 4 se vždy volí uzel, který je v $D$ nejkratší dobu (naposledy
+      přidaný). Prohledávání do hloubky se také říká **backtracking** (podle zpětných
+      kroků).
+    intuition: |
+      DFS jde „pořád dál“ do nových uzlů, a když už z aktuálního uzlu žádná neprobraná hrana
+      nevede, vrátí se o krok zpět (zpětný krok) a zkouší jinou možnost. Obsah zásobníku
+      $D$ je vždy cesta ve stromu prohledávání z kořene do aktuálního uzlu.
+
+      Klíčová vlastnost pro další algoritmy: **každá chorda spojuje uzel s jeho předkem**
+      ve stromu prohledávání (v neorientovaném DFS nejsou „příčné“ hrany). A když DFS
+      vstoupí do nějaké větve, projde ji celou, než ji opustí.
+    pseudocode: |
+      1. Všechny uzly jsou neobjevené; zásobník $D$ je prázdný.
+      2. Pokud neobjevený uzel neexistuje, konec. Jinak vezmi neobjevený uzel $v$ (kořen), označ ho a vlož do $D$.
+      3. Dokud $D \ne \emptyset$: nechť $w$ je uzel na **vrcholu** zásobníku.
+         * Má-li $w$ neprobranou hranu $\{w, z\}$: projdi ji, označ jako probranou;
+           je-li $z$ neobjevený, označ ho a **vlož na vrchol** zásobníku
+           (objevení nového uzlu, hrana stromu); jinak je $\{w, z\}$ chorda.
+         * Jinak $w$ ze zásobníku odeber (zpětný krok do uzlu pod ním).
+      4. Jdi na 2 (další komponenta).
+    complexity: |
+      $O(n + m)$ – speciální případ Algoritmu 5.1. Lze jej psát i rekurzivně; zásobník pak
+      nahrazuje zásobník volání.
+    examples:
+      - title: DFS na grafu se 13 uzly
+        body: |
+          Stejný graf jako u [BFS](#alg-bfs), začínáme v uzlu 1, volíme nejmenší čísla.
+          Posloupnost kroků (→ objevení nového uzlu, ⇢ chorda, ← zpětný krok):
+
+          * $1 \to 2 \to 3$; ze 3: chorda $3$⇢$1$; $3 \to 5$; z 5: chorda $5$⇢$2$;
+            $5 \to 4$; ze 4: chorda $4$⇢$2$; zpět $4 \leftarrow$ do 5.
+          * $5 \to 6 \to 7$; ze 7: chorda $7$⇢$5$; zpět do 6, 5, 3, 2, 1.
+          * $1 \to 8 \to 9$; z 9: chorda $9$⇢$1$; $9 \to 10$; z 10: chorda $10$⇢$8$;
+            zpět do 9, 8; $8 \to 11$; zpět do 8, 1. Zásobník je prázdný.
+          * Nová komponenta: $12 \to 13$, zpět do 12, konec.
+
+          Hrany stromu: $12, 23, 35, 54, 56, 67, 18, 89, 9\,10, 8\,11, 12\,13$;
+          chordy: $31, 52, 42, 75, 91, 10\,8$. Každá chorda vede do předka.
+        graph:
+          directed: false
+          nodes:
+            - { id: 12, x: 4, y: 10 }
+            - { id: 13, x: 7, y: 9 }
+            - { id: 10, x: 4, y: 7.8 }
+            - { id: 9, x: 1, y: 6.8 }
+            - { id: 8, x: 4, y: 5.8 }
+            - { id: 1, x: 1, y: 4.8 }
+            - { id: 11, x: 7, y: 4.8 }
+            - { id: 3, x: 4, y: 3.6 }
+            - { id: 2, x: 1, y: 2.6 }
+            - { id: 7, x: 7, y: 2.6 }
+            - { id: 5, x: 4, y: 1.6 }
+            - { id: 4, x: 1, y: 0.4 }
+            - { id: 6, x: 7, y: 0.4 }
+          edges:
+            - { from: 12, to: 13 }
+            - { from: 10, to: 9 }
+            - { from: 10, to: 8 }
+            - { from: 9, to: 1 }
+            - { from: 9, to: 8 }
+            - { from: 8, to: 1 }
+            - { from: 8, to: 11 }
+            - { from: 1, to: 3 }
+            - { from: 1, to: 2 }
+            - { from: 3, to: 2 }
+            - { from: 3, to: 5 }
+            - { from: 2, to: 4 }
+            - { from: 2, to: 5 }
+            - { from: 4, to: 5 }
+            - { from: 5, to: 6 }
+            - { from: 5, to: 7 }
+            - { from: 6, to: 7 }
+    visualization: graph-search
+    related: [alg-prohledavani, alg-bfs, def-strom-prohledavani, alg-artikulace-tarjan]
+    source: "skripta str. 29, 31–32"
+
+  - id: def-strom-prohledavani
+    kind: definition
+    section: "5.1"
+    title: Strom prohledávání, chordy, zpětný krok
+    terms:
+      - strom prohledávání
+      - les prohledávání
+      - DFS strom
+      - chorda
+      - zpětná hrana
+      - back edge
+      - tree edge
+      - zpětný krok
+      - objevení nového uzlu
+    statement: |
+      Kroky prohledávání do hloubky jsou trojího typu:
+
+      a) **objevení nového uzlu**,
+      b) **nalezení hrany do již existujícího uzlu**,
+      c) **zpětný krok**.
+
+      Hrany prohledávané v krocích a) tvoří strom zvaný **strom prohledávání** (pro
+      nesouvislé grafy les prohledávání). Hrany prohledávané v krocích b) se nazývají
+      **chordy**. Obvykle se oba druhy hran chápou jako orientované ve směru prohledávání;
+      zpětné kroky pak jdou vždy po hranách stromu proti jejich orientaci.
+    intuition: |
+      Strom prohledávání je kostra (každé komponenty), kterou si DFS „vyšlape“. Chordy jsou
+      zbylé hrany – každá z nich uzavírá s cestou ve stromu kružnici. V DFS na neorientovaném
+      grafu vede každá chorda z uzlu do některého jeho **předka**: když DFS objeví uzel $y$,
+      projde celý podstrom pod $y$ dřív, než se vrátí, takže všechny hrany z podstromu
+      buď vedou do podstromu, nebo do uzlů na aktuální cestě (předků).
+
+      Na této vlastnosti stojí Tarjanův algoritmus pro artikulace a bloky.
+    examples:
+      - title: Strom a chordy z příkladu DFS
+        body: |
+          Orientované hrany stromu (z otce do syna): $1\to2$, $2\to3$, $3\to5$, $5\to4$,
+          $5\to6$, $6\to7$, $1\to8$, $8\to9$, $9\to10$, $8\to11$, $12\to13$.
+          Chordy (z potomka do předka): $3\to1$, $5\to2$, $4\to2$, $7\to5$, $9\to1$,
+          $10\to8$.
+    visualization: graph-search
+    related: [alg-dfs, alg-artikulace-tarjan, prop-kriterium-artikulace, prop-test-acyklicnosti]
+    illustrations:
+      - title: Strom DFS versus strom BFS
+        property: spanning-tree
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 0, y: 5 }
+            - { id: a, x: 3, y: 8.5 }
+            - { id: b, x: 3, y: 1.5 }
+            - { id: c, x: 6.5, y: 8.5 }
+            - { id: d, x: 6.5, y: 1.5 }
+            - { id: e, x: 10, y: 8.5 }
+            - { id: f, x: 10, y: 1.5 }
+          edges:
+            - { from: s, to: a }
+            - { from: s, to: b }
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: f }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Strom DFS ze $s$ (čísla = pořadí objevení, sousedé abecedně). DFS jde pořád hlouběji, takže strom je tu dokonce cesta. Chordy $b\,s$, $c\,a$, $f\,d$ vedou všechny do **předka**.
+            edges: { s-b: back, a-c: back, d-f: back }
+            labels: { s: "1", a: "2", b: "3", d: "4", c: "5", e: "6", f: "7" }
+            edge_set: [s-a, a-b, b-d, d-c, c-e, e-f]
+          - caption: |
+              Strom BFS na stejném grafu je „široký a mělký“. Chorda $\{c, d\}$ tu spojuje dva uzly, z nichž žádný není předkem druhého – v DFS na neorientovaném grafu se to stát nemůže.
+            edges: { a-b: back, c-d: back, e-f: back }
+            labels: { s: "1", a: "2", b: "3", c: "4", d: "5", e: "6", f: "7" }
+            edge_set: [s-a, s-b, a-c, b-d, c-e, d-f]
+          - caption: |
+              Přidáme-li ke stromu DFS kteroukoli chordu, třeba $\{c, a\}$, vznikne kružnice. Strom prohledávání je kostra: chordy jsou přesně hrany, které by kružnici uzavřely.
+            edge_set: [s-a, a-b, b-d, d-c, c-e, e-f, a-c]
+    source: "skripta str. 31–32"
+
+  - id: prop-komponenty-linearne
+    kind: proposition
+    label: "Tvrzení 5.1"
+    section: "5.1"
+    title: Komponenty v lineárním čase
+    terms:
+      - nalezení komponent
+      - komponenty souvislosti
+      - connected components
+      - test souvislosti
+    statement: |
+      Komponenty grafu lze nalézt v čase $O(m + n)$.
+    intuition: |
+      Každý průchod krokem 3 Algoritmu 5.1 zahajuje novou komponentu – stačí uzlům při
+      objevení zapisovat číslo aktuální komponenty. Speciálně lze v čase $O(n + m)$
+      rozhodnout, zda je graf souvislý (krok 3 proběhne právě jednou).
+    proof: |
+      Spustíme Algoritmus 5.1 s čítačem $c := 0$; při každém provedení kroku 3 zvýšíme
+      $c$ o 1 a uzlu $v$ přiřadíme číslo $c$; při zařazení uzlu $z$ do $D$ v kroku 6 mu
+      přiřadíme aktuální $c$.
+
+      Mezi dvěma provedeními kroku 3 algoritmus prochází jen hrany z uzlů v $D$, takže
+      objeví přesně uzly dosažitelné z $v$, tj. celou komponentu uzlu $v$ (každý dosažitelný
+      uzel je objeven, protože $D$ se vyprázdní až po probrání všech hran z dosažených uzlů;
+      nedosažitelný uzel objeven být nemůže, protože se jde jen po hranách). Uzly se stejným
+      číslem tedy tvoří komponentu. Přidaná práce je $O(1)$ na uzel, takže podle
+      [Věty 5.1](#thm-prohledavani-linearni) je celkový čas $O(m + n)$.
+    proof_steps:
+      - V Algoritmu 5.1 přiřazujeme objeveným uzlům číslo komponenty, které zvyšujeme při každém kroku 3.
+      - Mezi dvěma kroky 3 se objeví právě uzly dosažitelné z uzlu $v$ zvoleného v kroku 3.
+      - Každý dosažitelný uzel je objeven, protože $D$ se vyprázdní až po probrání všech hran z dosažených uzlů.
+      - Uzly se stejným číslem tvoří tedy komponentu a celkový čas je podle Věty 5.1 $O(m+n)$.
+    related: [alg-prohledavani, thm-prohledavani-linearni]
+    source: "skripta str. 32; přednáška 7, fólie 2"
+
+  - id: prop-test-acyklicnosti
+    kind: proposition
+    section: "5.1"
+    title: Test acykličnosti (les) prohledáváním
+    terms:
+      - test acykličnosti
+      - je graf les
+      - je graf strom
+      - hledání kružnice
+      - cycle detection
+    statement: |
+      Graf $G$ neobsahuje kružnici (je lesem), právě když Algoritmus 5.1 (např. DFS
+      nebo BFS) nenalezne žádnou chordu, tj. každá procházená hrana vede do dosud
+      nedosaženého uzlu. Ekvivalentně $m = n - c$, kde $c$ je počet komponent.
+      Test lze provést v čase $O(n + m)$ (dokonce $O(n)$, pokud se zastavíme u první
+      chordy), a je-li chorda nalezena, poskytne i konkrétní kružnici.
+    intuition: |
+      Hrany, po nichž se objevují nové uzly, tvoří kostru každé komponenty. Jakákoli další
+      hrana (chorda) spojuje dva uzly, mezi nimiž už ve stromu vede cesta – a tím uzavírá
+      kružnici. Graf bez chord je tedy roven svému lesu prohledávání.
+    proof: |
+      *Ve skriptech není, doplněno.*
+
+      Hrany, po nichž algoritmus objeví nový uzel, tvoří les $T$: každá taková hrana
+      přidá nový uzel, a každá komponenta začíná jedním uzlem z kroku 3, takže $T$ má
+      $n - c$ hran a je acyklický.
+
+      Najde-li algoritmus chordu $\{w, z\}$, je $z$ už dosažen ve stejné komponentě; ve
+      stromu $T$ vede cesta z $w$ do $z$, která chordu neobsahuje, a spolu s ní tvoří
+      kružnici. Nenajde-li žádnou chordu, jsou všechny hrany grafu v $T$, tedy $G = T$ je
+      les a $m = n - c$.
+
+      Časová složitost plyne z [Věty 5.1](#thm-prohledavani-linearni); zastavíme-li se
+      u první chordy, prošli jsme předtím nejvýše $n - 1$ stromových hran, takže stačí
+      čas $O(n)$.
+    proof_steps:
+      - Hrany, po nichž se objevují nové uzly, tvoří les $T$ s $n - c$ hranami.
+      - Chorda $\{w,z\}$ spojuje dva uzly téže komponenty, mezi nimiž v $T$ vede cesta, takže spolu s ní uzavírá kružnici.
+      - Bez chord jsou všechny hrany grafu v $T$, takže $G$ je les a $m = n - c$.
+      - Před nalezením první chordy se projde nejvýše $n-1$ hran, takže test trvá $O(n)$.
+    related: [alg-prohledavani, def-strom-prohledavani, prop-komponenty-linearne]
+    illustrations:
+      - title: Chorda = kružnice
+        property: acyclic
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 0, y: 5 }
+            - { id: a, x: 3, y: 8.5 }
+            - { id: b, x: 3, y: 1.5 }
+            - { id: c, x: 6.5, y: 8.5 }
+            - { id: d, x: 6.5, y: 1.5 }
+            - { id: e, x: 10, y: 8.5 }
+            - { id: f, x: 10, y: 1.5 }
+          edges:
+            - { from: s, to: a }
+            - { from: a, to: b }
+            - { from: b, to: d }
+            - { from: d, to: c }
+            - { from: c, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Prohledávání ze $s$ nenašlo žádnou chordu: všech 6 hran vedlo do nového uzlu, $m = n - c = 7 - 1$. Graf je roven svému stromu prohledávání – je to strom (les).
+          - caption: |
+              Přidáme hranu $\{b, s\}$. Prohledávání z $b$ narazí na už objevený uzel $s$ – chorda. Spolu s cestou $s\,a\,b$ ve stromu uzavírá kružnici.
+            add: [[b, s]]
+          - caption: |
+              Každá další chorda dává další kružnici (např. $\{f, d\}$ s cestou $d\,c\,e\,f$). Teď $m = 8 > n - c = 6$: co hrana navíc, to chorda.
+            add: [[f, d]]
+    source: "doplněno (použití prohledávání)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 5.2
+  - id: def-vetev-grafu
+    kind: definition
+    section: "5.2"
+    title: Větev grafu při artikulaci
+    terms:
+      - větev grafu
+      - větev u artikulace
+      - podstrom DFS
+    statement: |
+      Je-li uzel $v$ artikulace grafu $G$, pak **větev grafu $G$** (u uzlu $v$) je
+      maximální souvislá část grafu $G$, v níž uzel $v$ není artikulací.
+    intuition: |
+      Větev je tvořena uzlem $v$ a jednou komponentou grafu $G - v$ (spolu s hranami
+      do $v$). Backtracking má důležitou vlastnost: jakmile do větve vstoupí (přes $v$),
+      projde ji celou a teprve pak ji opustí – opustit ji jinudy než přes artikulaci $v$
+      ani nejde. Speciálně: vstoupí-li do koncového bloku, neopustí ho, dokud ho celý
+      neprozkoumá. Otázkou je jen, jak při zpětném kroku poznat, že jsme v artikulaci –
+      to řeší Tarjanova dolní čísla.
+    related: [def-artikulace, alg-artikulace-tarjan, alg-dfs]
+    source: "skripta str. 32"
+
+  - id: prop-kriterium-artikulace
+    kind: proposition
+    section: "5.2"
+    title: Dolní čísla a Tarjanovo kritérium artikulace
+    terms:
+      - dolní číslo
+      - low point
+      - lowpoint
+      - p(x)
+      - r(x)
+      - kritérium artikulace
+      - Tarjanovo kritérium
+    statement: |
+      Proveďme na souvislém grafu $G$ prohledávání do hloubky; uzly očíslujme pořadím,
+      v němž byly zařazeny do stromu prohledávání ($p(x)$), a dolní čísla $r(x)$ počítejme
+      pravidly:
+
+      a) při objevení nového uzlu $x$ položíme $r(x) = p(x)$,
+
+      b) při nalezení chordy $xy$ položíme $r(x) = \min\{p(y), r(x)\}$,
+
+      c) při zpětném kroku z $x$ do $y$ položíme $r(y) = \min\{r(y), r(x)\}$.
+
+      Pak:
+
+      1. $r(x)$ je nejmenší pořadové číslo uzlu, do něhož se lze z uzlu $x$ dostat
+         orientovanou cestou složenou z hran stromu a případně (na konci) z právě jedné
+         chordy.
+      2. Uzel $x$ s $p(x) > 1$ je artikulací, právě když existuje jeho následník (syn) $y$
+         ve stromu prohledávání takový, že $r(y) \ge p(x)$.
+      3. *(Doplněno.)* Kořen ($p(x) = 1$) je artikulací, právě když má ve stromu
+         prohledávání alespoň dva syny.
+    intuition: |
+      Bod 2 lidsky: $x$ je artikulace, pokud má syna $y$, z jehož podstromu se **nelze
+      dostat chordou výš než do $x$** – podstrom pod $y$ je pak k zbytku grafu „přivázán“
+      jen přes $x$. Kořen je speciální, protože nad ním nic není: je artikulací, právě když
+      se pod ním strom větví (dva podstromy nemohou být propojeny chordou, chordy vedou jen
+      do předků).
+
+      Skripta kritérium pro kořen neuvádějí; bez něj by algoritmus kořen nikdy neoznačil.
+      Např. v cestě $a - b - c$ prohledávané z $b$ je kořen $b$ artikulace.
+    proof: |
+      *Skripta uvádějí tvrzení bez důkazu („snadno je vidět“), doplněno.*
+
+      **Pomocné pozorování (vlastnost DFS).** Každá chorda spojuje uzel s jeho předkem ve
+      stromu a je nalezena z potomka: když je uzel $z$ objeven, jeho předci leží v zásobníku
+      pod ním a $z$ i všichni jeho potomci jsou zpracováni (a odebráni) dřív, než se
+      algoritmus vrátí k předkům. Všechny hrany ze $z$ se tedy probírají v době, kdy jsou
+      v zásobníku jen předci $z$ a uzly z podstromu $z$; nedosažený uzel se stane potomkem.
+
+      **Bod 1.** Uzel $x$ je dokončen (zpětný krok z něj) až po dokončení všech synů. V tu
+      chvíli podle pravidel platí
+      $r(x) = \min\bigl(\{p(x)\} \cup \{p(y) : xy \text{ chorda z } x\} \cup \{r(s) : s \text{ syn } x\}\bigr)$,
+      což indukcí podle pořadí dokončení dává popsané minimum přes cesty „dolů po stromu,
+      pak nejvýše jedna chorda“.
+
+      Označme $T_y$ podstrom se synem $y$. Uzly v $T_y$ mají $p \ge p(y) > p(x)$; chordy
+      z $T_y$ vedou do předků, tj. do $T_y$, do $x$ nebo do předků $x$ (ti mají $p < p(x)$).
+
+      **Bod 2, ($\Leftarrow$).** Nechť $r(y) \ge p(x)$. Pak z $T_y$ nevede chorda do žádného
+      předka $x$, takže všechny hrany z $T_y$ ven vedou do $x$. Po odebrání $x$ je $T_y$
+      oddělen od kořene (kořen $\ne x$, neboť $p(x) > 1$), graf $G - x$ je nesouvislý
+      a $x$ je artikulace ([viz](#prop-artikulace-rozpojuje)).
+
+      **Bod 2, ($\Rightarrow$).** Nechť $x$ je artikulace, $K$ komponenta grafu $G - x$
+      neobsahující kořen a $y$ první objevený uzel z $K$. Všichni sousedé $y$ leží
+      v $K \cup \{x\}$ a žádný uzel z $K$ nebyl objeven dřív, takže otcem $y$ je $x$.
+      Podstrom $T_y$ leží v $K$ (cesta ve stromu z $y$ dolů neprochází $x$) a předci $y$
+      kromě $x$ v $K$ neleží (do $K$ se z kořene dostaneme jen přes $x$). Chordy z $T_y$
+      tedy vedou jen do $T_y$ nebo do $x$, a proto $r(y) \ge p(x)$.
+
+      **Bod 3.** Chordy vedou jen do předků, takže mezi podstromy dvou různých synů kořene
+      není žádná hrana: má-li kořen aspoň dva syny, jeho odebrání graf rozpojí. Má-li jediného
+      syna, je po odebrání kořene zbytek stromu prohledávání (podstrom syna) souvislý, a tedy
+      i $G - \text{kořen}$.
+    proof_steps:
+      - V DFS vede každá chorda z uzlu do jeho předka, protože podstrom uzlu se celý zpracuje před návratem k předkům.
+      - Pravidla a)–c) dávají při dokončení $x$ minimum z $p(x)$, z $p$ konců chord z $x$ a z dolních čísel synů, což je popsané minimum přes cesty.
+      - "Je-li $r(y) \\ge p(x)$, nevede z podstromu $T_y$ chorda nad $x$, takže odebráním $x$ se $T_y$ oddělí od kořene."
+      - "Je-li $x$ artikulace, je první objevený uzel $y$ komponenty $G-x$ bez kořene synem $x$ a chordy z $T_y$ vedou nejvýše do $x$, tedy $r(y) \\ge p(x)$."
+      - Mezi podstromy různých synů kořene nevede hrana, takže kořen je artikulací, právě když má aspoň dva syny.
+    related: [def-strom-prohledavani, alg-artikulace-tarjan, def-artikulace, prop-artikulace-rozpojuje, prop-kriterium-mostu]
+    illustrations:
+      - title: Artikulace podle dolních čísel
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: g, x: 1.5, y: 9.5 }
+            - { id: a, x: 1.5, y: 6 }
+            - { id: b, x: 0, y: 2 }
+            - { id: c, x: 3.8, y: 2.5 }
+            - { id: d, x: 6.3, y: 2.5 }
+            - { id: e, x: 10, y: 1.5 }
+            - { id: f, x: 9, y: 6 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: a, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: d, to: f }
+            - { from: a, to: g }
+        steps:
+          - caption: |
+              DFS z kořene $a$ (sousedé abecedně); čísla jsou pořadí $p(x)$. Chordy $c\,a$ a $f\,d$ vedou do předků.
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1", b: "2", c: "3", d: "4", e: "5", f: "6", g: "7" }
+          - caption: |
+              Popisky $p/r$: dolní číslo $r(x)$ je nejmenší $p$, kam se z $x$ dostaneme dolů po stromu a nakonec jednou chordou. Z podstromu pod $e$ vede chorda jen do $d$, proto $r(e) = r(f) = 4$.
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+          - caption: |
+              Uzel $d$: syn $e$ má $r(e) = 4 \ge p(d) = 4$ – z podstromu pod $e$ se nad $d$ nedostaneme, takže $d$ je **artikulace**.
+            set: [d]
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Uzel $c$: syn $d$ má $r(d) = 4 \ge p(c) = 3$ – podstrom pod $d$ visí jen na $c$, i $c$ je artikulace.
+            set: [c]
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Uzel $b$: jediný syn $c$ má $r(c) = 1 < p(b) = 2$ – chorda $c\,a$ uzel $b$ obchází, takže artikulací **není**.
+            set: [b]
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Kořen $a$ má dva syny, $b$ a $g$. Chordy vedou jen do předků, takže mezi jejich podstromy žádná hrana nevede a kořen **je** artikulace. Pro kořen se dolní čísla nepoužívají ($r(b) \ge 1$ platí vždy).
+            set: [a]
+            edges: { a-b: tree, b-c: tree, c-d: tree, d-e: tree, e-f: tree, a-g: tree, a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+    source: "skripta str. 32 (bod 3 a důkaz doplněny); přednáška 7, fólie 2"
+
+  - id: alg-artikulace-tarjan
+    kind: algorithm
+    section: "5.2"
+    title: Hledání artikulací backtrackingem (Tarjan 1972)
+    terms:
+      - Tarjanův algoritmus
+      - hledání artikulací
+      - artikulace v lineárním čase
+      - articulation points algorithm
+      - Hopcroft-Tarjan
+      - dolní číslo
+    statement: |
+      Artikulace grafu lze nalézt jediným průchodem prohledávání do hloubky, během něhož se
+      počítají pořadová čísla $p(x)$ a dolní čísla $r(x)$
+      ([kritérium](#prop-kriterium-artikulace)).
+    intuition: |
+      **Naivní postup:** postupně odebírat každý uzel a zjišťovat (prohledáváním), zda
+      vzrostl počet komponent. To je $n$-krát prohledávání, tedy $O(n(m + n))$.
+
+      **Tarjanův postup** využívá toho, že backtracking projde každou větev celou, než ji
+      opustí. Při zpětném kroku ze syna $y$ do otce $x$ už známe $r(y)$ – nejvyšší místo,
+      kam se dá z podstromu $T_y$ „vyšplhat“ jednou chordou. Pokud to není výš než $x$,
+      je podstrom k ostatku grafu připojen jen přes $x$, a $x$ je artikulace.
+    pseudocode: |
+      1. Polož $i := 0$. Spusť prohledávání do hloubky (Algoritmus 5.1 se zásobníkem).
+      2. **Objevení nového uzlu $x$** (po hraně stromu nebo v kroku 3 jako kořen): $i := i + 1$, $p(x) := i$, $r(x) := p(x)$.
+      3. **Nalezení chordy $\{x, y\}$** z aktuálního uzlu $x$ ($y$ už je ve stromu): $r(x) := \min\{r(x), p(y)\}$.
+      4. **Zpětný krok z $x$ do otce $y$:** $r(y) := \min\{r(y), r(x)\}$; je-li $y$ různý od kořene a $r(x) \ge p(y)$, označ $y$ jako artikulaci.
+      5. **Dokončení kořene:** kořen označ jako artikulaci, právě když má ve stromu aspoň dva syny *(doplněno, ve skriptech chybí)*.
+      6. U nesouvislého grafu opakuj pro každou komponentu (číslování může pokračovat; kořenem je první uzel komponenty).
+    complexity: |
+      $O(n + m)$ – jediné prohledávání do hloubky s $O(1)$ prací navíc na každý krok
+      (oproti naivnímu $O(n(n + m))$).
+    examples:
+      - title: Artikulace v grafu se 13 uzly
+        body: |
+          DFS z příkladu u [prohledávání do hloubky](#alg-dfs) (kořen 1):
+
+          | uzel | 1 | 2 | 3 | 5 | 4 | 6 | 7 | 8 | 9 | 10 | 11 |
+          |---|---|---|---|---|---|---|---|---|---|---|---|
+          | $p$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+          | $r$ (konečné) | 1 | 1 | 1 | 2 | 2 | 4 | 4 | 1 | 1 | 8 | 11 |
+
+          Průběh: chorda $3$⇢$1$ dá $r(3) = 1$; chorda $5$⇢$2$ dá $r(5) = 2$; chorda
+          $4$⇢$2$ dá $r(4) = 2$; chorda $7$⇢$5$ dá $r(7) = 4$, při návratu $r(6) = 4$.
+          Chorda $9$⇢$1$ dá $r(9) = 1$, chorda $10$⇢$8$ dá $r(10) = 8$.
+
+          * Uzel 5 ($p = 4$): syn 6 má $r(6) = 4 \ge 4$ → **artikulace**.
+          * Uzel 8 ($p = 8$): syn 11 má $r(11) = 11 \ge 8$ → **artikulace**.
+          * Uzly 2, 3, 6, 9: všichni synové mají $r < p$ → nejsou artikulace.
+          * Kořen 1 má dva syny (2 a 8) → **artikulace** (pravidlo pro kořen).
+          * Komponenta $\{12, 13\}$: kořen 12 má jediného syna → bez artikulace.
+    visualization: blocks
+    related: [prop-kriterium-artikulace, alg-dfs, alg-bloky, prop-kriterium-mostu, def-artikulace, def-vetev-grafu]
+    source: "skripta str. 32; přednáška 7, fólie 2"
+
+  - id: prop-kriterium-mostu
+    kind: proposition
+    section: "5.2"
+    title: Hledání mostů pomocí dolních čísel
+    terms:
+      - hledání mostů
+      - most v lineárním čase
+      - bridge finding
+      - kritérium mostu
+    statement: |
+      Při prohledávání do hloubky s čísly $p(x)$ a $r(x)$ (jako v Tarjanově algoritmu)
+      platí: žádná chorda není most a hrana stromu $\{x, y\}$, kde $y$ je syn $x$, je
+      mostem, právě když $r(y) > p(x)$ (ekvivalentně $r(y) = p(y)$). Všechny mosty grafu
+      lze tedy nalézt v čase $O(n + m)$.
+    intuition: |
+      Rozdíl oproti artikulacím je jen v ostré nerovnosti: u artikulace stačí, že se
+      z podstromu nedostaneme **nad** $x$ (může se vrátit chordou do $x$), u mostu se
+      nesmíme dostat ani **do** $x$ – jinak by chorda do $x$ spolu s hranou $\{x, y\}$
+      ležela na kružnici. Mosty jsou zároveň přesně jednohranové bloky.
+    proof: |
+      *Ve skriptech není, doplněno.*
+
+      Chorda $\{w, z\}$ spojuje uzel s předkem, takže spolu s cestou ve stromu tvoří
+      kružnici – most to není.
+
+      Nechť $\{x, y\}$ je hrana stromu, $y$ syn $x$, a $T_y$ podstrom uzlu $y$. Uzly
+      v $T_y$ mají $p \ge p(y)$, předci $y$ mají $p \le p(x)$; proto $r(y) > p(x)$ platí,
+      právě když $r(y) = p(y)$, tj. když z $T_y$ nevede žádná chorda do $x$ ani výš.
+
+      * Je-li $r(y) > p(x)$, je $\{x, y\}$ jedinou hranou mezi $T_y$ a zbytkem grafu (chordy
+        vedou jen do předků). Kdyby ležela na kružnici, musela by kružnice opustit $T_y$
+        ještě jinou hranou – spor. Je to tedy most.
+      * Je-li $r(y) \le p(x)$, vede z některého uzlu $z \in T_y$ chorda do předka $w$
+        uzlu $y$ (tj. $w = x$ nebo předek $x$). Cesta ve stromu z $w$ přes $x$, $y$ do $z$
+        spolu s chordou $\{z, w\}$ je kružnice obsahující $\{x, y\}$ – most to není.
+    proof_steps:
+      - Chorda vede do předka a s cestou ve stromu tvoří kružnici, takže to není most.
+      - Pro hranu stromu $\{x,y\}$ ($y$ syn) je $r(y) > p(x)$ totéž jako $r(y) = p(y)$, protože uzly v $T_y$ mají $p \ge p(y)$ a předci $p \le p(x)$.
+      - Je-li $r(y) > p(x)$, je $\{x,y\}$ jedinou hranou mezi podstromem $T_y$ a zbytkem grafu, a je to tedy most.
+      - Je-li $r(y) \le p(x)$, uzavře chorda z $T_y$ do předka $y$ kružnici přes $\{x,y\}$.
+    related: [prop-kriterium-artikulace, alg-artikulace-tarjan, def-most]
+    illustrations:
+      - title: "Most: r(y) > p(x)"
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: g, x: 1.5, y: 9.5 }
+            - { id: a, x: 1.5, y: 6 }
+            - { id: b, x: 0, y: 2 }
+            - { id: c, x: 3.8, y: 2.5 }
+            - { id: d, x: 6.3, y: 2.5 }
+            - { id: e, x: 10, y: 1.5 }
+            - { id: f, x: 9, y: 6 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: a, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: d, to: f }
+            - { from: a, to: g }
+        steps:
+          - caption: |
+              Stejné DFS jako u artikulací (popisky $p/r$, chordy čárkovaně). Hrana stromu $\{c, d\}$: $r(d) = 4 > p(c) = 3$ – z podstromu pod $d$ nevede chorda do $c$ ani výš, hrana je **most**.
+            edge_set: [c-d]
+            edges: { a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Hrana $\{d, e\}$: $r(e) = 4 = p(d)$, není ostře větší. Chorda $f\,d$ vrací do $d$, hrana leží na kružnici $d\,e\,f$ a most to není. (Pro artikulaci $d$ by ale $\ge$ stačilo.)
+            edge_set: [d-e]
+            edges: { a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Visutá hrana $\{a, g\}$: $r(g) = 7 > p(a) = 1$, takže je to most – jako každá hrana k listu.
+            edge_set: [a-g]
+            edges: { a-c: back, d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+          - caption: |
+              Chorda $\{c, a\}$ mostem nikdy není: spolu s cestou $a\,b\,c$ ve stromu tvoří kružnici. Stačí proto testovat jen hrany stromu.
+            edge_set: [a-c]
+            edges: { d-f: back }
+            labels: { a: "1/1", b: "2/1", c: "3/1", d: "4/4", e: "5/4", f: "6/4", g: "7/7" }
+            witness: true
+    source: "doplněno (použití backtrackingu)"
+    supplemented: true
+
+  - id: alg-bloky
+    kind: algorithm
+    section: "5.2"
+    title: Hledání bloků backtrackingem
+    terms:
+      - hledání bloků
+      - bloky v lineárním čase
+      - biconnected components algorithm
+      - zásobník hran
+    statement: |
+      Tarjanův postup lze použít i pro generování bloků grafu: kdykoli při zpětném kroku
+      nalezneme artikulaci $x$ (resp. dokončíme kořen), dáme na výstup všechny hrany
+      prozkoumané mezi prvním (dopředným) a druhým (zpětným) průchodem uzlu $x$ po
+      příslušné hraně stromu, které ještě nebyly vydány – ty tvoří jeden blok.
+    intuition: |
+      Bloky tvoří strom ([Věta 4.3](#thm-blokovy-graf-strom)); DFS vstoupí do koncového
+      bloku a celý ho projde, než se vrátí do artikulace. V okamžiku, kdy se vracíme po
+      hraně $\{x, y\}$ a platí $r(y) \ge p(x)$, jsou hrany prozkoumané od vstupu do $y$
+      (a ještě nevydané) přesně hranami jednoho bloku. Prakticky se to realizuje
+      **zásobníkem hran**.
+    pseudocode: |
+      1. Prováděj DFS s čísly $p$, $r$ jako v [Tarjanově algoritmu](#alg-artikulace-tarjan); navíc udržuj zásobník hran $Z$ (na začátku prázdný).
+      2. Každou procházenou hranu (hranu stromu i chordu) vlož na $Z$.
+      3. Při zpětném kroku ze syna $y$ do otce $x$ aktualizuj $r(x)$; platí-li $r(y) \ge p(x)$ (u kořene vždy), vybírej hrany ze $Z$ až po hranu $\{x, y\}$ včetně – tvoří jeden **blok**, vydej ho.
+      4. Opakuj pro všechny komponenty.
+    complexity: |
+      $O(n + m)$ – každá hrana se na zásobník vloží i z něj vybere jen jednou.
+    examples:
+      - title: Bloky grafu se 13 uzly
+        body: |
+          Pokračování příkladu u [artikulací](#alg-artikulace-tarjan). Bloky se vydávají
+          v tomto pořadí:
+
+          1. návrat $6 \to 5$, $r(6) = 4 \ge p(5) = 4$: blok s hranami $56, 67, 75$ (trojúhelník);
+          2. návrat $2 \to 1$ (kořen): blok $12, 23, 31, 35, 52, 54, 42$;
+          3. návrat $11 \to 8$, $r(11) = 11 \ge 8$: blok $8\,11$ (most);
+          4. návrat $8 \to 1$ (kořen): blok $18, 89, 91, 9\,10, 10\,8$;
+          5. komponenta $\{12, 13\}$: blok $12\,13$ (most).
+    visualization: blocks
+    related: [alg-artikulace-tarjan, def-blok, thm-blokovy-graf-strom, prop-kriterium-artikulace]
+    source: "skripta str. 32"
+
+  - id: rem-kvazikomponenty-backtracking
+    kind: remark
+    label: "Poznámka (str. 33)"
+    section: "5.2"
+    title: Další modifikace backtrackingu – kvazikomponenty
+    terms:
+      - kvazikomponenty backtrackingem
+      - silné komponenty v lineárním čase
+      - kondenzace v lineárním čase
+      - strongly connected components
+    statement: |
+      Artikulace a bloky jsme díky backtrackingu nalezli v čase $O(m + n)$. Existuje
+      podobná metoda (také založená na backtrackingu, modifikovaném pro orientované grafy),
+      která se stejnou časovou složitostí $O(m + n)$ vyhledá kvazikomponenty
+      a určí kondenzaci orientovaného grafu. Určení kvazikomponent přes distanční matici
+      je sice také možné, ale samotné nalezení distanční matice má složitost $O(n^3)$.
+    intuition: |
+      Je to Tarjanův algoritmus pro silné komponenty: také používá pořadová a dolní čísla,
+      jen se pracuje s orientovanými hranami. Pro zkoušku je podstatný kontrast
+      $O(m + n)$ (backtracking) proti $O(n^3)$ (distanční matice).
+    related: [alg-artikulace-tarjan, alg-dfs]
+    source: "skripta str. 33"
+
+  # ------------------------------------------------------------------ 5.3
+  - id: rem-biartikulace
+    kind: remark
+    label: "Poznámka (str. 33)"
+    section: "5.3"
+    title: Backtracking pro 3-souvislost; obecný postup přes toky
+    terms:
+      - biartikulace
+      - dvouuzlový řez
+      - 3-komponenty
+      - triconnected components
+      - 3-souvislost
+    statement: |
+      Backtracking lze využít i pro hledání **biartikulací** (dvouuzlových řezů)
+      a **3-komponent** (maximálních 3-souvislých podgrafů), opět v čase $O(m + n)$.
+      Pro vyšší souvislosti už podobné jednoduché postupy založené na backtrackingu nejsou
+      známé. Vždy lze ale použít obecný postup založený na převodu na úlohu maximálního
+      toku v síti, který jsme poznali v důkazech Ford–Fulkersonovy a Mengerovy věty.
+    intuition: |
+      Shrnutí pro zkoušku: 1-, 2- a 3-souvislost – lineárně (prohledávání / backtracking);
+      $k \ge 4$ – toky, $O(n^{4{,}5})$ pro celý graf.
+    related: [alg-artikulace-tarjan, alg-hranova-souvislost, alg-uzlova-souvislost]
+    source: "skripta str. 33"
+
+  - id: alg-hranova-souvislost
+    kind: algorithm
+    section: "5.3"
+    title: Určení hranové souvislosti pomocí toků
+    terms:
+      - algoritmus hranové souvislosti
+      - výpočet h(G)
+      - edge connectivity algorithm
+      - Dinicův algoritmus
+      - Even Hopcroft Tarjan
+    statement: |
+      $h_G(a, b)$ je rovno velikosti maximálního toku v síti, která vznikne symetrickou
+      orientací grafu $G$ s jednotkovou propustností všech hran, považujeme-li uzel $a$
+      za zdroj a uzel $b$ za stok ([Věta 4.6](#thm-ford-fulkerson-hranova-souvislost)).
+      Hranovou souvislost $h(G)$ celého grafu dostaneme jako minimum $h_G(a, b)$ přes
+      dvojice uzlů.
+    intuition: |
+      Maximální tok v síti s jednotkovými propustnostmi je počet hranově disjunktních cest,
+      a ten je podle Ford–Fulkersonovy věty roven velikosti minimálního řezu.
+
+      *Poznámka nad rámec skript:* stačí zafixovat jeden uzel $a$ a počítat $h_G(a, b)$
+      jen pro $n - 1$ uzlů $b$, protože minimální hranový řez celého grafu odděluje $a$
+      od nějakého uzlu $b$. To dává $O(n \cdot n^3) = O(n^4)$.
+    pseudocode: |
+      1. Sestroj síť $\vec{G}$: každou hranu $\{x, y\}$ nahraď hranami $(x, y)$ a $(y, x)$, všechny s propustností 1.
+      2. Pro dvojici $a \ne b$ najdi maximální tok ze zdroje $a$ do stoku $b$ (např. [Ford–Fulkerson](#alg-ford-fulkerson) / Dinicův algoritmus); jeho velikost je $h_G(a, b)$.
+      3. Pro celý graf opakuj krok 2 pro všechny dvojice uzlů a polož $h(G) := \min_{a \ne b} h_G(a, b)$.
+    complexity: |
+      Jedna dvojice: $O(n^3)$ (nejrychlejší známý Dinicův algoritmus pro maximální tok).
+      Celý graf přes všechny dvojice: $O(n^2) \cdot O(n^3) = O(n^5)$. Nejlepší známé
+      vylepšení (Even, Hopcroft, Tarjan) má složitost $O(m^2 \sqrt{n})$, kde $m = |H(G)|$;
+      protože obecně $m \sim n^2$, je to nejvýše $O(n^{4{,}5})$.
+    examples:
+      - title: Hranová souvislost mezi dvěma uzly
+        body: |
+          V grafu z příkladu u [matice hranové souvislosti](#def-hranovy-stupen-mezi-uzly)
+          najde tok z uzlu 2 do uzlu 4 tři cesty $2\,4$, $2\,1\,4$, $2\,3\,4$ po jedné
+          jednotce, tedy $h_G(2, 4) = 3$; minimální řez tvoří hrany u uzlu 2.
+    visualization: max-flow
+    related: [thm-ford-fulkerson-hranova-souvislost, thm-ford-fulkerson, alg-ford-fulkerson, alg-uzlova-souvislost, rem-biartikulace]
+    illustrations:
+      - title: Tok z b do d a minimální řez
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: d, x: 5, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: c, x: 5, y: 2 }
+            - { id: e, x: 8.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: d }
+            - { from: b, to: d }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+        steps:
+          - caption: |
+              Síť se symetrickou orientací a propustnostmi 1, zdroj $b$, stok $d$. Maximální tok má velikost 3 – po jedné jednotce cestami $b\,d$, $b\,a\,d$, $b\,c\,d$, které nesdílejí hranu.
+            edges: { b-d: path, a-b: tree, a-d: tree, b-c: active, c-d: active }
+            edge_labels: { b-d: "1/1", a-b: "1/1", a-d: "1/1", b-c: "1/1", c-d: "1/1" }
+          - caption: |
+              Minimální řez tvoří tři hrany u $b$ – stejně velký jako maximální tok. Tedy $h_G(b, d) = 3$.
+            edge_set: [a-b, b-d, b-c]
+          - caption: |
+              Pro celý graf bereme minimum přes dvojice uzlů. Kvůli mostu $\{d, e\}$ je $h_G(e, x) = 1$ pro každé $x$, a proto $h(G) = 1$.
+            edge_set: [d-e]
+    source: "skripta str. 33"
+
+  - id: alg-uzlova-souvislost
+    kind: algorithm
+    section: "5.3"
+    title: Určení uzlové souvislosti pomocí toků (štěpení uzlů)
+    terms:
+      - algoritmus uzlové souvislosti
+      - výpočet u(G)
+      - vertex connectivity algorithm
+      - štěpení uzlů
+      - půlení uzlů
+    statement: |
+      Uzlová souvislost $u_G(a, b)$ mezi dvěma nesousedními uzly se určí pomocí myšlenky
+      z důkazu [Mengerovy věty](#thm-menger): „štěpení (půlení) uzlů“ a převod na
+      maximální tok. Uzlovou souvislost $u(G)$ celého grafu dostaneme jako minimum
+      přes dvojice nesousedních uzlů (pro úplný graf $u(K_n) = n - 1$).
+    intuition: |
+      Uzel s kapacitou 1 nahradíme hranou s propustností 1 mezi vstupním a výstupním
+      polouzlem; maximální tok je pak počet vnitřně disjunktních cest a podle Mengerovy
+      věty se rovná $u_G(a, b)$. Síť má $2n$ uzlů a $n + 2m$ hran, takže časová náročnost
+      se oproti hranové souvislosti jen násobí konstantou.
+    pseudocode: |
+      1. Sestroj síť: každý uzel $x$ nahraď polouzly $(x, 1)$, $(x, 2)$ a hranou $((x, 1), (x, 2))$ s propustností 1; každou hranu $\{x, y\}$ nahraď hranami $((x, 2), (y, 1))$ a $((y, 2), (x, 1))$ s propustností $\infty$.
+      2. Pro nesousední $a$, $b$ najdi maximální tok ze zdroje $(a, 2)$ do stoku $(b, 1)$; jeho velikost je $u_G(a, b)$.
+      3. Pro celý graf: $u(G) := \min u_G(a, b)$ přes nesousední dvojice; je-li $G$ úplný, $u(G) = n - 1$.
+    complexity: |
+      Jedna dvojice: $O(n^3)$ (stejně jako u hranové souvislosti, konstanta se jen násobí).
+      Celý graf: $O(n^{4{,}5})$, stejně jako pro hranovou souvislost. Oba postupy jsou
+      nejlepší známé pro $k$-souvislost s $k \ge 4$.
+    visualization: max-flow
+    related: [thm-menger, rem-puleni-uzlu, alg-hranova-souvislost, rem-biartikulace]
+    source: "skripta str. 33"
+
+  # ------------------------------------------------------------------ 5.4
+  - id: alg-hamilton-backtracking
+    kind: algorithm
+    section: "5.4"
+    title: Backtracking pro generování hamiltonovských cest a cyklů
+    terms:
+      - hamiltonovská cesta
+      - hamiltonovský cyklus
+      - generování hamiltonovských kružnic
+      - backtracking hamiltonovská kružnice
+      - Hamiltonian path backtracking
+      - úplné prohledávání
+    statement: |
+      Obecné schéma backtrackingu (prohledávání do hloubky z pevného počátečního uzlu)
+      modifikujeme pravidly:
+
+      1. nebereme v úvahu chordy (hrany do uzlů, které už jsou v $D$),
+      2. při $|D| = n$ testujeme existenci hrany do počátečního uzlu; výsledkem je
+         hamiltonovská **cesta** (hrana neexistuje) nebo **cyklus** (hrana existuje),
+      3. při zpětném kroku se v každém uzlu $u$ ptáme, zda existuje následník s vyšším
+         číslem, do něhož jsme z $u$ ještě nešli; jakmile jej nalezneme, při následném
+         dopředném pohybu prozkoumáváme opět všechny uzly grafu, které nejsou v množině $D$.
+    intuition: |
+      Na rozdíl od běžného DFS zde **uzel po zpětném kroku přestává být „navštívený“** –
+      $D$ je vždy jen aktuální cesta z počátečního uzlu. Algoritmus tak systematicky
+      probere všechny cesty začínající v daném uzlu (strom všech takových cest, tzv.
+      rozhodovací strom) a vypíše ty, které obsahují všechny uzly. Z vypsaných cyklů lze
+      např. pro ohodnocený graf vybrat nejlevnější – řešit úlohu obchodního cestujícího.
+
+      Hledáme-li i cesty začínající v jiných uzlech, musíme algoritmus spustit z každého
+      počátečního uzlu.
+    pseudocode: |
+      1. Zvol počáteční uzel $s$; $D := (s)$ (zásobník = aktuální cesta).
+      2. Nechť $w$ je vrchol zásobníku. Je-li $|D| = n$: existuje-li hrana $(w, s)$, vypiš hamiltonovský cyklus, jinak hamiltonovskou cestu; jdi na 4.
+      3. **Dopředný krok:** najdi následníka $z$ uzlu $w$ s nejmenším číslem, který není v $D$ (chordy ignoruj). Existuje-li, vlož $z$ do $D$ a jdi na 2; jinak jdi na 4.
+      4. **Zpětný krok:** odeber vrchol $v$ ze zásobníku. Je-li $D$ prázdná, konec. Jinak pro nový vrchol $u$ hledej následníka **s číslem větším než $v$**, který není v $D$; existuje-li, vlož ho do $D$ a jdi na 2 (dál se opět zkoušejí všechny uzly mimo $D$), jinak opakuj krok 4.
+    complexity: |
+      Backtracking pracuje v čase $O(m' + n')$, kde $m'$, $n'$ jsou ale rozměry
+      **rozhodovacího stromu** (stromu všech zkoumaných cest), ne grafu $G$. Počet uzlů
+      rozhodovacího stromu roste obecně exponenciálně s počtem uzlů grafu (v $K_n$ je
+      $(n-1)!$ hamiltonovských cest z daného uzlu). Algoritmus je tedy exponenciální.
+    examples:
+      - title: Hamiltonovské cesty a cykly z uzlu 1
+        body: |
+          Orientovaný graf na uzlech $1, \dots, 5$ s hranami
+          $(1,3)$, $(2,1)$, $(2,4)$, $(3,2)$, $(3,4)$, $(3,5)$, $(4,1)$, $(4,5)$, $(5,2)$.
+          Průběh (cesta $D$, akce):
+
+          | $D$ | akce |
+          |---|---|
+          | 1 | 1→3 |
+          | 1, 3 | 3→2 |
+          | 1, 3, 2 | 2→4 (do 1 nelze, je v $D$) |
+          | 1, 3, 2, 4 | 4→5 |
+          | 1, 3, 2, 4, 5 | test $(5,1)$: ne → **cesta** 1–3–2–4–5 |
+          | 1, 3, 2, 4 / 1, 3, 2 | zpět, žádný vyšší následník |
+          | 1, 3 | následník 3 vyšší než 2: 3→4 |
+          | 1, 3, 4 | 4→5 |
+          | 1, 3, 4, 5 | 5→2 |
+          | 1, 3, 4, 5, 2 | test $(2,1)$: ano → **cyklus** 1–3–4–5–2–1 |
+          | 1, 3, 4, 5 / 1, 3, 4 | zpět |
+          | 1, 3 | následník vyšší než 4: 3→5 |
+          | 1, 3, 5 | 5→2 |
+          | 1, 3, 5, 2 | 2→4 |
+          | 1, 3, 5, 2, 4 | test $(4,1)$: ano → **cyklus** 1–3–5–2–4–1 |
+          | 1, 3, 5, 2 / 1, 3, 5 / 1, 3 / 1 | zpět, nic dalšího |
+          | $\emptyset$ | konec |
+
+          Nalezli jsme jednu hamiltonovskou cestu a dva hamiltonovské cykly začínající
+          v uzlu 1.
+        graph:
+          directed: true
+          nodes:
+            - { id: 1, x: 5, y: 9.5 }
+            - { id: 2, x: 0.5, y: 6 }
+            - { id: 3, x: 9.5, y: 6 }
+            - { id: 4, x: 2, y: 1 }
+            - { id: 5, x: 8, y: 1 }
+          edges:
+            - { from: 1, to: 3 }
+            - { from: 2, to: 1 }
+            - { from: 2, to: 4 }
+            - { from: 3, to: 2 }
+            - { from: 3, to: 4 }
+            - { from: 3, to: 5 }
+            - { from: 4, to: 1 }
+            - { from: 4, to: 5 }
+            - { from: 5, to: 2 }
+    visualization: hamilton-backtracking
+    related: [def-hamiltonovsky-graf, alg-dfs, rem-hamilton-casova-narocnost, alg-posova-heuristika, rem-hamilton-np]
+    source: "skripta str. 33–34; přednáška 7, fólie 3"
+
+  - id: rem-hamilton-casova-narocnost
+    kind: remark
+    label: "Poznámka (str. 34)"
+    section: "5.4"
+    title: Časová náročnost backtrackingu pro hamiltonovské kružnice
+    terms:
+      - Christofides
+      - časová náročnost backtrackingu
+      - exponenciální růst
+    statement: |
+      Backtracking pro hamiltonovské kružnice samozřejmě není efektivní. Christofides
+      uvádí empirický odhad: za jednu sekundu se zpracuje graf s přibližně 25 uzly
+      a každé zvýšení počtu uzlů o dva prodlouží výpočet více než na dvojnásobek. Odtud
+      orientační tabulka:
+
+      | počet uzlů | 50 | 60 | 70 | 80 |
+      |---|---|---|---|---|
+      | čas | 1,6 hodiny | 2,14 dne | 68,7 dne | 6 let |
+    intuition: |
+      Zdvojnásobení času na každé dva uzly znamená růst zhruba jako $2^{n/2} \approx 1{,}41^n$.
+      Rychlejší počítač tedy pomůže jen o pár uzlů navíc – typický projev exponenciálního
+      algoritmu.
+    related: [alg-hamilton-backtracking, rem-hamilton-np]
+    source: "skripta str. 34"
+
+  # ------------------------------------------------------------------ 5.5
+  - id: def-heuristika
+    kind: definition
+    section: "5.5"
+    title: Heuristika
+    terms:
+      - heuristika
+      - heuristic
+      - orákulum
+      - oracle
+      - odpověď nevím
+    statement: |
+      **Heuristika** je polynomiální postup, který neprobere všechny možnosti, ale
+      v některých případech „umí“ dát odpověď. Má tzv. **orákulum**, které jí řekne, co
+      probírat nemusí. Výsledkem aplikace heuristiky je zpravidla buď kladná odpověď, nebo
+      heuristika „neví“ (zpravidla neumí dát zápornou odpověď). I při odpovědi „nevím“
+      přesto může kladné řešení problému existovat.
+    intuition: |
+      Heuristika obětuje úplnost za rychlost. Pro hamiltonovskou kružnici: najde-li ji,
+      máme jistotu (kružnici lze ověřit); nenajde-li ji, nevíme nic. Proto heuristiky
+      nevyvracejí, že graf je nehamiltonovský.
+    related: [alg-posova-heuristika, alg-hamilton-uzaver]
+    source: "skripta str. 34"
+
+  - id: alg-posova-heuristika
+    kind: algorithm
+    section: "5.5"
+    title: Pósova heuristika
+    terms:
+      - Pósova heuristika
+      - Pósa
+      - rotace cesty
+      - Pósova rotace
+      - prodlužování cesty
+      - Posa rotation
+    statement: |
+      Pósova heuristika se snaží přímočaře prodlužovat cestu. Když to není možné (z koncového
+      uzlu nevede hrana do žádného volného uzlu), vezme hranu z koncového uzlu do některého
+      uzlu cesty a cestu „přetočí“ (rotace), čímž získá nový koncový uzel.
+    intuition: |
+      Máme cestu $x_1 x_2 \dots x_i x_{i+1} \dots z$ a ze $z$ nevede hrana ven z cesty.
+      Pokud má $z$ souseda $x_i$ na cestě, přidáme hranu $\{z, x_i\}$ a odebereme
+      $\{x_i, x_{i+1}\}$ – vznikne cesta se stejnou množinou uzlů
+      $x_1 \dots x_i\, z \dots x_{i+1}$, ale s novým koncem $x_{i+1}$, z něhož možná
+      prodloužit půjde. Jednoduché, a v testech dávalo velmi dobré výsledky.
+    pseudocode: |
+      1. Zvol počáteční uzel $x_1$; cesta $P := (x_1)$.
+      2. Nechť $z$ je koncový uzel $P$. Má-li $z$ souseda mimo $P$, přidej ho na konec $P$ a opakuj krok 2.
+      3. Obsahuje-li $P$ všechny uzly a existuje hrana $\{z, x_1\}$, vypiš hamiltonovskou kružnici, konec.
+      4. **Rotace:** zvol souseda $x_i$ uzlu $z$ na cestě ($x_i \ne$ předchůdce $z$); odstraň hranu $\{x_i, x_{i+1}\}$, přidej $\{z, x_i\}$ a úsek $x_{i+1} \dots z$ obrať; novým koncem je $x_{i+1}$. Pokračuj krokem 2.
+      5. Chraň se proti zacyklení (např. pamatuj si už vyzkoušené rotace / koncové uzly, omez počet kroků). Nenalezne-li heuristika řešení, přečísluje uzly (jiný počáteční uzel, jiné pořadí voleb) a aplikuje se znovu; po vyčerpání pokusů odpoví „nevím“.
+    complexity: |
+      Jeden krok (prodloužení nebo rotace) stojí $O(n)$; při omezeném počtu rotací
+      a restartů je celá heuristika polynomiální. Úspěch ale zaručen není.
+    related: [def-heuristika, alg-hamilton-backtracking, def-hamiltonovsky-graf]
+    illustrations:
+      - title: Jedna Pósova rotace
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 2.5, y: 9 }
+            - { id: b, x: 7.5, y: 9 }
+            - { id: e, x: 10, y: 5 }
+            - { id: d, x: 7.5, y: 1 }
+            - { id: c, x: 2.5, y: 1 }
+            - { id: f, x: 0, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: e }
+            - { from: c, to: f }
+            - { from: f, to: a }
+        steps:
+          - caption: |
+              Heuristika z $a$ prodlužuje cestu vždy k sousedovi s nejmenším jménem: $a, b, c, d, e$. Z konce $e$ už nevede hrana do volného uzlu ($f$ sousedí jen s $a$ a $c$) – zasekli jsme se.
+            nodes: { a: source, e: active }
+            edges: { a-b: path, b-c: path, c-d: path, d-e: path }
+          - caption: |
+              **Rotace:** konec $e$ sousedí s uzlem $b$ na cestě. Přidáme hranu $\{e, b\}$ a odebereme hranu $\{b, c\}$, která z $b$ pokračuje dál po cestě.
+            nodes: { a: source, b: active, e: active }
+            edges: { a-b: path, b-c: rejected, c-d: path, d-e: path, b-e: active }
+          - caption: |
+              Vznikla cesta $a, b, e, d, c$ se stejnými uzly, ale s novým koncem $c$ – a ten má volného souseda $f$.
+            nodes: { a: source, c: active }
+            edges: { a-b: path, b-e: path, e-d: path, d-c: path }
+          - caption: |
+              Prodloužíme o $f$. Cesta obsahuje všechny uzly a $f$ sousedí s $a$, takže ji uzavřeme do hamiltonovské kružnice $a\,b\,e\,d\,c\,f\,a$.
+            edges: { a-b: path, b-e: path, e-d: path, d-c: path, c-f: path, f-a: path }
+    source: "skripta str. 34–35"
+
+  - id: thm-dirac-5-2
+    kind: theorem
+    label: "Věta 5.2"
+    section: "5.5"
+    title: Diracova věta
+    terms:
+      - Diracova věta
+      - Dirac
+      - minimální stupeň alespoň n/2
+      - Dirac's theorem
+      - postačující podmínka hamiltonovskosti
+    statement: |
+      (Dirac) Nechť $G$ je graf na $n \ge 3$ uzlech. Je-li $\delta(G) \ge \dfrac{n}{2}$,
+      pak je $G$ hamiltonovský.
+    intuition: |
+      Má-li každý uzel aspoň s polovinou ostatních hranu, je graf tak „hustý“, že se
+      hamiltonovská kružnice vždy najde. Podmínka je **postačující, ne nutná**: kružnice
+      $C_n$ ($n \ge 5$) je hamiltonovská, ale má $\delta = 2$.
+
+      Hranice $n/2$ je těsná: úplný bipartitní graf $K_{k, k+1}$ má $n = 2k + 1$ uzlů,
+      $\delta = k < n/2$, a hamiltonovský není (kružnice v bipartitním grafu střídá strany,
+      musela by mít na obou stranách stejně uzlů).
+    proof: |
+      Diracova věta plyne ihned z obecnější [Oreho věty](#thm-ore-5-3): jsou-li $x$, $y$
+      libovolné (i nesousední) uzly, je $d(x) + d(y) \ge 2\delta(G) \ge n$. Podmínka Oreho
+      věty je tedy splněna a $G$ je hamiltonovský.
+    proof_steps:
+      - Zvolíme libovolné dva nesousední uzly $x$, $y$.
+      - Z předpokladu je $d(x) \ge n/2$ a $d(y) \ge n/2$, tedy $d(x) + d(y) \ge n$.
+      - Graf splňuje předpoklad Oreho věty (a má $n \ge 3$ uzlů), takže je hamiltonovský.
+    related: [thm-ore-5-3, thm-dirac, def-hamiltonovsky-graf, thm-bondy-chvatal]
+    illustrations:
+      - title: Těsnost hranice n/2
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: a1, x: 2.5, y: 8.5 }
+            - { id: a2, x: 7.5, y: 8.5 }
+            - { id: b1, x: 0, y: 2.5 }
+            - { id: b2, x: 5, y: 0.5 }
+            - { id: b3, x: 10, y: 2.5 }
+          edges:
+            - { from: a1, to: b1 }
+            - { from: a1, to: b2 }
+            - { from: a1, to: b3 }
+            - { from: a2, to: b1 }
+            - { from: a2, to: b2 }
+            - { from: a2, to: b3 }
+        steps:
+          - caption: |
+              $K_{2,3}$: $n = 5$ a $\delta = 2 < 5/2$. Hamiltonovská kružnice by v bipartitním grafu střídala strany, ty ale mají 2 a 3 uzly – graf hamiltonovský není. Hranici $n/2$ tedy nelze snížit.
+          - caption: |
+              Přidáme hranu $\{b_1, b_2\}$. Pořád je $\delta = 2$ a Diracova podmínka neplatí – a graf přesto hamiltonovský **je**. Podmínka je jen postačující, ne nutná.
+            add: [[b1, b2]]
+          - caption: |
+              Přidáme ještě $\{b_2, b_3\}$ a $\{b_1, b_3\}$: teď $\delta = 3 \ge 5/2$ a Diracova věta hamiltonovskou kružnici zaručuje bez hledání.
+            add: [[b2, b3], [b1, b3]]
+    source: "skripta str. 35; přednáška 7, fólie 4"
+
+  - id: thm-ore-5-3
+    kind: theorem
+    label: "Věta 5.3"
+    section: "5.5"
+    title: Oreho věta
+    terms:
+      - Oreho věta
+      - Ore
+      - Ore's theorem
+      - součet stupňů nesousedních uzlů
+    statement: |
+      (Ore) Nechť $G$ je graf na $n \ge 3$ uzlech. Jestliže pro všechny dvojice
+      nesousedních uzlů $x, y$ grafu $G$ platí
+
+      $$
+      d(x) + d(y) \ge n,
+      $$
+
+      pak je graf $G$ hamiltonovský.
+    intuition: |
+      Zeslabení Diracovy podmínky: nemusí mít velký stupeň každý uzel, stačí, aby každá
+      **nesousední** dvojice měla dohromady dost sousedů. Sousední dvojice nás nezajímají.
+      Předpoklad $n \ge 3$ je ve fóliích, ve skriptech chybí (pro $n = 2$ je $K_2$
+      triviálním protipříkladem – splňuje podmínku, ale hamiltonovský není).
+    proof: |
+      Důkaz je založen na [Oreho lemmatu](#lemma-ore-5-1). Podle předpokladu všechny dvojice
+      nesousedních uzlů splňují podmínku $d(x) + d(y) \ge n$. Přidáním hrany se stupně jen
+      zvětšují, takže podmínka zůstává splněna i pro zbývající nesousední dvojice. Můžeme
+      tedy do $G$ postupně přidat všechny chybějící hrany; vznikne úplný graf $K_n$, který je
+      pro $n \ge 3$ hamiltonovský. Podle lemmatu je při každém přidání hrany
+      hamiltonovskost zachována i směrem zpět, tedy hamiltonovský je i graf $G$.
+    proof_steps:
+      - Všechny nesousední dvojice splňují $d(x)+d(y) \ge n$ a přidáváním hran stupně jen rostou.
+      - Postupně přidáme všechny chybějící hrany, při každém přidání je podmínka Oreho lemmatu splněna.
+      - Vznikne úplný graf $K_n$, který je pro $n \ge 3$ hamiltonovský.
+      - Podle Oreho lemmatu je hamiltonovský i každý předchozí graf v posloupnosti, tedy i $G$.
+    related: [lemma-ore-5-1, thm-dirac-5-2, def-uzaver-grafu, thm-bondy-chvatal, def-hamiltonovsky-graf]
+    illustrations:
+      - title: Ore pomůže tam, kde Dirac ne
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: v, x: 5, y: 9.5 }
+            - { id: a, x: 2, y: 6.5 }
+            - { id: b, x: 8, y: 6.5 }
+            - { id: c, x: 2, y: 1 }
+            - { id: d, x: 8, y: 1 }
+          edges:
+            - { from: v, to: a }
+            - { from: v, to: b }
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              $K_4$ a uzel $v$ připojený ke dvěma jeho uzlům; pod uzly jsou stupně. $\delta = 2 < 5/2$, Diracova věta nepomůže. Nesousední dvojice jsou ale jen $v, c$ a $v, d$ se součtem $2 + 3 = 5 \ge n$ – Oreho podmínka platí, graf je hamiltonovský.
+            labels: { v: "2", a: "4", b: "4", c: "3", d: "3" }
+          - caption: |
+              Odebereme hranu $\{c, d\}$: nesousední $c, d$ mají součet $2 + 2 = 4 < 5$ a Oreho věta nic neříká. Tady graf hamiltonovský opravdu není – tři uzly $v, c, d$ stupně 2 by všechny potřebovaly oba uzly $a$ i $b$.
+            remove: [[c, d]]
+            labels: { v: "2", a: "4", b: "4", c: "2", d: "2" }
+          - caption: |
+              Vrátíme $\{c, d\}$ a odebereme $\{a, b\}$. Nesousední dvojice $a, b$ ($3 + 3$) i $v, c$ a $v, d$ ($2 + 3$) mají součet $\ge 5$ – podmínka platí. Sousední dvojice nás nezajímají.
+            add: [[c, d]]
+            remove: [[a, b]]
+            labels: { v: "2", a: "3", b: "3", c: "3", d: "3" }
+    source: "skripta str. 35–36; přednáška 7, fólie 4"
+
+  - id: lemma-ore-5-1
+    kind: lemma
+    label: "Lemma 5.1"
+    section: "5.5"
+    title: Oreho lemma
+    terms:
+      - Oreho lemma
+      - přidání hrany zachovává hamiltonovskost
+      - G + uv
+    statement: |
+      (Ore) Nechť $u, v$ jsou dva nesousední uzly grafu $G$ (na $n$ uzlech) takové, že
+      $d(u) + d(v) \ge n$. Pak $G$ je hamiltonovský, právě když graf $G + \{u, v\}$
+      (vzniklý přidáním hrany $\{u, v\}$ do $G$) je hamiltonovský.
+    intuition: |
+      Hranu mezi dvěma nesousedními uzly s velkým součtem stupňů můžeme klidně přidat –
+      hamiltonovskost tím nevznikne „uměle“. Pokud hamiltonovská kružnice novou hranu
+      používá, lze ji „přepojit“ přes dvojici hran, jejíž existenci zaručí počítání
+      sousedů (princip holubníku). Důkaz je konstruktivní – dává algoritmus, jak
+      z kružnice v $G + \{u, v\}$ vyrobit kružnici v $G$ v čase $O(n)$.
+    proof: |
+      1. Je-li $G$ hamiltonovský, je zřejmě hamiltonovský i $G + \{u, v\}$ (stejná kružnice).
+      2. Nechť $G + \{u, v\}$ je hamiltonovský a $C$ jeho hamiltonovská kružnice. Neleží-li
+         $\{u, v\}$ na $C$, je $C$ kružnicí v $G$ a jsme hotovi. Nechť tedy
+         $\{u, v\} \in H(C)$. Odebráním této hrany dostaneme v $G$ hamiltonovskou cestu
+         $u = x_1, x_2, \dots, x_{n-1}, x_n = v$. Označme
+
+         $$
+         M = \{x_i \mid \{u, x_{i+1}\} \in H(G)\}, \qquad N = \{x_i \mid \{x_i, v\} \in H(G)\}.
+         $$
+
+         Pak $|M| = d(u)$ a $|N| = d(v)$, takže podle předpokladu
+         $|M| + |N| = d(u) + d(v) \ge n$. Uzel $v = x_n$ neleží v žádné z množin $M$, $N$
+         (v $M$ by musel existovat $x_{n+1}$; v $N$ by byl sousedem sám sebe), tedy
+         $|M \cup N| \le n - 1 < n$. Proto $M \cap N \ne \emptyset$.
+
+         Zvolme $x_i \in M \cap N$: platí $\{u, x_{i+1}\} \in H(G)$ a $\{x_i, v\} \in H(G)$.
+         Pak posloupnost uzlů
+         $u = x_1, x_2, \dots, x_i, v = x_n, x_{n-1}, \dots, x_{i+1}, x_1 = u$
+         určuje hamiltonovskou kružnici v $G$.
+    proof_steps:
+      - Hamiltonovská kružnice v $G$ je hamiltonovská i v $G + \{u,v\}$.
+      - Obsahuje-li hamiltonovská kružnice v $G + \{u,v\}$ hranu $\{u,v\}$, dostaneme jejím odebráním hamiltonovskou cestu $u = x_1, \dots, x_n = v$ v $G$.
+      - "Definujeme $M = \\{x_i : u \\sim x_{i+1}\\}$ a $N = \\{x_i : x_i \\sim v\\}$, takže $|M| = d(u)$ a $|N| = d(v)$."
+      - Protože $|M| + |N| \ge n$ a $M \cup N \subseteq \{x_1, \dots, x_{n-1}\}$, existuje $x_i \in M \cap N$.
+      - "Kružnice $x_1 \\dots x_i\\, x_n x_{n-1} \\dots x_{i+1} x_1$ používá hrany $\\{x_i, v\\}$ a $\\{u, x_{i+1}\\}$ a je hamiltonovská v $G$."
+    examples:
+      - title: Přepojení kružnice
+        body: |
+          Cesta $u = x_1, x_2, \dots, x_7 = v$ ($n = 7$), $u$ sousedí s $x_2$, $x_4$, $x_5$
+          ($d(u) = 3$), $v$ sousedí s $x_6$, $x_4$, $x_3$, $x_2$ ($d(v) = 4$), tedy
+          $d(u) + d(v) = 7 = n$. Pak $M = \{x_1, x_3, x_4\}$, $N = \{x_2, x_3, x_4, x_6\}$
+          a $M \cap N = \{x_3, x_4\}$. Pro $x_i = x_3$: kružnice
+          $x_1 x_2 x_3\, x_7 x_6 x_5 x_4\, x_1$ (hrany $\{x_3, x_7\}$ a $\{x_1, x_4\}$
+          existují).
+    visualization: bondy-chvatal
+    related: [thm-ore-5-3, def-uzaver-grafu, thm-bondy-chvatal, alg-hamilton-uzaver]
+    illustrations:
+      - title: Přepojení přes „křížící se“ hrany
+        for: proof
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 5, y: 9.5 }
+            - { id: x2, x: 8.5, y: 7.8 }
+            - { id: x3, x: 9.4, y: 4 }
+            - { id: x4, x: 7, y: 0.9 }
+            - { id: x5, x: 3, y: 0.9 }
+            - { id: x6, x: 0.6, y: 4 }
+            - { id: x7, x: 1.5, y: 7.8 }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: x4 }
+            - { from: x4, to: x5 }
+            - { from: x5, to: x6 }
+            - { from: x6, to: x7 }
+            - { from: x1, to: x4 }
+            - { from: x1, to: x5 }
+            - { from: x7, to: x4 }
+            - { from: x7, to: x3 }
+            - { from: x7, to: x2 }
+        steps:
+          - caption: |
+              Uzly $u = x_1$ a $v = x_7$ nesousedí a $d(u) + d(v) = 3 + 4 = 7 = n$. V grafu $G + \{u, v\}$ máme hamiltonovskou kružnici, která novou hranu $\{u, v\}$ používá.
+            add: [[x1, x7]]
+            edges: { x1-x2: path, x2-x3: path, x3-x4: path, x4-x5: path, x5-x6: path, x6-x7: path, x7-x1: path }
+            labels: { x1: "u", x7: "v" }
+          - caption: |
+              Odebereme $\{u, v\}$: v $G$ zbude hamiltonovská **cesta** $u = x_1, x_2, \dots, x_7 = v$. Musíme ji uzavřít jinak než hranou $\{u, v\}$.
+            remove: [[x1, x7]]
+            edges: { x1-x2: path, x2-x3: path, x3-x4: path, x4-x5: path, x5-x6: path, x6-x7: path }
+            labels: { x1: "u", x7: "v" }
+          - caption: |
+              $x_i \in M$, když $u \sim x_{i+1}$ (hrany u $u$); $x_i \in N$, když $x_i \sim v$. Platí $|M| + |N| = d(u) + d(v) = 7$, ale obě množiny leží v $\{x_1, \dots, x_6\}$ – podle principu holubníku mají společný prvek: $x_3$ a $x_4$.
+            edges: { x1-x2: active, x1-x4: active, x1-x5: active, x7-x6: considered, x7-x4: considered, x7-x3: considered, x7-x2: considered }
+            labels: { x1: "u, M", x2: "N", x3: "M, N", x4: "M, N", x6: "N", x7: "v" }
+          - caption: |
+              Pro $x_i = x_3$ je $x_3 \sim v$ a $u \sim x_4$. Kružnice $x_1 x_2 x_3\, x_7 x_6 x_5 x_4\, x_1$ vynechá hranu $\{x_3, x_4\}$ a místo $\{u, v\}$ použije dvě „křížící se“ hrany – je to hamiltonovská kružnice v $G$.
+            edges: { x1-x2: path, x2-x3: path, x3-x7: path, x7-x6: path, x6-x5: path, x5-x4: path, x4-x1: path, x3-x4: rejected }
+            labels: { x1: "u", x7: "v" }
+    source: "skripta str. 35; přednáška 7, fólie 4"
+
+  - id: def-uzaver-grafu
+    kind: definition
+    label: "Definice 5.1"
+    section: "5.5"
+    title: Uzávěr grafu (Bondy, Chvátal)
+    terms:
+      - uzávěr grafu
+      - cl(G)
+      - closure
+      - Bondy-Chvátalův uzávěr
+      - Hamiltonian closure
+    statement: |
+      **Uzávěrem** grafu $G$ nazveme graf $\mathrm{cl}(G)$, který vznikne z grafu $G$
+      postupným rekurentním přidáváním všech hran $\{u, v\}$ splňujících podmínku Oreho
+      lemmatu (tj. $u$, $v$ nesousední a $d(u) + d(v) \ge n$, kde $n = |U(G)|$).
+    intuition: |
+      Důležité: podmínka $d(u) + d(v) \ge n$ se v každém kroku testuje **v aktuálním grafu**
+      (s již přidanými hranami), ne v původním $G$. Proto může být uzávěr úplným grafem, i když
+      v $G$ podmínku splňuje jen málo dvojic. Podle [Oreho lemmatu](#lemma-ore-5-1) se
+      přidáváním hran hamiltonovskost nemění: $G$ je hamiltonovský, právě když
+      $\mathrm{cl}(G)$ je hamiltonovský.
+    examples:
+      - title: Uzávěr kružnice C5 s jednou tětivou
+        body: |
+          $G = C_5 + h$: kružnice $1\,2\,3\,4\,5$ s tětivou $\{1, 3\}$, $n = 5$. Stupně:
+          $d(1) = d(3) = 3$, $d(2) = d(4) = d(5) = 2$. Tři uzly mají stupeň 2, přesto:
+
+          1. $\{1, 4\}$: $3 + 2 = 5 \ge 5$, přidáme; teď $d(1) = 4$, $d(4) = 3$.
+          2. $\{3, 5\}$: $3 + 2 = 5$, přidáme; $d(3) = 4$, $d(5) = 3$.
+          3. $\{2, 4\}$: $2 + 3 = 5$, přidáme; $d(2) = 3$, $d(4) = 4$.
+          4. $\{2, 5\}$: $3 + 3 = 6$, přidáme.
+
+          Výsledkem je $K_5$, tedy $\mathrm{cl}(G)$ je úplný a $G$ je hamiltonovský
+          (což tu vidíme i přímo – $C_5$).
+        graph:
+          directed: false
+          nodes:
+            - { id: 1, x: 5, y: 9.5 }
+            - { id: 2, x: 9.5, y: 6 }
+            - { id: 3, x: 8, y: 1 }
+            - { id: 4, x: 2, y: 1 }
+            - { id: 5, x: 0.5, y: 6 }
+          edges:
+            - { from: 1, to: 2 }
+            - { from: 2, to: 3 }
+            - { from: 3, to: 4 }
+            - { from: 4, to: 5 }
+            - { from: 5, to: 1 }
+            - { from: 1, to: 3 }
+    visualization: bondy-chvatal
+    related: [lemma-ore-5-1, prop-uzaver-jednoznacny, thm-bondy-chvatal, alg-hamilton-uzaver]
+    illustrations:
+      - title: Uzávěr krok za krokem
+        property: complete
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9.5, y: 6 }
+            - { id: c, x: 8, y: 1 }
+            - { id: d, x: 2, y: 1 }
+            - { id: e, x: 0.5, y: 6 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: a }
+            - { from: a, to: c }
+        steps:
+          - caption: |
+              $C_5$ s tětivou $\{a, c\}$, $n = 5$, pod uzly jsou stupně. Hledáme nesousední dvojice se součtem stupňů $\ge 5$.
+            labels: { a: "3", b: "2", c: "3", d: "2", e: "2" }
+          - caption: |
+              $d(a) + d(d) = 3 + 2 = 5$, přidáme $\{a, d\}$. Stupně $a$ a $d$ vzrostly, což pomůže dalším dvojicím.
+            add: [[a, d]]
+            edges: { a-d: active }
+            labels: { a: "4", b: "2", c: "3", d: "3", e: "2" }
+          - caption: |
+              $d(c) + d(e) = 3 + 2 = 5$, přidáme $\{c, e\}$.
+            add: [[c, e]]
+            edges: { c-e: active }
+            labels: { a: "4", b: "2", c: "4", d: "3", e: "3" }
+          - caption: |
+              $d(b) + d(d) = 2 + 3 = 5$, přidáme $\{b, d\}$. V původním grafu by tahle dvojice podmínku nesplnila ($2 + 2$) – podmínka se testuje v **aktuálním** grafu.
+            add: [[b, d]]
+            edges: { b-d: active }
+            labels: { a: "4", b: "3", c: "4", d: "4", e: "3" }
+          - caption: |
+              $d(b) + d(e) = 3 + 3 = 6$, přidáme poslední hranu. Uzávěr je úplný graf $K_5$, takže podle Bondyho–Chvátalovy věty je $G$ hamiltonovský.
+            add: [[b, e]]
+            labels: { a: "4", b: "4", c: "4", d: "4", e: "4" }
+    source: "skripta str. 36; přednáška 7, fólie 5"
+
+  - id: prop-uzaver-jednoznacny
+    kind: proposition
+    label: "Tvrzení 5.2"
+    section: "5.5"
+    title: Jednoznačnost uzávěru
+    terms:
+      - jednoznačnost uzávěru
+      - uzávěr nezávisí na pořadí
+    statement: |
+      Pro každý graf $G$ je jeho uzávěr $\mathrm{cl}(G)$ určen jednoznačně.
+    intuition: |
+      Definice uzávěru nepředepisuje pořadí, v jakém hrany přidáváme. Tvrzení říká, že
+      na pořadí nezáleží: přidání hrany může podmínku pro jiné dvojice jen „zlepšit“
+      (stupně rostou), nikdy ne zkazit. Hrana, kterou šlo přidat v jednom pořadí, proto
+      půjde přidat i v každém jiném.
+    proof: |
+      Nechť má graf $G$ dva uzávěry $G_1$ a $G_2$; $G_1$ vznikl přidáním hran
+      $e_1, e_2, \dots, e_m$ (v tomto pořadí) a $G_2$ přidáním hran $f_1, f_2, \dots, f_r$.
+      Ukážeme, že každá hrana $e_i$ je obsažena v $G_2$ (a symetricky každá $f_j$ v $G_1$).
+
+      Sporem: nechť $e_{k+1} = \{u, v\}$ je první hrana posloupnosti $e_i$, která v $G_2$
+      není, a označme $H = G \cup \{e_1, \dots, e_k\}$. Podle definice (hrana $e_{k+1}$ byla
+      přidána do $H$) je $d_H(u) + d_H(v) \ge n$. Podle volby $e_{k+1}$ jsou všechny hrany
+      $e_1, \dots, e_k$ v $G_2$, takže $H$ je podgrafem $G_2$ a $d_{G_2}(u) + d_{G_2}(v)
+      \ge d_H(u) + d_H(v) \ge n$. Uzly $u$, $v$ jsou v $G_2$ nesousední a splňují podmínku,
+      takže proces vytváření $G_2$ by hranu $\{u, v\}$ ještě přidal – $G_2$ by nebyl
+      uzávěrem (proces končí, až když žádná taková hrana neexistuje). Spor.
+
+      Stejně se ukáže, že každá hrana $f_j$ je v $G_1$; proto $G_1 = G_2$.
+    proof_steps:
+      - Předpokládáme dva uzávěry $G_1$ (hrany $e_1,\dots,e_m$) a $G_2$ (hrany $f_1,\dots,f_r$).
+      - Pro spor vezmeme první hranu $e_{k+1} = \{u,v\}$, která v $G_2$ chybí, a graf $H = G \cup \{e_1,\dots,e_k\}$.
+      - V $H$ platí $d_H(u) + d_H(v) \ge n$ a $H$ je podgrafem $G_2$, takže i $d_{G_2}(u) + d_{G_2}(v) \ge n$.
+      - Pak by hrana $\{u,v\}$ byla do $G_2$ přidána, a to je spor s tím, že $G_2$ je uzávěr.
+      - Symetricky je každá hrana $f_j$ v $G_1$, a tedy $G_1 = G_2$.
+    related: [def-uzaver-grafu, thm-bondy-chvatal]
+    source: "skripta str. 36; přednáška 7, fólie 5"
+
+  - id: thm-bondy-chvatal
+    kind: theorem
+    label: "Věta 5.4"
+    section: "5.5"
+    title: Bondyho–Chvátalova věta
+    terms:
+      - Bondy-Chvátalova věta
+      - Bondy
+      - Chvátal
+      - úplný uzávěr
+      - Bondy-Chvátal theorem
+    statement: |
+      (Bondy, Chvátal) Nechť $G$ je graf s alespoň třemi uzly. Je-li $\mathrm{cl}(G)$
+      úplný graf, potom je graf $G$ hamiltonovský.
+    intuition: |
+      Silnější než Oreho i Diracova věta: místo aby podmínku splňovaly všechny nesousední
+      dvojice najednou, stačí, aby se graf postupným přidáváním „povolených“ hran dal
+      doplnit na úplný graf. Obrácení **neplatí**: kružnice $C_n$ pro $n \ge 5$ je
+      hamiltonovská, ale žádná nesousední dvojice nemá součet stupňů $\ge n$ ($2 + 2 < n$),
+      takže $\mathrm{cl}(C_n) = C_n$ není úplný.
+
+      Obecně platí ekvivalence: $G$ je hamiltonovský $\iff$ $\mathrm{cl}(G)$ je
+      hamiltonovský.
+    proof: |
+      *Důkaz ve skriptech není, doplněno (přímý důsledek Oreho lemmatu).*
+
+      Nechť $\mathrm{cl}(G)$ vznikl z $G$ přidáním hran $e_1, \dots, e_r$ a označme
+      $G_0 = G$, $G_i = G_{i-1} + e_i$, takže $G_r = \mathrm{cl}(G)$. Podle definice
+      uzávěru má hrana $e_i = \{u, v\}$ nesousední konce v $G_{i-1}$ a
+      $d_{G_{i-1}}(u) + d_{G_{i-1}}(v) \ge n$.
+
+      Graf $G_r = K_n$ je pro $n \ge 3$ hamiltonovský. Podle [Oreho lemmatu](#lemma-ore-5-1)
+      aplikovaného na graf $G_{i-1}$ a hranu $e_i$ platí: je-li $G_i$ hamiltonovský, je
+      hamiltonovský i $G_{i-1}$. Postupně pro $i = r, r-1, \dots, 1$ dostaneme, že
+      hamiltonovský je $G_0 = G$.
+    proof_steps:
+      - Uzávěr vzniká posloupností grafů $G = G_0 \subset G_1 \subset \dots \subset G_r = \mathrm{cl}(G)$, kde $G_i = G_{i-1} + e_i$.
+      - Každá přidaná hrana $e_i$ splňuje v grafu $G_{i-1}$ podmínku Oreho lemmatu.
+      - Graf $G_r = K_n$ je pro $n \ge 3$ hamiltonovský.
+      - Oreho lemma přenáší hamiltonovskost z $G_i$ na $G_{i-1}$, indukcí směrem dolů až na $G_0 = G$.
+    related: [def-uzaver-grafu, lemma-ore-5-1, thm-ore-5-3, thm-dirac-5-2, alg-hamilton-uzaver]
+    illustrations:
+      - title: Obrácení neplatí
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 2.5, y: 9 }
+            - { id: b, x: 7.5, y: 9 }
+            - { id: c, x: 10, y: 5 }
+            - { id: d, x: 7.5, y: 1 }
+            - { id: e, x: 2.5, y: 1 }
+            - { id: f, x: 0, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: a }
+        steps:
+          - caption: |
+              $C_6$ je hamiltonovský, ale každá nesousední dvojice má součet stupňů $2 + 2 = 4 < 6$. Žádnou hranu nepřidáme, $\mathrm{cl}(C_6) = C_6$ není úplný – obrácení věty tedy **neplatí**.
+          - caption: |
+              Přidáme tři hlavní úhlopříčky. Graf je 3-regulární a každá nesousední dvojice má součet $3 + 3 = 6 \ge n$, takže uzávěr je $K_6$ a věta hamiltonovskost zaručuje.
+            add: [[a, d], [b, e], [c, f]]
+    source: "skripta str. 36; přednáška 7, fólie 5"
+
+  - id: alg-hamilton-uzaver
+    kind: algorithm
+    label: "Poznámka (str. 36)"
+    section: "5.5"
+    title: Nalezení hamiltonovské kružnice přes uzávěr
+    terms:
+      - heuristika založená na uzávěru
+      - výpočet uzávěru
+      - polynomiální algoritmus hamiltonovská kružnice
+      - konstrukce hamiltonovské kružnice
+    statement: |
+      Myšlenka důkazu Oreho lemmatu poskytuje **polynomiální algoritmus** na nalezení
+      hamiltonovské kružnice v grafu $G$, jehož uzávěrem je úplný graf. (Obecně je problém
+      existence hamiltonovské kružnice NP-úplný.)
+    intuition: |
+      Uzávěr spočítáme a zapamatujeme si pořadí přidaných hran. V úplném grafu je
+      hamiltonovská kružnice zadarmo; pak přidané hrany odebíráme v opačném pořadí a pokaždé,
+      když kružnice odebíranou hranu používá, ji „přepojíme“ konstrukcí z důkazu Oreho
+      lemmatu. Pokud uzávěr úplný není, heuristika odpoví „nevím“.
+    pseudocode: |
+      1. **Uzávěr:** dokud existují nesousední $u$, $v$ s $d(u) + d(v) \ge n$ (v aktuálním grafu), přidej hranu $\{u, v\}$; zapamatuj pořadí $e_1, \dots, e_r$.
+      2. Není-li $\mathrm{cl}(G)$ úplný graf, odpověz „nevím“ a skonči.
+      3. Zvol hamiltonovskou kružnici $C$ v $K_n$ (např. $1, 2, \dots, n, 1$).
+      4. Pro $j = r, r-1, \dots, 1$: je-li $e_j = \{u, v\} \in H(C)$, odeber ji (cesta $u = x_1, \dots, x_n = v$), najdi $i$ s $\{u, x_{i+1}\}$ i $\{x_i, v\}$ v grafu $G + e_1 + \dots + e_{j-1}$ a polož $C := x_1 \dots x_i\, x_n x_{n-1} \dots x_{i+1}\, x_1$.
+      5. Vrať $C$ – hamiltonovskou kružnici v $G$.
+    complexity: |
+      Polynomiální. Přímočarý výpočet uzávěru: nejvýše $O(n^2)$ přidaných hran a před každou
+      prohledání $O(n^2)$ dvojic, tedy $O(n^4)$ (s chytřejší evidencí kandidátů méně).
+      Zpětná fáze: nejvýše $O(n^2)$ přepojení po $O(n)$, tj. $O(n^3)$.
+    examples:
+      - title: Kdy heuristika neví
+        body: |
+          Pro kružnici $C_6$ je $\mathrm{cl}(C_6) = C_6$ (každá nesousední dvojice má součet
+          stupňů $4 < 6$), takže algoritmus odpoví „nevím“, přestože $C_6$ hamiltonovská je.
+    visualization: bondy-chvatal
+    related: [def-uzaver-grafu, thm-bondy-chvatal, lemma-ore-5-1, def-heuristika, rem-hamilton-np]
+    illustrations:
+      - title: Petersenův graf – heuristika neví, a právem
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: o1, x: 5, y: 9.8 }
+            - { id: o2, x: 9.6, y: 6.5 }
+            - { id: o3, x: 7.8, y: 1.1 }
+            - { id: o4, x: 2.2, y: 1.1 }
+            - { id: o5, x: 0.4, y: 6.5 }
+            - { id: i1, x: 5, y: 7.2 }
+            - { id: i2, x: 7.1, y: 5.7 }
+            - { id: i3, x: 6.3, y: 3.2 }
+            - { id: i4, x: 3.7, y: 3.2 }
+            - { id: i5, x: 2.9, y: 5.7 }
+          edges:
+            - { from: o1, to: o2 }
+            - { from: o2, to: o3 }
+            - { from: o3, to: o4 }
+            - { from: o4, to: o5 }
+            - { from: o5, to: o1 }
+            - { from: o1, to: i1 }
+            - { from: o2, to: i2 }
+            - { from: o3, to: i3 }
+            - { from: o4, to: i4 }
+            - { from: o5, to: i5 }
+            - { from: i1, to: i3 }
+            - { from: i3, to: i5 }
+            - { from: i5, to: i2 }
+            - { from: i2, to: i4 }
+            - { from: i4, to: i1 }
+        steps:
+          - caption: |
+              Petersenův graf: 3-regulární, $n = 10$. Každá nesousední dvojice má součet $3 + 3 = 6 < 10$, uzávěr je $G$ sám a heuristika odpoví „nevím“. Tady oprávněně – Petersenův graf hamiltonovský **není**.
+          - caption: |
+              Hamiltonovskou **cestu** ale má: $o_1\,i_1\,i_3\,i_5\,o_5\,o_4\,i_4\,i_2\,o_2\,o_3$. Uzavřít ji nejde, konce $o_1$ a $o_3$ nesousedí – a žádná jiná hamiltonovská cesta to nespraví.
+            edges: { o1-i1: path, i1-i3: path, i3-i5: path, i5-o5: path, o5-o4: path, o4-i4: path, i4-i2: path, i2-o2: path, o2-o3: path }
+            nodes: { o1: active, o3: active }
+          - caption: |
+              Stačí přidat jedinou hranu $\{o_1, o_3\}$ a graf hamiltonovský je. Uzávěr ale ani teď nic nepřidá (součty stupňů jsou nejvýš $4 + 4 < 10$), heuristika by zase odpověděla „nevím“ – rozdíl mezi oběma grafy pozná jen úplné prohledání.
+            add: [[o1, o3]]
+    source: "skripta str. 36 (poznámka; konkrétní postup a složitost doplněny)"
+
+  - id: rem-hamilton-np
+    kind: remark
+    section: "5.5"
+    title: Hamiltonovskost je NP-úplný problém
+    terms:
+      - NP-úplnost hamiltonovské kružnice
+      - HAM
+      - Hamiltonian cycle problem
+      - obchodní cestující
+    statement: |
+      Problém existence hamiltonovské kružnice v grafu je obecně **NP-úplný**. Pro jeho
+      řešení proto známe jen exponenciální algoritmy (backtracking) a polynomiální
+      heuristiky nebo postačující podmínky (Dirac, Ore, Bondy–Chvátal), které dávají
+      odpověď jen v některých případech.
+    intuition: |
+      Kontrast s eulerovskými grafy: existenci uzavřeného eulerovského tahu rozhodneme
+      triviálně (souvislost + sudé stupně) v lineárním čase, kdežto pro hamiltonovskou
+      kružnici žádná taková „lokální“ charakterizace není známa – a pokud P ≠ NP,
+      ani neexistuje.
+    related: [alg-hamilton-backtracking, alg-hamilton-uzaver, def-hamiltonovsky-graf, def-eulerovsky-graf]
+    source: "skripta str. 36"
+
+quiz:
+  - id: q-prohl-01
+    question: |
+      Jakou časovou složitost má Algoritmus 5.1 (prohledávání grafu) při reprezentaci
+      seznamy sousedů?
+    options:
+      - '$O(n)$'
+      - '$O(n + m)$'
+      - '$O(n \cdot m)$'
+      - '$O(n^2)$'
+    correct: 1
+    explanation: |
+      Každý uzel do $D$ vstoupí a odejde jednou a každá hrana se z $M$ odebere jednou
+      (Věta 5.1). Se seznamy sousedů je tedy celkový čas $O(n + m)$. S maticí sousednosti
+      by hledání hran stálo $O(n^2)$.
+    related: [thm-prohledavani-linearni, alg-prohledavani]
+
+  - id: q-prohl-02
+    question: |
+      Množina $D$ v Algoritmu 5.1 je realizována jako **fronta**. Jaký postup vznikne?
+    options:
+      - Prohledávání do hloubky (DFS)
+      - Prohledávání do šířky (BFS)
+      - Dijkstrův algoritmus
+      - Náhodné prohledávání
+    correct: 1
+    explanation: |
+      Fronta = vždy se bere uzel, který je v $D$ nejdéle, takže prohledávání se šíří po
+      vrstvách podle vzdálenosti – je to BFS. Zásobník (uzel v $D$ nejkratší dobu) dává DFS.
+    related: [rem-prohledavani-implementace, alg-bfs, alg-dfs]
+
+  - id: q-prohl-03
+    question: |
+      Kterou úlohu řeší prohledávání **do šířky** přímo, bez dalších úprav?
+    options:
+      - Nalezení všech artikulací
+      - Nalezení nejkratších cest (počtem hran) z počátečního uzlu
+      - Nalezení hamiltonovské kružnice
+      - Výpočet uzlové souvislosti
+    correct: 1
+    explanation: |
+      BFS probírá uzly v pořadí podle vzdálenosti od počátku; strom prohledávání je stromem
+      nejkratších cest v neohodnoceném grafu. Artikulace se hledají backtrackingem (DFS).
+    related: [alg-bfs]
+
+  - id: q-prohl-04
+    question: |
+      Kam může vést chorda nalezená při prohledávání **do hloubky** neorientovaného grafu?
+    options:
+      - Do libovolného již objeveného uzlu
+      - Jen do předka aktuálního uzlu ve stromu prohledávání
+      - Jen do sourozence aktuálního uzlu
+      - Do dosud neobjeveného uzlu
+    correct: 1
+    explanation: |
+      DFS projde celý podstrom uzlu dřív, než se vrátí k jeho předkům, takže všechny
+      již objevené uzly, které jsou ještě aktivní, leží na cestě z kořene – chorda tedy vede
+      do předka. Na tom stojí Tarjanův algoritmus. Hrana do neobjeveného uzlu je hrana stromu.
+    related: [def-strom-prohledavani, alg-dfs]
+
+  - id: q-prohl-05
+    question: |
+      V Tarjanově algoritmu má uzel $x$ pořadové číslo $p(x) = 5$ a jeho synové $y_1$, $y_2$
+      mají $r(y_1) = 3$, $r(y_2) = 5$. Co platí?
+    options:
+      - $x$ není artikulace, protože $r(y_1) < p(x)$.
+      - $x$ je artikulace, protože $r(y_2) \ge p(x)$.
+      - $x$ je artikulace, právě když je kořenem.
+      - Z těchto údajů to nelze rozhodnout.
+    correct: 1
+    explanation: |
+      Stačí jediný syn $y$ s $r(y) \ge p(x)$: z podstromu $y_2$ se chordou nelze dostat výš
+      než do $x$, takže odebráním $x$ se podstrom oddělí. ($p(x) = 5 > 1$, $x$ tedy není
+      kořen.)
+    related: [prop-kriterium-artikulace, alg-artikulace-tarjan]
+
+  - id: q-prohl-06
+    question: |
+      Kdy je **kořen** stromu prohledávání do hloubky artikulací?
+    options:
+      - Vždy
+      - Nikdy
+      - Právě když má ve stromu alespoň dva syny
+      - Právě když z něj vede aspoň jedna chorda
+    correct: 2
+    explanation: |
+      Chordy vedou jen do předků, takže mezi podstromy různých synů kořene není hrana.
+      Má-li kořen dva syny, jeho odebrání graf rozpojí, s jediným synem ne. (Skripta toto
+      pravidlo výslovně neuvádějí, kritérium $r(y) \ge p(x)$ formulují jen pro $p(x) > 1$.)
+    related: [prop-kriterium-artikulace]
+
+  - id: q-prohl-07
+    question: |
+      Jakou složitost má naivní hledání artikulací („odeber uzel a zjisti, zda vzrostl
+      počet komponent“) a jakou Tarjanův algoritmus?
+    options:
+      - '$O(n + m)$ a $O(n + m)$'
+      - '$O(n(n + m))$ a $O(n + m)$'
+      - '$O(n^3)$ a $O(n^2)$'
+      - '$O(2^n)$ a $O(n(n + m))$'
+    correct: 1
+    explanation: |
+      Naivní postup provede $n$-krát prohledávání v čase $O(n + m)$. Tarjan vystačí
+      s jediným průchodem backtrackingu, při němž počítá čísla $p(x)$ a $r(x)$.
+    related: [alg-artikulace-tarjan]
+
+  - id: q-prohl-08
+    question: |
+      Proč backtracking pro generování hamiltonovských cest není efektivní, přestože
+      „backtracking pracuje v čase $O(m + n)$“?
+    options:
+      - Protože musí počítat distanční matici.
+      - Protože $m$ a $n$ jsou zde rozměry rozhodovacího stromu, který roste exponenciálně s počtem uzlů grafu.
+      - Protože chordy se musí procházet opakovaně.
+      - Ve skutečnosti je efektivní, běží v čase $O(m + n)$ grafu $G$.
+    correct: 1
+    explanation: |
+      Uzly se po zpětném kroku opět uvolní, takže algoritmus prochází strom všech cest
+      z počátečního uzlu. Ten má obecně exponenciálně mnoho uzlů (v $K_n$ je
+      $(n-1)!$ hamiltonovských cest z jednoho uzlu).
+    related: [alg-hamilton-backtracking, rem-hamilton-casova-narocnost]
+
+  - id: q-prohl-09
+    question: |
+      Který graf na 7 uzlech splňuje podmínku Oreho věty, ale **ne** podmínku Diracovy věty?
+    options:
+      - Kružnice $C_7$
+      - Úplný bipartitní graf $K_{3,4}$
+      - '$K_6$ a jeden další uzel spojený se třemi uzly $K_6$'
+      - Strom se 7 uzly
+    correct: 2
+    explanation: |
+      Nový uzel $w$ má stupeň 3, uzly $K_6$ mají stupeň 6 (sousedé $w$) nebo 5. Jediné
+      nesousední dvojice jsou $w$ a uzel $K_6$ stupně 5: $3 + 5 = 8 \ge 7$, Oreho podmínka
+      platí. Ale $\delta = 3 < 7/2$, takže Diracova podmínka neplatí. $C_7$ a strom nesplňují
+      ani Oreho podmínku ($2 + 2 < 7$, resp. listy), $K_{3,4}$ také ne: dva uzly stupně 3
+      ve větší části dávají $3 + 3 = 6 < 7$ (a $K_{3,4}$ ani hamiltonovský není).
+    related: [thm-ore-5-3, thm-dirac-5-2]
+
+  - id: q-prohl-10
+    question: |
+      Co tvrdí Oreho lemma pro nesousední uzly $u$, $v$ s $d(u) + d(v) \ge n$?
+    options:
+      - '$G$ je vždy hamiltonovský.'
+      - '$G$ je hamiltonovský, právě když $G + \{u, v\}$ je hamiltonovský.'
+      - '$G + \{u, v\}$ je vždy úplný graf.'
+      - '$G$ má hamiltonovskou cestu z $u$ do $v$.'
+    correct: 1
+    explanation: |
+      Přidání takové hrany nemění hamiltonovskost. Netriviální směr: kružnici v
+      $G + \{u, v\}$ přes hranu $\{u, v\}$ lze přepojit pomocí indexu $x_i \in M \cap N$,
+      jehož existenci zaručí počítání ($|M| + |N| \ge n$, $|M \cup N| \le n - 1$).
+    related: [lemma-ore-5-1]
+
+  - id: q-prohl-11
+    question: |
+      Při konstrukci uzávěru $\mathrm{cl}(G)$ se podmínka $d(u) + d(v) \ge n$ testuje:
+    options:
+      - v původním grafu $G$
+      - v aktuálním grafu s již přidanými hranami
+      - v doplňku grafu $G$
+      - jen pro uzly minimálního stupně
+    correct: 1
+    explanation: |
+      Stupně se počítají v aktuálním grafu, proto může uzávěr být úplný, i když v $G$
+      podmínku splňuje jen málo dvojic (např. $C_5$ s jednou tětivou má $\mathrm{cl} = K_5$).
+      Výsledek přitom nezávisí na pořadí přidávání (Tvrzení 5.2).
+    related: [def-uzaver-grafu, prop-uzaver-jednoznacny]
+
+  - id: q-prohl-12
+    question: |
+      Graf $G$ s $n \ge 3$ uzly má uzávěr $\mathrm{cl}(G)$, který **není** úplný. Co z toho
+      plyne?
+    options:
+      - '$G$ není hamiltonovský.'
+      - '$G$ nemá hamiltonovskou cestu.'
+      - O hamiltonovskosti $G$ to samo o sobě nic neříká.
+      - '$G$ je nesouvislý.'
+    correct: 2
+    explanation: |
+      Bondy–Chvátalova věta je jen postačující podmínka. Např. $C_6$ je hamiltonovská,
+      ale $\mathrm{cl}(C_6) = C_6$. Platí ovšem, že $G$ je hamiltonovský, právě když
+      $\mathrm{cl}(G)$ je hamiltonovský.
+    related: [thm-bondy-chvatal, def-uzaver-grafu]
+
+  - id: q-prohl-13
+    question: |
+      Jakou složitost má výpočet hranové souvislosti $h(G)$ celého grafu přes maximální
+      toky pro všechny dvojice uzlů (Dinicův algoritmus) a jaké je nejlepší známé vylepšení?
+    options:
+      - '$O(n^3)$, resp. $O(n^2)$'
+      - '$O(n^5)$, resp. $O(m^2\sqrt{n}) \subseteq O(n^{4{,}5})$'
+      - '$O(n + m)$, resp. $O(n)$'
+      - '$O(2^n)$, resp. $O(n^5)$'
+    correct: 1
+    explanation: |
+      $O(n^2)$ dvojic krát $O(n^3)$ na jeden tok dává $O(n^5)$; Even, Hopcroft a Tarjan
+      dosáhli $O(m^2\sqrt{n})$, což je při $m \sim n^2$ nejvýše $O(n^{4{,}5})$. Stejné odhady
+      platí pro uzlovou souvislost (štěpení uzlů).
+    related: [alg-hranova-souvislost, alg-uzlova-souvislost]
+
+  - id: q-prohl-14
+    question: |
+      Pósova heuristika skončila odpovědí „nevím“. Co to znamená?
+    options:
+      - Graf není hamiltonovský.
+      - Graf je nesouvislý.
+      - Heuristika kružnici nenašla, ale hamiltonovská kružnice přesto může existovat.
+      - Graf má artikulaci.
+    correct: 2
+    explanation: |
+      Heuristika zpravidla neumí dát zápornou odpověď – neprobírá všechny možnosti.
+      Jistotu dává jen kladná odpověď (nalezená kružnice).
+    related: [def-heuristika, alg-posova-heuristika]
+
+  - id: q-prohl-15
+    question: |
+      Jak rozhodnout v čase $O(n + m)$, zda je graf lesem (neobsahuje kružnici)?
+    options:
+      - Spočítat distanční matici a hledat nuly mimo diagonálu.
+      - Prohledat graf a zjistit, zda byla nalezena nějaká chorda.
+      - Ověřit, že všechny stupně jsou nejvýše 2.
+      - Spustit backtracking pro hamiltonovské cesty.
+    correct: 1
+    explanation: |
+      Hrany objevující nové uzly tvoří les prohledávání; každá chorda s ním uzavírá kružnici.
+      Graf je lesem, právě když chorda neexistuje, tj. $m = n - c$ ($c$ = počet komponent).
+    related: [prop-test-acyklicnosti]

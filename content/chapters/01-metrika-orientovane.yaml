@@ -1,0 +1,2411 @@
+id: metrika-orientovane
+number: 1
+title: Metrika, eulerovské a hamiltonovské grafy, orientované grafy
+source: "Přednáška 2 (TGD1-02-folie, str. 1–12); přednáška 3 (TGD1-03-folie, str. 1–8)"
+exam_questions: [2, 3, 10]
+summary: |
+  Kapitola zavádí vzdálenost v grafu a ukazuje, že má vlastnosti metriky (i ve váženém případě),
+  a řeší úlohu **minimální cesty** Dijkstrovým algoritmem. Dále charakterizuje eulerovské grafy
+  (polynomiálně rozhodnutelné) a uvádí postačující podmínku hamiltonovskosti (Dirac) spolu
+  s motivací výpočetní složitosti (TSP, rozhodovací strom). Druhá polovina se věnuje orientovaným
+  grafům: silné souvislosti, kvazikomponentám, kondenzaci, acyklickým grafům a jejich
+  topologickému očíslování, mocninám matice sousednosti a nakonec metodě **kritické cesty**.
+sections:
+  - number: "1.1"
+    title: Vzdálenost a metrika grafu
+  - number: "1.2"
+    title: Ohodnocené grafy, w-vzdálenost a minimální cesta
+  - number: "1.3"
+    title: Eulerovské a hamiltonovské grafy, složitost
+  - number: "1.4"
+    title: Orientované grafy, silná souvislost a kvazikomponenty
+  - number: "1.5"
+    title: Acyklické grafy a kondenzace
+  - number: "1.6"
+    title: Ohodnocené orientované grafy, matice a minimální cesty
+  - number: "1.7"
+    title: Kritická cesta
+items:
+  # ------------------------------------------------------------------ 1.1
+  - id: def-vzdalenost
+    kind: definition
+    label: Definice
+    section: "1.1"
+    title: Vzdálenost uzlů v grafu
+    terms: [vzdálenost, vzdálenost uzlů, d_G(u,v), nejkratší cesta, metrika grafu]
+    statement: |
+      Nechť $G$ je graf, $u, v \in U(G)$. **Vzdáleností** uzlů $u, v$ v grafu $G$ (značíme $d_G(u,v)$)
+      rozumíme nejmenší délku cesty z uzlu $u$ do uzlu $v$ v grafu $G$. Neexistuje-li v $G$ cesta
+      z $u$ do $v$, klademe $d_G(u,v) = \infty$.
+    intuition: |
+      Vzdálenost = nejmenší počet hran, přes které je nutné přejít. Cesta nejmenší délky se nazývá
+      **nejkratší cesta**. V neohodnoceném grafu ji (i všechny vzdálenosti z jednoho uzlu) najde
+      prohledávání do šířky (BFS) v čase $O(n + m)$.
+
+      Pozor na kolizi značení: $d_G(u)$ (jeden argument) je stupeň uzlu, $d_G(u,v)$ (dva argumenty) vzdálenost.
+    related: [thm-metrika-grafu, def-w-delka-vzdalenost, prop-souvislost-cesta]
+    source: "přednáška 2, folie 1"
+    supplemented: false
+
+  - id: thm-metrika-grafu
+    kind: theorem
+    label: Věta
+    section: "1.1"
+    title: Vlastnosti vzdálenosti (metrika grafu)
+    terms: [metrika grafu, vlastnosti vzdálenosti, trojúhelníková nerovnost, symetrie vzdálenosti]
+    statement: |
+      Nechť $G$ je graf, $x, y, z \in U(G)$. Pak platí:
+
+      - (i) $d_G(x,y)$ je celé číslo nebo $\infty$,
+      - (ii) $d_G(x,y) \ge 0$ a $d_G(x,y) = 0 \iff x = y$,
+      - (iii) $d_G(x,y) = d_G(y,x)$,
+      - (iv) $d_G(x,y) + d_G(y,z) \ge d_G(x,z)$,
+      - (v) je-li $d_G(x,z) > 1$, pak existuje uzel $y \in U(G)$ tak, že $x \ne y \ne z$ a
+         $d_G(x,y) + d_G(y,z) = d_G(x,z)$.
+    intuition: |
+      Body (ii)–(iv) jsou axiomy metriky: vzdálenost je nezáporná, nulová jen pro tentýž uzel, symetrická
+      a splňuje trojúhelníkovou nerovnost. Body (i) a (v) jsou navíc typické pro **grafovou** metriku:
+      hodnoty jsou celočíselné a „mezi" dvěma vzdálenými uzly vždy leží nějaký uzel přesně na nejkratší
+      trase (metrika nemá „díry"). Naopak každá metrika s vlastnostmi (i) a (v) je metrikou nějakého grafu.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **(i)** Délka cesty je počet hran, tedy nezáporné celé číslo; minimum z konečně mnoha celých čísel
+      je celé číslo, a neexistuje-li cesta, je hodnota $\infty$.
+
+      **(ii)** Délky jsou nezáporné. Cesta délky 0 je jediný uzel, takže $d_G(x,y) = 0$ právě když $x = y$.
+
+      **(iii)** Projdeme-li cestu z $x$ do $y$ pozpátku, dostaneme cestu z $y$ do $x$ stejné délky
+      (neorientovaný graf), takže množiny délek jsou stejné.
+
+      **(iv)** Je-li některý sčítanec $\infty$, nerovnost platí. Jinak spojíme nejkratší cestu z $x$ do $y$
+      a nejkratší cestu z $y$ do $z$ – dostaneme sled z $x$ do $z$ délky $d_G(x,y) + d_G(y,z)$. Z něj lze
+      vynecháním opakujících se úseků získat cestu z $x$ do $z$, která není delší
+      (viz [větička o sledech a cestách](#prop-souvislost-cesta)). Proto $d_G(x,z) \le d_G(x,y) + d_G(y,z)$.
+
+      **(v)** Nechť $d_G(x,z) = k$, $1 < k < \infty$, a $x = v_0, v_1, \dots, v_k = z$ je nejkratší cesta.
+      Položme $y = v_1$; jistě $y \ne x$ a $y \ne z$ (protože $k \ge 2$). Platí $d_G(x,y) = 1$ a úsek
+      $v_1, \dots, v_k$ dává $d_G(y,z) \le k - 1$; z (iv) zároveň $d_G(y,z) \ge d_G(x,z) - d_G(x,y) = k - 1$.
+      Tedy $d_G(x,y) + d_G(y,z) = 1 + (k-1) = k$.
+      (Pro $d_G(x,z) = \infty$ vyhovuje libovolný třetí uzel $y$, existuje-li: $x$ a $z$ leží v různých
+      komponentách, takže alespoň jedna ze vzdáleností $d_G(x,y)$, $d_G(y,z)$ je nekonečná.) $\square$
+    proof_steps:
+      - Délky cest jsou nezáporná celá čísla a cesta délky 0 je jen jediný uzel, odtud (i) a (ii).
+      - Obrácením cesty z x do y vznikne cesta z y do x stejné délky, odtud symetrie (iii).
+      - Spojením nejkratších cest x→y a y→z dostaneme sled z x do z, který obsahuje cestu nejvýše stejné délky, odtud trojúhelníková nerovnost (iv).
+      - Pro (v) vezmeme nejkratší cestu x = v_0, …, v_k = z s k ≥ 2 a zvolíme y = v_1.
+      - Platí d(x,y) = 1, úsek cesty dává d(y,z) ≤ k − 1 a trojúhelníková nerovnost d(y,z) ≥ k − 1, tedy součet je přesně k.
+    illustrations:
+      - title: Vzdálenosti z uzlu x
+        graph:
+          directed: false
+          nodes:
+            - { id: x, x: 0.5, y: 5 }
+            - { id: a, x: 3.5, y: 2 }
+            - { id: b, x: 3.5, y: 8 }
+            - { id: c, x: 6.5, y: 2 }
+            - { id: d, x: 6.5, y: 8 }
+            - { id: z, x: 9.5, y: 5 }
+            - { id: y, x: 9.5, y: 0.5 }
+          edges:
+            - { from: x, to: a }
+            - { from: x, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: z }
+            - { from: d, to: z }
+            - { from: c, to: y }
+        steps:
+          - caption: |
+              Popisky jsou vzdálenosti $d_G(x, \cdot)$ – nejmenší počet hran z $x$. Jsou to celá čísla a nulu má jen $x$ sám (body (i), (ii)).
+            labels: { x: "0", a: "1", b: "1", c: "2", d: "2", z: "3", y: "3" }
+            nodes: { x: source }
+          - caption: |
+              Trojúhelníková nerovnost: $d(x,y) + d(y,z) = 3 + 2 = 5 \ge 3 = d(x,z)$. Spojením nejkratších cest $x \to y$ a $y \to z$ vznikne sled délky 5; vystřižením úseku $c, y, c$ z něj dostaneme cestu $x, a, c, z$ délky 3.
+            labels: { y: "d(x,y)=3", z: "d(x,z)=3" }
+            nodes: { x: source, y: active, z: active }
+            edges: { x-a: path, a-c: path, c-y: path, c-z: path }
+          - caption: |
+              Bod (v): $d(x,z) = 3 > 1$, takže na nejkratší cestě $x, a, c, z$ leží uzel $a \ne x, z$ s $d(x,a) + d(a,z) = 1 + 2 = 3$. Mezi vzdálenými uzly vždy leží uzel „přesně na trase“.
+            labels: { a: "1 + 2" }
+            nodes: { x: source, a: active, z: active }
+            edges: { x-a: path, a-c: path, c-z: path }
+          - caption: |
+              Po přidání hrany $xc$ se vzdálenosti jen zkrátí: $d(x,c)$ klesne na 1 a $d(x,z)$ i $d(x,y)$ na 2. Nové cesty přibudou, žádná nezmizí.
+            add: [[x, c]]
+            labels: { x: "0", a: "1", b: "1", c: "1", d: "2", z: "2", y: "2" }
+            nodes: { x: source }
+            edges: { x-c: active }
+    related: [def-vzdalenost, thm-w-metrika]
+    source: "přednáška 2, folie 1"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 1.2
+  - id: def-w-delka-vzdalenost
+    kind: definition
+    label: Definice
+    section: "1.2"
+    title: w-délka cesty, w-vzdálenost, minimální cesta
+    terms: [w-délka, w-vzdálenost, vážená vzdálenost, minimální cesta, nejkratší cesta, délka cesty v ohodnoceném grafu]
+    statement: |
+      Nechť $G$ je graf s ohodnocením $w$. Pro každou cestu $P \subset G$ definujeme **$w$-délku**
+      $w(P)$ cesty $P$ předpisem
+      $$
+      w(P) = \sum_{h \in H(P)} w(h).
+      $$
+      Nechť $u, v \in U(G)$. **$w$-vzdáleností** uzlů $u, v$ v grafu $G$ (značíme $d^w_G(u,v)$) rozumíme
+      nejmenší $w$-délku cesty z uzlu $u$ do uzlu $v$ v grafu $G$. Neexistuje-li v $G$ cesta z $u$ do $v$,
+      klademe $d^w_G(u,v) = \infty$.
+
+      Pro $u, v \in U(G)$ se cesta z $u$ do $v$ nejmenší délky nazývá **nejkratší cesta**, cesta z $u$ do $v$
+      nejmenší $w$-délky **minimální cesta**.
+    intuition: |
+      Rozlišujte: *nejkratší* cesta = nejméně hran, *minimální* cesta = nejmenší součet vah. Obecně jsou
+      to různé cesty (dlouhá trasa po dálnici může být „levnější" než krátká přes hory).
+
+      (Ve foliích je u $w$-vzdálenosti překlep „$d_G(u,v) = \infty$" místo $d^w_G(u,v) = \infty$.)
+
+      Minimální cestu z daného uzlu hledá [Dijkstrův algoritmus](#alg-dijkstra), $w$-vzdálenosti všech
+      dvojic Floydův algoritmus (kapitola Grafy a matice).
+    examples:
+      - title: Převozník, koza, vlk a zelí
+        body: |
+          Převozník má převézt kozu (K), vlka (V) a zelí (Z) přes řeku; do loďky se vejde jen s jedním
+          z nich. Bez dozoru nesmí zůstat koza s vlkem ani koza se zelím. Jízda trvá 1 h samotnému převozníkovi,
+          2 h se zelím, 3 h s kozou a 4 h s vlkem.
+
+          **Model:** uzly = přípustné stavy (kdo je na levém | pravém břehu), hrany = jízdy loďkou, váha = doba jízdy.
+          Ptáme se na minimální cestu ze stavu „vše vlevo" do stavu „vše vpravo".
+
+          Graf přípustných stavů je na obrázku. Ze stavu $PVZ \mid K$ (koza je vpravo, převozník se vrátil)
+          vedou dvě symetrické větve: převézt nejprve vlka (4 h), vrátit kozu (3 h), převézt zelí (2 h),
+          nebo nejprve zelí (2 h), vrátit kozu (3 h), převézt vlka (4 h). Obě větve trvají 9 h.
+
+          **Odpovědi:** převoz je možný; minimální doba je $3 + 1 + 9 + 1 + 3 = 17$ hodin; minimální řešení jsou **dvě**.
+        graph:
+          directed: false
+          nodes:
+            - { id: u, x: 0, y: 5, label: "PKVZ | -" }
+            - { id: a, x: 1.5, y: 5, label: "VZ | PK" }
+            - { id: b, x: 3, y: 5, label: "PVZ | K" }
+            - { id: c, x: 4.5, y: 2, label: "Z | PKV" }
+            - { id: d, x: 4.5, y: 8, label: "V | PKZ" }
+            - { id: e, x: 6, y: 2, label: "PKZ | V" }
+            - { id: f, x: 6, y: 8, label: "PKV | Z" }
+            - { id: g, x: 7.3, y: 5, label: "K | PVZ" }
+            - { id: h, x: 8.6, y: 5, label: "PK | VZ" }
+            - { id: v, x: 10, y: 5, label: "- | PKVZ" }
+          edges:
+            - { from: u, to: a, w: 3 }
+            - { from: a, to: b, w: 1 }
+            - { from: b, to: c, w: 4 }
+            - { from: b, to: d, w: 2 }
+            - { from: c, to: e, w: 3 }
+            - { from: d, to: f, w: 3 }
+            - { from: e, to: g, w: 2 }
+            - { from: f, to: g, w: 4 }
+            - { from: g, to: h, w: 1 }
+            - { from: h, to: v, w: 3 }
+    related: [def-vzdalenost, def-ohodnoceny-graf, thm-w-metrika, alg-dijkstra, rem-distancni-matice]
+    source: "přednáška 2, folie 1 a 3"
+    supplemented: false
+
+  - id: thm-w-metrika
+    kind: theorem
+    label: Věta
+    section: "1.2"
+    title: Vlastnosti w-vzdálenosti
+    terms: [w-vzdálenost, metrika, trojúhelníková nerovnost, vážená metrika]
+    statement: |
+      Nechť $G$ je graf s ohodnocením $w$ a nechť $x, y, z \in U(G)$. Pak platí:
+
+      - (i) $d^w_G(x,y) \ge 0$ a $d^w_G(x,y) = 0 \iff x = y$,
+      - (ii) $d^w_G(x,y) = d^w_G(y,x)$,
+      - (iii) $d^w_G(x,y) + d^w_G(y,z) \ge d^w_G(x,z)$,
+      - (iv) je-li $d_G(x,z) > 1$, pak existuje uzel $y \in U(G)$ tak, že $x \ne y \ne z$ a
+         $d^w_G(x,y) + d^w_G(y,z) = d^w_G(x,z)$.
+    intuition: |
+      Funkce $d^w_G$ má také vlastnosti metriky. Body (i) a (iii) využívají, že váhy jsou **kladné**:
+      s nulovými vahami by různé uzly mohly mít vzdálenost 0, se zápornými by „nejkratší cesta" nemusela
+      dávat smysl.
+
+      Pozor na předpoklad v (iv): je to $d_G(x,z) > 1$ (neohodnocená vzdálenost), tj. $x$ a $z$ nesousedí.
+      Pak má každá cesta mezi nimi vnitřní uzel a vnitřní uzel minimální cesty je hledané $y$.
+      Pro sousední uzly to platit nemusí – přímá hrana může být nejkratší spojení.
+
+      Ne každá „vzdálenost z praxe" je metrika – viz příklad s jízdenkami.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **(i)** Váhy jsou kladné, takže $w(P) \ge 0$ a $w(P) = 0$ jen pro cestu bez hran, tj. jediný uzel.
+      Tedy $d^w_G(x,y) = 0 \iff x = y$.
+
+      **(ii)** Obrácená cesta má stejné hrany, tedy stejnou $w$-délku.
+
+      **(iii)** Je-li některý sčítanec nekonečný, nerovnost platí. Jinak spojením minimální cesty $x \to y$
+      a minimální cesty $y \to z$ vznikne sled $S$ z $x$ do $z$ s $w$-délkou (součtem vah hran počítaných
+      s násobností) $d^w_G(x,y) + d^w_G(y,z)$. Vynecháním uzavřených úseků (opakuje-li se uzel) dostaneme
+      cestu z $x$ do $z$, jejíž $w$-délka je – díky nezápornosti vah – nejvýše $w$-délka sledu $S$.
+
+      **(iv)** Nechť $d_G(x,z) > 1$. Je-li $d^w_G(x,z) = \infty$, vyhovuje libovolný třetí uzel (pokud
+      existuje), protože $x, z$ leží v různých komponentách. Jinak vezmeme minimální cestu
+      $P: x = v_0, v_1, \dots, v_k = z$; protože $x, z$ nesousedí, je $k \ge 2$, a položíme $y = v_1$.
+      Úseky $P_1 = x \dots y$ a $P_2 = y \dots z$ dávají $d^w(x,y) + d^w(y,z) \le w(P_1) + w(P_2) = w(P) = d^w(x,z)$,
+      opačná nerovnost je (iii). $\square$
+    proof_steps:
+      - Kladnost vah dává w(P) ≥ 0 s rovností jen pro cestu bez hran, odtud (i).
+      - Obrácená cesta má stejné hrany a tedy stejnou w-délku, odtud symetrie (ii).
+      - Spojením minimálních cest x→y a y→z vznikne sled, z něhož vynecháním uzavřených úseků dostaneme cestu x→z s nejvýše stejnou w-délkou, odtud (iii).
+      - Pro (iv) uzly x, z nesousedí, takže minimální cesta mezi nimi má vnitřní uzel y.
+      - Úseky minimální cesty dávají d^w(x,y) + d^w(y,z) ≤ d^w(x,z) a opačná nerovnost plyne z (iii).
+    examples:
+      - title: Cena jízdenky není metrika
+        body: |
+          Nechť $\rho(x,y)$ je cena obyčejné jízdenky mezi stanicemi a ceník je pásmový: 1–6 km za 10 Kč,
+          7–10 km za 16 Kč, 11–15 km za 22 Kč, 16–20 km za 28 Kč. Mezi stanicemi Plzeň hl. n. – Starý Plzenec
+          (10 km) – Nezvěstice (dalších 6 km) vychází (P = Plzeň, S = Starý Plzenec, N = Nezvěstice)
+
+          $$
+          \rho(P, N) = 28 > 26 = 16 + 10 = \rho(P, S) + \rho(S, N).
+          $$
+
+          Trojúhelníková nerovnost neplatí, $\rho$ tedy **není metrika** – vyplatí se koupit dvě jízdenky.
+          $w$-vzdálenost v grafu by tento problém neměla: vždy je nejvýše součtem vzdáleností přes mezilehlý uzel.
+    related: [def-w-delka-vzdalenost, thm-metrika-grafu]
+    source: "přednáška 2, folie 2"
+    supplemented: false
+
+  - id: rem-distancni-matice
+    kind: remark
+    label: Definice / poznámka
+    section: "1.2"
+    title: Distanční a w-distanční matice (odkaz)
+    terms: [distanční matice, w-distanční matice, matice vzdáleností, matice w-vzdáleností, D(G)]
+    statement: |
+      Nechť $G$ je ohodnocený graf s uzly $1, \dots, n$ a $d^w_{ij} = d^w_G(i,j)$. Matice
+      $\mathbf{D}^w(G) = [d^w_{ij}]_{i,j=1}^n$ se nazývá **matice $w$-vzdáleností ($w$-distanční matice)**.
+      Neohodnocený graf považujeme za ohodnocený $w_{ij} = 1$; pak dostáváme **distanční matici**
+      $\mathbf{D}(G) = [d_{ij}]$, kde $d_{ij} = d_G(i,j)$. Stejně se definují pro orientované grafy
+      (přednáška 3, folie 2).
+
+      Podrobně (včetně Floydova algoritmu) viz [w-distanční matice](#def-w-distancni-matice)
+      a [Floydův algoritmus](#alg-floyd) v kapitole Grafy a matice.
+    intuition: |
+      Distanční matice je „tabulka vzdáleností" jako v autoatlasu. Pro neorientovaný graf je symetrická
+      s nulami na diagonále. Výpočetní možnosti:
+
+      - $\mathbf{D}(G)$ neohodnoceného grafu: $n$-krát BFS, tj. $O(n(n+m))$, nebo přes mocniny matice
+        sousednosti ([důsledek](#cor-distancni-matice-mocniny));
+      - $\mathbf{D}^w(G)$: Floydův algoritmus v $O(n^3)$, nebo $n$-krát Dijkstra ($n \cdot O(n^2) = O(n^3)$).
+    related: [def-w-distancni-matice, alg-floyd, thm-floyd, alg-dijkstra, cor-distancni-matice-mocniny]
+    source: "přednáška 2, folie 4; přednáška 3, folie 2"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 1.3
+  - id: def-eulerovsky-graf
+    kind: definition
+    label: Definice
+    section: "1.3"
+    title: Eulerovský graf
+    terms: [eulerovský graf, eulerovský tah, uzavřený eulerovský tah, kreslení jedním tahem]
+    statement: |
+      Buď $G$ graf, $m = |H(G)|$. Řekneme, že $G$ je **eulerovský**, jestliže v $G$ existuje uzavřený tah délky $m$.
+    intuition: |
+      Uzavřený tah délky $m$ projde **každou hranou právě jednou** (tah hrany neopakuje a délka $m$ znamená,
+      že použije všechny) a vrátí se do výchozího uzlu – „nakreslit graf jedním tahem a skončit tam, kde
+      jsme začali". Historicky problém sedmi královeckých mostů (Euler, 1736).
+
+      Je-li požadován jen otevřený tah přes všechny hrany, stačí, aby lichý stupeň měly právě dva uzly
+      (tah pak začíná v jednom a končí v druhém) – např. „domeček".
+    related: [thm-euler, cor-eul-polynomialni, alg-eulerovsky-tah, def-uzavreny-sled-kruznice]
+    source: "přednáška 2, folie 4"
+    supplemented: false
+
+  - id: thm-euler
+    kind: theorem
+    label: Věta
+    section: "1.3"
+    title: Charakterizace eulerovských grafů
+    terms: [Eulerova věta, eulerovský graf, sudé stupně, charakterizace eulerovských grafů]
+    statement: |
+      Graf $G$ je eulerovský, právě když $G$ je souvislý a všechny jeho uzly jsou sudého stupně.
+    intuition: |
+      Kdykoli tah do uzlu vstoupí, musí z něj zase vystoupit – hrany u každého uzlu se tedy „párují"
+      na vstupy a výstupy, a proto je stupeň sudý (i u výchozího uzlu, protože tah je uzavřený).
+      Překvapivé je, že tato zjevně nutná podmínka (spolu se souvislostí) **stačí**.
+
+      Věta implicitně předpokládá graf bez izolovaných uzlů (resp. souvislost se týká části grafu s hranami):
+      např. trojúhelník s jedním izolovaným uzlem má uzavřený tah přes všechny hrany, ale souvislý není.
+
+      Dobrá zpráva pro složitost: eulerovskost poznáme **lokálně** (stupně) + souvislost, tj. v lineárním čase.
+      Pro hamiltonovské grafy žádná taková charakterizace známa není.
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Předpokládáme, že $G$ nemá izolované uzly.
+
+      **(⇒)** Nechť $T$ je uzavřený tah délky $m$; obsahuje všechny hrany, a protože žádný uzel není
+      izolovaný, i všechny uzly. Libovolné dva uzly jsou tedy spojeny úsekem tahu $T$, takže $G$ je souvislý.
+      Při procházení uzavřeného tahu přispívá každý průchod uzlem $v$ dvěma různými hranami (vstupní a výstupní;
+      u výchozího uzlu spárujeme první a poslední hranu). Každá hrana je v $T$ právě jednou, takže hrany
+      u uzlu $v$ jsou rozděleny do dvojic a $d_G(v)$ je sudé.
+
+      **(⇐)** Nechť $G$ je souvislý se sudými stupni. Zvolme v $G$ tah $T: v_0, v_1, \dots, v_k$
+      **maximální délky**.
+
+      1. *$T$ je uzavřený.* Kdyby $v_k \ne v_0$, pak tah $T$ používá u uzlu $v_k$ lichý počet hran
+         (každý vnitřní průchod dvě, poslední příchod jednu). Protože $d_G(v_k)$ je sudé, existuje hrana u $v_k$,
+         kterou $T$ nepoužívá, a o ni lze $T$ prodloužit – spor s maximalitou.
+      2. *$T$ obsahuje všechny hrany.* Kdyby nějaká hrana chyběla, pak – protože $G$ je souvislý – existuje
+         hrana $e = \{v_i, y\}$ mimo $T$ s koncem $v_i$ na tahu $T$ (vezmeme cestu z uzlu tahu ke konci
+         chybějící hrany a první hranu této cesty, která v $T$ není, příp. chybějící hranu samotnou).
+         Uzavřený tah $T$ lze „pootočit" tak, aby začínal a končil ve $v_i$:
+         $v_i, v_{i+1}, \dots, v_k = v_0, v_1, \dots, v_i$, a pak jej prodloužit o hranu $e$. Vznikne tah délky
+         $k + 1$ – spor s maximalitou.
+
+      Tedy $T$ je uzavřený tah délky $m$ a $G$ je eulerovský. $\square$
+    proof_steps:
+      - "(⇒) Uzavřený tah přes všechny hrany prochází všemi uzly, takže graf je souvislý."
+      - "(⇒) Každý průchod uzlem spotřebuje dvě hrany (vstupní a výstupní) a každá hrana je použita jednou, proto jsou všechny stupně sudé."
+      - "(⇐) Zvolíme tah maximální délky."
+      - Kdyby tah nebyl uzavřený, měl by jeho koncový uzel lichý počet použitých hran, tedy i nepoužitou hranu, o kterou by šel tah prodloužit.
+      - Kdyby uzavřený tah nepokryl všechny hrany, existovala by ze souvislosti nepoužitá hrana s koncem na tahu.
+      - Pootočením uzavřeného tahu tak, aby začínal v tomto uzlu, a přidáním nepoužité hrany vznikne delší tah – spor, takže tah pokrývá všechny hrany.
+    examples:
+      - title: Motýlek ano, domeček ne
+        body: |
+          **Motýlek** (dva trojúhelníky se společným uzlem $c$): stupně $2,2,4,2,2$, graf je souvislý, tedy
+          eulerovský. Eulerovský tah: $a, b, c, d, e, c, a$.
+
+          **Domeček** (čtverec se „střechou" – trojúhelníkem nad horní hranou): dva uzly mají stupeň 3,
+          eulerovský tedy není. Lze jej ale nakreslit jedním *otevřeným* tahem, který začne v jednom uzlu
+          stupně 3 a skončí ve druhém.
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 1 }
+            - { id: b, x: 0, y: 7 }
+            - { id: c, x: 4, y: 4 }
+            - { id: d, x: 8, y: 1 }
+            - { id: e, x: 8, y: 7 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: c }
+    illustrations:
+      - title: Sudé stupně rozhodují
+        property: eulerian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 5, y: 5 }
+            - { id: d, x: 9.5, y: 1 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: c }
+        steps:
+          - caption: |
+              Motýlek má stupně $2, 2, 4, 2, 2$ a je souvislý, takže je eulerovský – např. tah $a, b, c, d, e, c, a$.
+          - caption: |
+              Přidáme hranu $be$: uzly $b$ a $e$ mají teď lichý stupeň 3. Uzavřený tah přes všechny hrany neexistuje, protože každý průchod uzlem spotřebuje dvě hrany; zbývá jen otevřený tah z $b$ do $e$.
+            add: [[b, e]]
+          - caption: |
+              Po přidání $ad$ mají lichý stupeň čtyři uzly. Takový graf nejde nakreslit jedním tahem vůbec – otevřený tah má lichý stupeň jen ve svých dvou koncích.
+            add: [[a, d]]
+          - caption: |
+              Odebereme svislé hrany $ab$ a $de$: všechny stupně jsou zase sudé a graf je souvislý, tedy opět eulerovský (tah $a, c, b, e, c, d, a$).
+            remove: [[a, b], [d, e]]
+      - title: Nejdelší tah je uzavřený a pokryje vše
+        for: proof
+        property: eulerian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 5, y: 5 }
+            - { id: d, x: 9.5, y: 1 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: c }
+        steps:
+          - caption: |
+              Tah $a, b, c, d$ není uzavřený. Jeho konec $d$ má sudý stupeň, ale tah u něj použil jen jednu hranu – zbývá $de$, o kterou jde tah prodloužit. Tah maximální délky proto musí být uzavřený.
+            nodes: { a: source, d: active }
+            edges: { a-b: path, b-c: path, c-d: path }
+            edge_labels: { a-b: "1", b-c: "2", c-d: "3" }
+          - caption: |
+              Uzavřený tah $a, b, c, a$ ještě nepokrývá hrany $cd, de, ec$. Ze souvislosti z něj nějaká nepoužitá hrana vychází – zde z uzlu $c$.
+            nodes: { c: active }
+            edges: { a-b: path, b-c: path, c-a: path }
+            edge_labels: { a-b: "1", b-c: "2", c-a: "3" }
+          - caption: |
+              Tah „pootočíme“, aby začínal v $c$ ($c, a, b, c$), a prodloužíme ho o $cd, de, ec$. Vznikne delší uzavřený tah – proto tah maximální délky obsahuje všechny hrany a graf je eulerovský.
+            edges: { c-a: path, a-b: path, b-c: path, c-d: path, d-e: path, e-c: path }
+            edge_labels: { c-a: "1", a-b: "2", b-c: "3", c-d: "4", d-e: "5", e-c: "6" }
+    related: [def-eulerovsky-graf, cor-eul-polynomialni, alg-eulerovsky-tah, thm-soucet-stupnu]
+    source: "přednáška 2, folie 4"
+    supplemented: false
+
+  - id: cor-eul-polynomialni
+    kind: corollary
+    label: Důsledek
+    section: "1.3"
+    title: Úloha EUL je polynomiální
+    terms: [EUL, problém EUL, eulerovskost, polynomiální algoritmus, rozhodovací problém]
+    statement: |
+      Uvažujme úlohu **EUL**:
+
+      - **Vstup:** graf $G$,
+      - **Úkol:** je graf $G$ eulerovský?
+      - **Výstup:** ANO / NE.
+
+      Úloha EUL je řešitelná v polynomiálním čase.
+    intuition: |
+      Díky Eulerově větě nemusíme tah hledat (to by mohlo vypadat jako prohledávání exponenciálně mnoha možností) –
+      stačí zkontrolovat dvě snadno ověřitelné vlastnosti. Konkrétně jde o čas $O(n + m)$.
+      Pro srovnání: analogická úloha pro hamiltonovské grafy (HAM) je NP-úplná a polynomiální algoritmus
+      pro ni není znám.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Podle [Eulerovy věty](#thm-euler) stačí ověřit, že (a) všechny uzly mají sudý stupeň a (b) graf je souvislý.
+
+      - (a) Stupně spočteme jedním průchodem seznamu hran (nebo řádků matice sousednosti) v čase $O(n + m)$,
+        resp. $O(n^2)$, a zkontrolujeme jejich paritu v čase $O(n)$.
+      - (b) Souvislost ověříme prohledáním grafu (BFS/DFS) z libovolného uzlu v čase $O(n + m)$: graf je souvislý,
+        právě když prohledávání navštíví všech $n$ uzlů.
+
+      Celkem $O(n + m)$, resp. $O(n^2)$, což je polynomiální v délce vstupu. $\square$
+    proof_steps:
+      - Podle Eulerovy věty stačí ověřit sudost všech stupňů a souvislost grafu.
+      - Stupně spočítáme jedním průchodem hran v čase O(n + m) a zkontrolujeme jejich paritu.
+      - Souvislost ověříme prohledáním grafu z jednoho uzlu v čase O(n + m) – musí navštívit všech n uzlů.
+      - Obě kontroly jsou polynomiální, tedy i celé rozhodnutí úlohy EUL.
+    complexity: "$O(n + m)$"
+    related: [thm-euler, alg-eulerovsky-tah, rem-polynomialni-vs-exponencialni]
+    source: "přednáška 2, folie 4"
+    supplemented: false
+
+  - id: alg-eulerovsky-tah
+    kind: algorithm
+    section: "1.3"
+    title: Nalezení eulerovského tahu (Hierholzerův algoritmus)
+    terms: [eulerovský tah, Hierholzerův algoritmus, Fleuryho algoritmus, konstrukce eulerovského tahu, spojování tahů]
+    statement: |
+      Vstup: souvislý graf $G$, jehož všechny uzly mají sudý stupeň. Výstup: uzavřený tah délky $m$.
+      Algoritmus vytváří uzavřené tahy z dosud nepoužitých hran a „vplétá" je do již nalezeného tahu.
+    pseudocode: |
+      1. Zvol uzel $v_0$ a z něj jdi po dosud nepoužitých hranách (každou použitou hranu označ), dokud to jde.
+         Protože jsou stupně sudé, uvízneš jen ve $v_0$ – vznikne uzavřený tah $T$.
+      2. Obsahuje-li $T$ všechny hrany, skonči: $T$ je eulerovský tah.
+      3. Jinak najdi na $T$ uzel $x$, z něhož vede nepoužitá hrana, a stejně jako v kroku 1 z něj vytvoř
+         uzavřený tah $T'$ z nepoužitých hran.
+      4. Vlož $T'$ do $T$ v místě uzlu $x$ (projdi $T$ do $x$, pak celé $T'$, pak zbytek $T$) a pokračuj krokem 2.
+    complexity: "$O(n + m)$"
+    intuition: |
+      Algoritmus kopíruje důkaz Eulerovy věty: uzavřené tahy se dají sloučit, kdykoli mají společný uzel.
+      Proč v kroku 1 a 3 uvízneme jen ve výchozím uzlu: v ostatních uzlech jsme po každém příchodu použili
+      lichý počet hran, a protože je stupeň sudý, vždy zbývá hrana k odchodu. Odebráním hran uzavřeného tahu
+      zůstanou stupně sudé, takže argument funguje opakovaně.
+
+      Při implementaci se seznamy sousedů a ukazatelem na „první nepoužitou hranu" u každého uzlu se každá
+      hrana zpracuje konstantně-krát, takže čas je $O(n + m)$. Alternativou je Fleuryho algoritmus
+      („nepřecházej most, pokud nemusíš"), který je jednodušší na ruční použití, ale pomalejší.
+    proof: |
+      *Algoritmus není ve foliích (folie uvádějí jen větu a polynomialitu EUL), doplněno.*
+
+      **Uvíznutí jen ve výchozím uzlu:** v grafu nepoužitých hran mají všechny uzly sudý stupeň (na začátku
+      podle předpokladu, po odebrání uzavřeného tahu se stupně zmenší o sudá čísla). Vstoupíme-li během
+      vytváření tahu do uzlu $y \ne$ výchozí, použili jsme u něj lichý počet hran, zbývá tedy aspoň jedna.
+      Proto tah skončí jen ve výchozím uzlu a je uzavřený.
+
+      **Existence uzlu $x$ v kroku 3:** zbývá-li nepoužitá hrana, ze souvislosti $G$ existuje nepoužitá hrana
+      s koncem na $T$ (stejný argument jako v důkazu [Eulerovy věty](#thm-euler)).
+
+      **Konečnost a výsledek:** každé opakování použije alespoň jednu novou hranu, takže algoritmus skončí,
+      a to s uzavřeným tahem obsahujícím všech $m$ hran. $\square$
+    proof_steps:
+      - V grafu dosud nepoužitých hran mají všechny uzly sudý stupeň.
+      - Při vytváření tahu má každý navštívený uzel různý od výchozího po příchodu ještě volnou hranu, takže tah skončí jen ve výchozím uzlu.
+      - Zbývá-li nepoužitá hrana, existuje ze souvislosti grafu nepoužitá hrana s koncem na již nalezeném tahu.
+      - Nový uzavřený tah lze do starého vložit v jejich společném uzlu.
+      - Každé opakování spotřebuje nové hrany, takže algoritmus skončí s tahem přes všech m hran.
+    examples:
+      - title: Spojení dvou uzavřených tahů
+        body: |
+          V motýlku (příklad u Eulerovy věty) vyjdeme z $a$: $a, b, c, a$ – uvízli jsme v $a$, ale u $c$ zbývají
+          nepoužité hrany. Z $c$ vytvoříme $c, d, e, c$ a vložíme jej místo uzlu $c$:
+          $a, b, \underline{c, d, e, c}, a$. Všech 6 hran je použito.
+    visualization: euler
+    related: [thm-euler, cor-eul-polynomialni, def-eulerovsky-graf]
+    source: "doplněno (standardní algoritmus)"
+    supplemented: true
+
+  - id: def-hamiltonovsky-graf
+    kind: definition
+    label: Definice
+    section: "1.3"
+    title: Hamiltonovský graf
+    terms: [hamiltonovský graf, hamiltonovská kružnice, hamiltonovská cesta, HAM]
+    statement: |
+      Buď $G$ graf, $n = |U(G)|$. Řekneme, že $G$ je **hamiltonovský**, jestliže v $G$ existuje kružnice délky $n$.
+    intuition: |
+      Kružnice délky $n$ projde **každým uzlem právě jednou** (hamiltonovská kružnice). Zatímco eulerovskost
+      se týká hran a má jednoduchou charakterizaci, hamiltonovskost se týká uzlů a rozhodnout ji je
+      NP-úplný problém. Máme jen postačující podmínky (Dirac, Ore, uzávěr grafu) a nutné podmínky
+      (souvislost, žádná artikulace, …), žádná z nich ale není zároveň nutná i postačující.
+    illustrations:
+      - title: Eulerovský, a přece ne hamiltonovský
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 5, y: 5 }
+            - { id: d, x: 9.5, y: 1 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: c }
+        steps:
+          - caption: |
+              Motýlek je eulerovský, ale **ne** hamiltonovský: kružnice přes všechny uzly by musela projít uzlem $c$ dvakrát – jednou při přechodu z levého trojúhelníku do pravého a podruhé při návratu.
+          - caption: |
+              Stačí přidat hranu $be$ mezi trojúhelníky a hamiltonovská kružnice existuje: projde každým uzlem právě jednou a uzel $c$ už nemusí být „mostem“.
+            add: [[b, e]]
+          - caption: |
+              Bez hrany $ca$ má uzel $a$ stupeň 1. Uzel na kružnici potřebuje dva sousedy, takže graf hamiltonovský není.
+            remove: [[c, a]]
+    related: [thm-dirac, def-tsp, def-eulerovsky-graf, def-uzavreny-sled-kruznice]
+    source: "přednáška 2, folie 5"
+    supplemented: false
+
+  - id: thm-dirac
+    kind: theorem
+    label: Věta (Dirac)
+    section: "1.3"
+    title: Diracova věta
+    terms: [Diracova věta, Dirac, hamiltonovskost, minimální stupeň, postačující podmínka hamiltonovskosti]
+    statement: |
+      Nechť $G$ je graf s $n = |U(G)| \ge 3$ a
+      $$
+      \delta(G) \ge \frac{n}{2}.
+      $$
+      Pak je $G$ hamiltonovský.
+    intuition: |
+      Má-li každý uzel alespoň polovinu ostatních za sousedy, je graf tak „hustý", že hamiltonovská kružnice
+      musí existovat. Podmínka je **postačující, ne nutná**: kružnice $C_n$ je hamiltonovská, a přitom
+      $\delta = 2$.
+
+      Mez $n/2$ nelze zlepšit: $K_{k,k+1}$ má $n = 2k+1$, $\delta = k < n/2$ a hamiltonovský není (kružnice
+      v bipartitním grafu střídá partity, takže by obě musely být stejně velké). Předpoklad $n \ge 3$ vylučuje
+      $K_2$ (má $\delta = 1 = n/2$, ale kružnici nemá).
+
+      Obecnější je Oreho věta: stačí $d(x) + d(y) \ge n$ pro každé dva nesousední uzly (viz kapitola o
+      hamiltonovských grafech a uzávěru grafu).
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Podle [větičky](#prop-souvislost-min-stupen) je $G$ souvislý. Protože $n \ge 3$, je $\delta(G) \ge 3/2$,
+      tedy $\delta(G) \ge 2$.
+
+      Nechť $P: v_1, v_2, \dots, v_k$ je cesta v $G$ s **maximálním počtem uzlů**. Z maximality leží všichni
+      sousedé uzlů $v_1$ a $v_k$ na $P$ (jinak bychom cestu prodloužili); speciálně $k \ge \delta + 1 \ge 3$.
+
+      *Krok 1: na uzlech cesty $P$ leží kružnice délky $k$.* Položme
+      $$
+      S = \{ i \in \{1, \dots, k-1\} \mid \{v_1, v_{i+1}\} \in H(G) \}, \qquad
+      T = \{ i \in \{1, \dots, k-1\} \mid \{v_i, v_k\} \in H(G) \}.
+      $$
+      Platí $|S| = d(v_1) \ge n/2$ a $|T| = d(v_k) \ge n/2$, přičemž $S, T \subset \{1, \dots, k-1\}$ a
+      $k - 1 \le n - 1 < n \le |S| + |T|$. Proto existuje $i \in S \cap T$, tj. $v_1 v_{i+1}$ i $v_i v_k$ jsou hrany.
+      Pak
+      $$
+      C:\ v_1, v_2, \dots, v_i, v_k, v_{k-1}, \dots, v_{i+1}, v_1
+      $$
+      je kružnice obsahující všech $k$ uzlů cesty $P$ (pro $i = 1$ jde o $v_1, \dots, v_k, v_1$).
+
+      *Krok 2: $k = n$.* Kdyby $k < n$, existuje uzel mimo $C$, a protože $G$ je souvislý, existuje hrana
+      $\{x, v_j\}$ s $x \notin C$ a $v_j$ na $C$. Začneme-li v $x$, přejdeme do $v_j$ a obejdeme kružnici $C$
+      až k sousedovi $v_j$ na $C$, dostaneme cestu s $k + 1$ uzly – spor s maximalitou $P$.
+
+      Tedy $C$ je kružnice délky $n$ a $G$ je hamiltonovský. $\square$
+    proof_steps:
+      - Graf je souvislý (δ ≥ n/2) a vezmeme v něm cestu P = v_1, …, v_k s maximálním počtem uzlů; všichni sousedé v_1 a v_k leží na P.
+      - Definujeme množiny indexů S (v_1 sousedí s v_{i+1}) a T (v_i sousedí s v_k); obě jsou podmnožinami {1, …, k−1} a mají aspoň n/2 prvků.
+      - Protože k − 1 < n ≤ |S| + |T|, existuje společný index i.
+      - Hrany v_1v_{i+1} a v_iv_k umožní uzavřít cestu P do kružnice C délky k.
+      - Kdyby k < n, ze souvislosti by z C vedla hrana k uzlu mimo C a rozpojením C bychom dostali delší cestu – spor.
+      - Proto k = n a C je hamiltonovská kružnice.
+    illustrations:
+      - title: Postačující, ale ne nutná podmínka
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1.5, y: 0.5 }
+            - { id: b, x: 8.5, y: 0.5 }
+            - { id: c, x: 0.5, y: 9 }
+            - { id: d, x: 5, y: 6 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: a, to: e }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: b, to: e }
+        steps:
+          - caption: |
+              $K_{2,3}$ má $n = 5$ a $\delta = 2 < n/2$. Hamiltonovská kružnice by střídala uzly z $\{a, b\}$ a z $\{c, d, e\}$, takže by obě skupiny musely být stejně velké – graf hamiltonovský není. Mez $n/2$ proto nejde zmenšit.
+            labels: { a: "3", b: "3", c: "2", d: "2", e: "2" }
+          - caption: |
+              Po přidání $cd$ je graf hamiltonovský, přestože uzel $e$ má stále stupeň $2 < n/2$. Diracova podmínka je postačující, ne nutná.
+            add: [[c, d]]
+            labels: { a: "3", b: "3", c: "3", d: "3", e: "2" }
+          - caption: |
+              S hranami $ce$ a $de$ má každý uzel stupeň aspoň $3 \ge n/2$ – teď hamiltonovskost zaručuje přímo Diracova věta.
+            add: [[c, e], [d, e]]
+            labels: { a: "3", b: "3", c: "4", d: "4", e: "4" }
+      - title: Uzavření nejdelší cesty do kružnice
+        for: proof
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: v1, x: 0.5, y: 8 }
+            - { id: v2, x: 2.5, y: 2 }
+            - { id: v3, x: 5, y: 0.5 }
+            - { id: v4, x: 7.5, y: 2 }
+            - { id: v5, x: 9.5, y: 8 }
+          edges:
+            - { from: v1, to: v2 }
+            - { from: v2, to: v3 }
+            - { from: v3, to: v4 }
+            - { from: v4, to: v5 }
+            - { from: v1, to: v3 }
+            - { from: v1, to: v4 }
+            - { from: v2, to: v4 }
+            - { from: v2, to: v5 }
+            - { from: v3, to: v5 }
+        steps:
+          - caption: |
+              $n = 5$ a $\delta = 3 \ge n/2$. Vezmeme nejdelší cestu $P = v_1, \dots, v_5$. Její konce spolu nesousedí, takže $P$ nejde uzavřít přímo; všichni jejich sousedé ale leží na $P$, jinak by šla prodloužit.
+            nodes: { v1: active, v5: active }
+            edges: { v1-v2: path, v2-v3: path, v3-v4: path, v4-v5: path }
+          - caption: |
+              $S = \{i : v_1 \sim v_{i+1}\} = \{1, 2, 3\}$ (hrany z $v_1$) a $T = \{i : v_i \sim v_5\} = \{2, 3, 4\}$ (hrany do $v_5$). Obě leží v $\{1, \dots, 4\}$ a $|S| + |T| = 6 > 4$, takže mají společný prvek, např. $i = 2$.
+            nodes: { v1: active, v5: active }
+            edges: { v1-v2: considered, v1-v3: considered, v1-v4: considered, v2-v5: active, v3-v5: active, v4-v5: active }
+          - caption: |
+              Pro $i = 2$ uzavřou hrany $v_1v_3$ a $v_2v_5$ cestu do kružnice $v_1, v_2, v_5, v_4, v_3, v_1$: vynecháme hranu $v_2v_3$ a úsek $v_3, v_4, v_5$ projdeme pozpátku. Kružnice má $k = n$ uzlů, je tedy hamiltonovská.
+            edges: { v1-v2: path, v2-v5: path, v5-v4: path, v4-v3: path, v3-v1: path, v2-v3: dim }
+    related: [def-hamiltonovsky-graf, prop-souvislost-min-stupen, def-min-max-stupen, def-tsp]
+    source: "přednáška 2, folie 5"
+    supplemented: false
+
+  - id: def-tsp
+    kind: definition
+    label: TSP
+    section: "1.3"
+    title: Problém obchodního cestujícího (TSP)
+    terms: [TSP, problém obchodního cestujícího, obchodní cestující, travelling salesman, rozhodovací strom, hrubá síla]
+    statement: |
+      **TSP** (problém obchodního cestujícího)
+
+      - **Vstup:** ohodnocený graf $G$,
+      - **Úkol:** najít v $G$ hamiltonovskou kružnici $C$ s minimální hodnotou $\sum_{h \in H(C)} w(h)$,
+      - **Výstup:** kružnice $C$.
+    intuition: |
+      Obchodní cestující má navštívit všechna města a vrátit se domů s co nejmenšími náklady. Přímočaré
+      řešení prochází **rozhodovací strom**: z výchozího uzlu postupně volíme dalšího dosud nenavštíveného
+      souseda; každá větev, která dojde do všech uzlů a může se vrátit, je hamiltonovská kružnice. Počet
+      větví ale roste až jako $(n-1)!$, takže pro větší $n$ je to nepoužitelné (viz
+      [tabulku růstu funkcí](#rem-polynomialni-vs-exponencialni)).
+
+      TSP je NP-těžký: už samotné rozhodnutí, zda hamiltonovská kružnice existuje, je NP-úplné.
+      Systematické prohledávání rozhodovacího stromu se nazývá backtracking (kapitola o prohledávání).
+    examples:
+      - title: TSP rozhodovacím stromem
+        body: |
+          Graf na obrázku má 8 uzlů. Rozhodovací strom z uzlu $A$ (větvení podle dalšího navštíveného souseda,
+          větev končí, když nelze pokračovat) najde jen čtyři úplné větve, které se vrátí do $A$. Jsou to dvě
+          hamiltonovské kružnice, každá prošlá v obou směrech:
+
+          - $A, F, E, D, C, H, G, B, A$ s hodnotou $8 + 14 + 6 + 8 + 5 + 7 + 7 + 5 = 60$,
+          - $A, F, G, H, E, D, C, B, A$ s hodnotou $8 + 6 + 7 + 5 + 6 + 8 + 9 + 5 = 54$.
+
+          Optimální okružní cesta je tedy $A, F, G, H, E, D, C, B, A$ s hodnotou **54**.
+          Většina větví stromu přitom skončí „slepě" – to je cena za hrubou sílu.
+        graph:
+          directed: false
+          nodes:
+            - { id: A, x: 0, y: 5 }
+            - { id: F, x: 2, y: 2 }
+            - { id: B, x: 2, y: 8 }
+            - { id: G, x: 4, y: 5 }
+            - { id: H, x: 6, y: 5 }
+            - { id: E, x: 8, y: 2 }
+            - { id: C, x: 8, y: 8 }
+            - { id: D, x: 10, y: 5 }
+          edges:
+            - { from: A, to: F, w: 8 }
+            - { from: A, to: B, w: 5 }
+            - { from: F, to: G, w: 6 }
+            - { from: F, to: E, w: 14 }
+            - { from: B, to: G, w: 7 }
+            - { from: B, to: C, w: 9 }
+            - { from: G, to: H, w: 7 }
+            - { from: H, to: E, w: 5 }
+            - { from: H, to: D, w: 5 }
+            - { from: H, to: C, w: 5 }
+            - { from: E, to: D, w: 6 }
+            - { from: D, to: C, w: 8 }
+    visualization: hamilton-backtracking
+    related: [def-hamiltonovsky-graf, rem-polynomialni-vs-exponencialni]
+    source: "přednáška 2, folie 5–6"
+    supplemented: false
+
+  - id: rem-polynomialni-vs-exponencialni
+    kind: remark
+    label: Poznámka
+    section: "1.3"
+    title: Polynomiální versus exponenciální algoritmy
+    terms: [časová složitost, polynomiální algoritmus, exponenciální algoritmus, růst funkcí, zrychlení počítače]
+    statement: |
+      Předpokládejme, že jedna operace trvá $1\,\mu s$. Algoritmus s $f(n)$ operacemi zpracuje vstup velikosti $n$ za:
+
+      | $n$ | $n^2$ | $n^3$ | $2^n$ | $n!$ |
+      |---|---|---|---|---|
+      | 20 | 0,4 ms | 8 ms | ≈ 1 s | ≈ 77 000 let |
+      | 60 | 3,6 ms | 0,2 s | ≈ 36 600 let | – |
+      | 1000 | 1 s | ≈ 17 min | – | – |
+
+      Zrychlíme-li počítač $1000\times$, vzroste velikost úlohy zvládnutelné ve stejném čase (z původních $n = 100$)
+      u $n^2$ na $\approx 3162$, u $n^3$ na $1000$, ale u $2^n$ jen na $\approx 109$ a u $n!$ na $101$.
+    intuition: |
+      Polynomiální algoritmy (Dijkstra, Jarník, test eulerovskosti, topologické uspořádání…) jsou „použitelné":
+      rychlejší počítač násobně zvětší řešitelné úlohy. U exponenciálních algoritmů (hrubá síla pro TSP, HAM)
+      zrychlení skoro nepomůže – $2^n$ se zrychlením $1000\times$ posune jen o $\log_2 1000 \approx 10$.
+      Proto je otázka „existuje polynomiální algoritmus?" (třídy P a NP) ústředním tématem předmětu.
+    related: [cor-eul-polynomialni, def-tsp, cor-acyc-polynomialni]
+    source: "přednáška 2, folie 7–8"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 1.4
+  - id: def-specialni-orientovane-grafy
+    kind: definition
+    label: Orientované grafy
+    section: "1.4"
+    title: Speciální orientované grafy (úplný graf, orientovaná cesta, cyklus)
+    terms: [orientovaný úplný graf, orientovaná cesta, cyklus, smyčka, cyklus délky 1]
+    statement: |
+      - **Orientovaný úplný graf:** $\vec{K}_n = (\langle 1,n\rangle, \langle 1,n\rangle \times \langle 1,n\rangle)$.
+      - **Orientovaná cesta délky $n \ge 0$:** $\vec{P}_n = (\langle 0,n\rangle, \{(i,i+1) \mid i \in \langle 0,n-1\rangle\})$.
+      - **Cyklus délky $n \ge 1$:** $\vec{C}_n = (\langle 1,n\rangle, \{(i,i+1) \mid i \in \langle 1,n-1\rangle\} \cup \{(n,1)\})$
+        pro $n \ge 2$; pro $n = 1$ dodefinujeme $\vec{C}_1 = (\{1\}, \{(1,1)\})$.
+    intuition: |
+      Rozdíly oproti neorientovanému případu: $\vec{K}_n$ obsahuje **všechny** uspořádané dvojice včetně smyček $(i,i)$;
+      cyklus může mít délku 2 (dvojice protisměrných hran) i 1 (smyčka). Smyčka je tedy cyklus, a graf se smyčkou
+      není acyklický.
+    related: [def-graf, def-orientovany-sled-tah-cesta, def-uzavreny-orientovany-sled-cyklus]
+    source: "přednáška 2, folie 9"
+    supplemented: false
+
+  - id: def-polostupne
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: Výstupní a vstupní (polo)stupeň
+    terms: [výstupní stupeň, vstupní stupeň, polostupeň, výstupní polostupeň, vstupní polostupeň, outdegree, indegree]
+    statement: |
+      Nechť $\vec{G}$ je orientovaný graf, $u \in U(\vec{G})$.
+
+      - **Výstupní (polo)stupeň** uzlu $u$ v grafu $\vec{G}$ je číslo
+        $d^-_{\vec{G}}(u) = |\{(u,x) \mid x \in U(\vec{G})\} \cap H(\vec{G})|$.
+      - **Vstupní (polo)stupeň** uzlu $u$ v grafu $\vec{G}$ je číslo
+        $d^+_{\vec{G}}(u) = |\{(x,u) \mid x \in U(\vec{G})\} \cap H(\vec{G})|$.
+    intuition: |
+      **Pozor na značení:** v TGD1 je $d^-$ **výstupní** (počet hran, které z uzlu vycházejí) a $d^+$ **vstupní**
+      (počet hran, které do uzlu vcházejí). V jiné literatuře bývá konvence opačná – při zkoušce se držte té ze skript.
+      Pomůcka: hrana z uzlu „odchází", uzel o ni „přichází" ($-$), do uzlu hrana „přibude" ($+$).
+
+      Smyčka $(u,u)$ přispívá jedničkou k oběma polostupňům.
+    related: [thm-soucet-polostupnu, def-vstupni-vystupni-uzel, def-stupen-uzlu]
+    source: "přednáška 2, folie 9"
+    supplemented: false
+
+  - id: thm-soucet-polostupnu
+    kind: theorem
+    label: Věta
+    section: "1.4"
+    title: Součet polostupňů
+    terms: [součet polostupňů, orientovaný princip sudosti]
+    statement: |
+      Pro každý orientovaný graf $\vec{G}$ platí
+      $$
+      \sum_{u \in U(\vec{G})} d^-_{\vec{G}}(u) = \sum_{u \in U(\vec{G})} d^+_{\vec{G}}(u) = |H(\vec{G})|.
+      $$
+    intuition: |
+      Každá hrana $(x,y)$ má právě jeden počátek (přispěje k výstupnímu stupni uzlu $x$) a právě jeden konec
+      (přispěje ke vstupnímu stupni uzlu $y$). Orientovaná obdoba věty $\sum d = 2m$.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Množinu hran rozdělíme podle počátečního uzlu: hrany s počátkem $u$ jsou právě prvky množiny
+      $\{(u,x) \mid x \in U\} \cap H(\vec{G})$, jejíž velikost je $d^-_{\vec{G}}(u)$. Tyto množiny jsou pro různá $u$
+      disjunktní a jejich sjednocení je celé $H(\vec{G})$, takže $\sum_u d^-_{\vec{G}}(u) = |H(\vec{G})|$.
+      Stejně rozdělením podle koncového uzlu dostaneme $\sum_u d^+_{\vec{G}}(u) = |H(\vec{G})|$. $\square$
+    proof_steps:
+      - Hrany rozdělíme podle jejich počátečního uzlu; třída uzlu u má právě d^-(u) prvků.
+      - Třídy jsou disjunktní a pokrývají všechny hrany, proto je součet výstupních stupňů roven |H|.
+      - Stejným rozdělením podle koncového uzlu dostaneme, že i součet vstupních stupňů je |H|.
+    related: [def-polostupne, thm-soucet-stupnu]
+    source: "přednáška 2, folie 9"
+    supplemented: false
+
+  - id: def-orientovany-sled-tah-cesta
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: Orientovaný sled, tah a cesta
+    terms: [orientovaný sled, orientovaný tah, orientovaná cesta, dosažitelnost]
+    statement: |
+      1. Buď $\vec{G}$ graf, $u, v \in U(\vec{G})$, a nechť $f : \vec{P}_k \to \vec{G}$ je homomorfismus takový, že
+         $f(0) = u$ a $f(k) = v$. Pak se graf $f(\vec{P}_k)$ nazývá **orientovaný sled délky $k$ z uzlu $u$ do uzlu $v$**
+         v grafu $\vec{G}$.
+      2. Je-li navíc $f$ hranový monomorfismus, pak se $f(\vec{P}_k)$ nazývá **orientovaný tah** (délky $k$ z $u$ do $v$ v $\vec{G}$).
+      3. Je-li navíc $f$ uzlový monomorfismus, pak se $f(\vec{P}_k)$ nazývá **orientovaná cesta** (délky $k$ z $u$ do $v$ v $\vec{G}$).
+    intuition: |
+      Totéž jako v neorientovaném případě, jen se smí chodit **pouze ve směru šipek**. Existuje-li orientovaný sled
+      z $u$ do $v$, říkáme, že $v$ je **dosažitelný** z $u$. Dosažitelnost není symetrická.
+    related: [def-sled-tah-cesta, def-silna-souvislost, def-uzavreny-orientovany-sled-cyklus]
+    source: "přednáška 2, folie 10"
+    supplemented: false
+
+  - id: def-uzavreny-orientovany-sled-cyklus
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: Uzavřený orientovaný sled, uzavřený orientovaný tah, cyklus
+    terms: [uzavřený orientovaný sled, uzavřený orientovaný tah, cyklus, orientovaná kružnice, délka cyklu]
+    statement: |
+      1. Nechť $\vec{G}$ je graf a $f : \vec{C}_k \to \vec{G}$ je homomorfismus. Pak se graf $f(\vec{C}_k)$ nazývá
+         **uzavřený orientovaný sled délky $k$** v grafu $\vec{G}$.
+      2. Je-li navíc $f$ hranový monomorfismus, pak se $f(\vec{C}_k)$ nazývá **uzavřený orientovaný tah** (délky $k$ v $\vec{G}$).
+      3. Je-li navíc $f$ uzlový monomorfismus, pak se $f(\vec{C}_k)$ nazývá **cyklus** (délky $k$ v $\vec{G}$).
+    intuition: |
+      Cyklus je orientovaná obdoba kružnice; může mít délku 1 (smyčka) nebo 2 (hrany $(x,y)$ a $(y,x)$).
+      Užitečné pozorování: **každý uzavřený orientovaný sled kladné délky obsahuje cyklus** – nejkratší uzavřený
+      orientovaný sled kladné délky v daném grafu je cyklus (jinak by šel zkrátit u opakujícího se uzlu).
+    related: [def-specialni-orientovane-grafy, def-acyklicky-graf, thm-silna-souvislost-cykly]
+    source: "přednáška 2, folie 10"
+    supplemented: false
+
+  - id: def-slaba-souvislost
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: (Slabá) souvislost orientovaného grafu
+    terms: [slabá souvislost, slabě souvislý graf, souvislý orientovaný graf, symetrizace]
+    statement: |
+      Řekneme, že orientovaný graf $\vec{G}$ je **(slabě) souvislý**, jestliže jeho symetrizace je souvislý
+      neorientovaný graf.
+
+      (**Symetrizací** grafu $\vec{G}$ rozumíme neorientovaný graf $G$ s $U(G) = U(\vec{G})$ a
+      $H(G) = \{\{x,y\} \mid x \ne y,\ (x,y) \in H(\vec{G})\}$ – zapomeneme orientaci, smyčky vynecháme a
+      protisměrné hrany splynou.)
+    intuition: |
+      Slabá souvislost = graf je „v jednom kuse", pokud se nedíváme na šipky. Nic neříká o tom, zda se lze
+      z každého uzlu dostat do každého po směru hran – to je silná souvislost.
+    related: [def-silna-souvislost, def-souvisly-graf]
+    source: "přednáška 2, folie 10 (pojem symetrizace doplněn)"
+    supplemented: false
+
+  - id: def-silna-souvislost
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: Silně souvislý graf
+    terms: [silná souvislost, silně souvislý graf, strongly connected]
+    statement: |
+      Řekneme, že orientovaný graf $\vec{G}$ je **silně souvislý**, jestliže pro každou dvojici uzlů
+      $u, v \in U(\vec{G})$ existuje v $\vec{G}$ orientovaný sled z $u$ do $v$.
+    intuition: |
+      Z každého uzlu se lze po šipkách dostat do každého (silniční síť jednosměrek, kde nikde neuvízneme).
+      Silně souvislý ⇒ slabě souvislý, ne naopak: orientovaná cesta $\vec{P}_2$ je slabě, ale ne silně souvislá.
+      Silnou souvislost lze otestovat dvěma prohledáváními (z uzlu $u$ v $\vec{G}$ a v grafu s obrácenými hranami)
+      v čase $O(n + m)$.
+    illustrations:
+      - title: Otočení jediné hrany
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 1, y: 1 }
+            - { id: b, x: 9, y: 1 }
+            - { id: c, x: 9, y: 9 }
+            - { id: d, x: 1, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: a }
+            - { from: a, to: c }
+        steps:
+          - caption: |
+              Po šipkách obejdeme cyklus $a \to b \to c \to d \to a$, takže z každého uzlu se dostaneme do každého – graf je silně souvislý.
+          - caption: |
+              Otočíme hranu $b \to c$. Z uzlu $b$ teď nevede žádná hrana, takže z něj nedojdeme nikam. Graf je dál slabě souvislý, ale silně souvislý není – $\{b\}$ je samostatná kvazikomponenta.
+            remove: [[b, c]]
+            add: [[c, b]]
+          - caption: |
+              Hrana $b \to d$ otevře z $b$ cestu ven ($b \to d \to a$) a graf je znovu silně souvislý. Silná souvislost závisí na směru hran, slabá ne.
+            add: [[b, d]]
+    related: [prop-silna-souvislost-cesta, thm-silna-souvislost-cykly, def-kvazikomponenta, def-slaba-souvislost]
+    source: "přednáška 2, folie 10"
+    supplemented: false
+
+  - id: prop-silna-souvislost-cesta
+    kind: proposition
+    label: Větička
+    section: "1.4"
+    title: Silná souvislost pomocí orientovaných cest
+    terms: [silná souvislost, orientovaná cesta, nejkratší orientovaný sled]
+    statement: |
+      Graf $\vec{G}$ je silně souvislý, právě když pro každé $u, v \in U(\vec{G})$ existuje v $\vec{G}$
+      orientovaná cesta z $u$ do $v$.
+    intuition: |
+      Stejně jako v neorientovaném případě: z orientovaného sledu lze vystřihnout uzavřené úseky
+      a zbude orientovaná cesta se stejnými konci.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **(⇐)** Orientovaná cesta je orientovaný sled.
+
+      **(⇒)** Mezi orientovanými sledy z $u$ do $v$ zvolme sled $u = x_0, x_1, \dots, x_k = v$ nejmenší délky.
+      Kdyby $x_i = x_j$ pro $i < j$, pak $x_0, \dots, x_i, x_{j+1}, \dots, x_k$ je orientovaný sled z $u$ do $v$
+      (hrana $(x_j, x_{j+1}) = (x_i, x_{j+1})$ existuje) kratší o $j - i$ – spor. Uzly jsou tedy navzájem různé
+      a sled je orientovaná cesta. $\square$
+    proof_steps:
+      - Směr zprava doleva je triviální, protože orientovaná cesta je orientovaný sled.
+      - Pro opačný směr vezmeme nejkratší orientovaný sled z u do v.
+      - Kdyby se v něm opakoval uzel, vynecháním úseku mezi výskyty by vznikl kratší orientovaný sled se stejnými konci.
+      - Nejkratší sled proto nemá opakované uzly a je orientovanou cestou.
+    related: [def-silna-souvislost, prop-souvislost-cesta]
+    source: "přednáška 2, folie 10"
+    supplemented: false
+
+  - id: thm-silna-souvislost-cykly
+    kind: theorem
+    label: Věta
+    section: "1.4"
+    title: Silná souvislost a cykly
+    terms: [silná souvislost, každá hrana v cyklu, cykly]
+    statement: |
+      Souvislý orientovaný graf $\vec{G}$ s alespoň 2 uzly je silně souvislý, právě když každá jeho hrana leží
+      v alespoň jednom cyklu.
+    intuition: |
+      Leží-li hrana $(x,y)$ na cyklu, lze se po zbytku cyklu vrátit z $y$ do $x$ – hrana je „obousměrně průchodná".
+      Jsou-li takové všechny hrany a graf je slabě souvislý, lze každou neorientovanou cestu symetrizace projít
+      i v orientovaném grafu. Předpoklad souvislosti je nutný: dva disjunktní cykly mají každou hranu v cyklu,
+      ale silně souvislé nejsou.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **(⇒)** Nechť $\vec{G}$ je silně souvislý a $(x,y) \in H(\vec{G})$. Je-li $x = y$, je hrana smyčkou, tj. cyklem
+      $\vec{C}_1$. Jinak podle [větičky](#prop-silna-souvislost-cesta) existuje orientovaná cesta $Q$ z $y$ do $x$;
+      ta neobsahuje hranu $(x,y)$ (uzel $x$ je na $Q$ až poslední). Spojením hrany $(x,y)$ a cesty $Q$ dostaneme
+      cyklus obsahující $(x,y)$.
+
+      **(⇐)** Nechť každá hrana leží na cyklu. Pro hranu $(x,y)$ pak existuje orientovaný sled z $x$ do $y$ (hrana sama)
+      i z $y$ do $x$ (zbytek cyklu). Buďte $u, v$ libovolné uzly. Protože $\vec{G}$ je slabě souvislý, existuje
+      v symetrizaci cesta $u = z_0, z_1, \dots, z_r = v$. Každá její hrana $\{z_{t}, z_{t+1}\}$ pochází z orientované
+      hrany $(z_t, z_{t+1})$ nebo $(z_{t+1}, z_t)$, a v obou případech existuje orientovaný sled z $z_t$ do $z_{t+1}$.
+      Složením těchto sledů vznikne orientovaný sled z $u$ do $v$. Tedy $\vec{G}$ je silně souvislý. $\square$
+    proof_steps:
+      - "(⇒) Pro hranu (x, y) existuje ze silné souvislosti orientovaná cesta z y zpět do x (smyčka je cyklem sama o sobě)."
+      - "(⇒) Hrana (x, y) spolu s touto cestou tvoří cyklus."
+      - "(⇐) Leží-li hrana na cyklu, lze ji projít v obou směrech – dopředu přímo, dozadu po zbytku cyklu."
+      - "(⇐) Ze slabé souvislosti vede mezi u a v cesta v symetrizaci a každý její krok lze realizovat orientovaným sledem."
+      - "(⇐) Složením těchto sledů dostaneme orientovaný sled z u do v, takže graf je silně souvislý."
+    illustrations:
+      - title: Hrana mimo cyklus brání silné souvislosti
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 3.5, y: 5 }
+            - { id: d, x: 6.5, y: 5 }
+            - { id: e, x: 9.5, y: 1 }
+            - { id: f, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: d }
+        steps:
+          - caption: |
+              Každá hrana leží na cyklu, ale graf není ani slabě souvislý. Proto věta souvislost předpokládá.
+          - caption: |
+              Hrana $c \to d$ graf (slabě) spojí, ale sama na žádném cyklu neleží: z $d$ se do $c$ vrátit nelze. Graf proto silně souvislý není.
+            add: [[c, d]]
+          - caption: |
+              Hrana $f \to b$ uzavře cyklus $c \to d \to e \to f \to b \to c$. Teď leží na cyklu každá hrana a graf je silně souvislý.
+            add: [[f, b]]
+          - caption: |
+              Myšlenka důkazu: hranu $c \to d$ lze „projít pozpátku“ po zbytku cyklu $d \to e \to f \to b \to c$. Každý krok neorientované cesty tak nahradíme orientovaným sledem.
+            nodes: { d: source, c: sink }
+            edges: { c-d: active, d-e: path, e-f: path, f-b: path, b-c: path }
+    related: [def-silna-souvislost, def-slaba-souvislost, def-uzavreny-orientovany-sled-cyklus]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: def-kvazikomponenta
+    kind: definition
+    label: Definice
+    section: "1.4"
+    title: Kvazikomponenta (silná komponenta)
+    terms: [kvazikomponenta, silná komponenta, silně souvislá komponenta, komponenta silné souvislosti, SCC, strongly connected component]
+    statement: |
+      Buď $\vec{G}' \subset \vec{G}$. Řekneme, že graf $\vec{G}'$ je **kvazikomponenta** (silná komponenta)
+      grafu $\vec{G}$, jestliže
+
+      1. $\vec{G}'$ je silně souvislý graf,
+      2. je-li $\vec{G}' \subset \vec{G}'' \subset \vec{G}$ a $\vec{G}''$ je silně souvislý, pak $\vec{G}' = \vec{G}''$.
+
+      (Tedy: kvazikomponenty grafu $\vec{G}$ jsou jeho maximální silně souvislé podgrafy.)
+    intuition: |
+      Kvazikomponenta je maximální skupina uzlů, které jsou navzájem dosažitelné (spolu se všemi hranami mezi nimi).
+      Na rozdíl od komponent neorientovaného grafu **nemusí každá hrana ležet v nějaké kvazikomponentě**:
+      hrany mezi různými kvazikomponentami nepatří žádné z nich – právě ty tvoří [kondenzaci](#def-kondenzace).
+
+      Každý uzel leží v právě jedné kvazikomponentě (i izolovaný uzel nebo uzel, který neleží na žádném cyklu,
+      tvoří jednoprvkovou kvazikomponentu).
+    examples:
+      - title: Kvazikomponenty grafu se 7 uzly
+        body: |
+          V grafu na obrázku jsou tři kvazikomponenty: $\{1,2,3\}$ (cyklus $1 \to 2 \to 3 \to 1$), $\{4,5\}$
+          (hrany $4 \to 5 \to 4$) a $\{6,7\}$ (hrany $6 \to 7 \to 6$). Hrany $3 \to 4$, $2 \to 6$ a $5 \to 7$
+          neleží v žádné kvazikomponentě – vedou „jen jedním směrem" mezi skupinami.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 0, y: 1 }
+            - { id: "2", x: 3, y: 0 }
+            - { id: "3", x: 1.5, y: 3 }
+            - { id: "4", x: 4, y: 6 }
+            - { id: "5", x: 7, y: 7 }
+            - { id: "6", x: 6, y: 1 }
+            - { id: "7", x: 9, y: 2 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "2", to: "3" }
+            - { from: "3", to: "1" }
+            - { from: "3", to: "4" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "4" }
+            - { from: "2", to: "6" }
+            - { from: "6", to: "7" }
+            - { from: "7", to: "6" }
+            - { from: "5", to: "7" }
+    visualization: scc
+    illustrations:
+      - title: Kvazikomponenty se slévají
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 3.5, y: 0.5 }
+            - { id: c, x: 2, y: 4 }
+            - { id: d, x: 4, y: 7.5 }
+            - { id: e, x: 7.5, y: 8 }
+            - { id: f, x: 6.5, y: 1 }
+            - { id: g, x: 9.5, y: 3 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: d }
+            - { from: b, to: f }
+            - { from: f, to: g }
+            - { from: g, to: f }
+            - { from: e, to: g }
+        steps:
+          - caption: |
+              Tři kvazikomponenty (barevně): $\{a, b, c\}$, $\{d, e\}$ a $\{f, g\}$. Hrany $c \to d$, $b \to f$ a $e \to g$ nepatří žádné z nich – vedou mezi skupinami jen jedním směrem.
+          - caption: |
+              Přidáme $g \to e$. Z $e$ se teď dá dojít do $g$ i zpět, takže $\{d, e\}$ a $\{f, g\}$ splynou v jednu kvazikomponentu. Kvazikomponenty jsou právě třídy vzájemné dosažitelnosti.
+            add: [[g, e]]
+          - caption: |
+              Hrana $d \to c$ dovolí vrátit se z dolní skupiny do $\{a, b, c\}$. Všechny uzly jsou navzájem dosažitelné, celý graf tvoří jedinou kvazikomponentu – je silně souvislý.
+            add: [[d, c]]
+    related: [prop-kvazikomponenty-rozklad, alg-kvazikomponenty, def-kondenzace, def-komponenta, def-silna-souvislost]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: prop-kvazikomponenty-rozklad
+    kind: proposition
+    section: "1.4"
+    title: Kvazikomponenty jako třídy vzájemné dosažitelnosti
+    terms: [vzájemná dosažitelnost, relace dosažitelnosti, rozklad na kvazikomponenty, kvazikomponenty]
+    statement: |
+      Na $U(\vec{G})$ definujme relaci $u \sim v$, právě když v $\vec{G}$ existuje orientovaný sled z $u$ do $v$
+      i orientovaný sled z $v$ do $u$. Pak $\sim$ je ekvivalence a kvazikomponenty grafu $\vec{G}$ jsou právě
+      podgrafy indukované na jejích třídách. Speciálně každý uzel leží v právě jedné kvazikomponentě.
+    intuition: |
+      Tvrzení dává praktický návod, jak kvazikomponenty hledat: stačí pro uzly zjistit, kam se lze dostat
+      a odkud se lze vrátit. Je také základem důkazu, že kondenzace je acyklická.
+    proof: |
+      *Tvrzení není ve foliích, doplněno.*
+
+      **Ekvivalence:** reflexivita – sled délky 0; symetrie – plyne z definice; tranzitivita – sledy lze skládat.
+
+      **Třída indukuje silně souvislý podgraf:** nechť $u \sim v$ a $S$ je orientovaný sled z $u$ do $v$. Pro libovolný
+      uzel $w$ na $S$ vede úsek $S$ z $u$ do $w$ a zbytek $S$ z $w$ do $v$, odkud se lze sledem vrátit do $u$; tedy
+      $w \sim u$. Celý sled $S$ tak leží v podgrafu indukovaném na třídě $[u]$, a ten je proto silně souvislý.
+
+      **Maximalita:** je-li $\vec{G}''$ silně souvislý podgraf, jsou všechny jeho uzly navzájem v relaci $\sim$, takže
+      leží v jedné třídě $[u]$, a $\vec{G}''$ je podgrafem indukovaného podgrafu na $[u]$. Silně souvislý podgraf
+      indukovaný na třídě je tedy maximální (kvazikomponenta), a naopak každá kvazikomponenta je obsažena v takovém
+      indukovaném podgrafu, a z maximality je mu rovna. $\square$
+    proof_steps:
+      - Relace vzájemné dosažitelnosti je reflexivní (sled délky 0), symetrická (z definice) a tranzitivní (skládání sledů).
+      - Každý uzel ležící na orientovaném sledu mezi dvěma ekvivalentními uzly je s nimi také ekvivalentní.
+      - Proto sledy mezi uzly jedné třídy nevybočí z třídy a indukovaný podgraf na třídě je silně souvislý.
+      - Každý silně souvislý podgraf má všechny uzly v jedné třídě, takže je obsažen v indukovaném podgrafu na ní.
+      - Indukované podgrafy na třídách jsou tedy právě maximální silně souvislé podgrafy, tj. kvazikomponenty.
+    related: [def-kvazikomponenta, alg-kvazikomponenty, thm-kondenzace]
+    source: "doplněno (standardní tvrzení)"
+    supplemented: true
+
+  - id: alg-kvazikomponenty
+    kind: algorithm
+    section: "1.4"
+    title: Nalezení kvazikomponent pomocí dosažitelnosti
+    terms: [hledání kvazikomponent, algoritmus kvazikomponent, Tarjanův algoritmus, Kosarajův algoritmus, dosažitelnost]
+    statement: |
+      Vstup: orientovaný graf $\vec{G}$. Výstup: rozklad $U(\vec{G})$ na množiny uzlů kvazikomponent.
+    pseudocode: |
+      1. Polož $R := U(\vec{G})$ (dosud nezařazené uzly).
+      2. Dokud $R \ne \emptyset$:
+         1. zvol $u \in R$,
+         2. prohledáním $\vec{G}$ z $u$ po směru hran urči množinu $D^+(u)$ uzlů dosažitelných z $u$,
+         3. prohledáním $\vec{G}$ z $u$ proti směru hran urči množinu $D^-(u)$ uzlů, z nichž je $u$ dosažitelný,
+         4. $K := D^+(u) \cap D^-(u)$ je množina uzlů kvazikomponenty obsahující $u$; vydej $K$ a polož $R := R \setminus K$.
+      3. Kvazikomponenty jsou podgrafy indukované na vydaných množinách.
+    complexity: "$O(n \\cdot (n + m))$; Tarjan/Kosaraju $O(n + m)$"
+    intuition: |
+      Správnost plyne přímo z [tvrzení o vzájemné dosažitelnosti](#prop-kvazikomponenty-rozklad): $v$ leží
+      v kvazikomponentě uzlu $u$, právě když $v \in D^+(u)$ a zároveň $v \in D^-(u)$.
+
+      Každé prohledávání (BFS/DFS) stojí $O(n + m)$ a provede se nejvýše $n$-krát, celkem $O(n(n+m))$.
+      Šikovnější algoritmy (Tarjanův – modifikace backtrackingu, nebo Kosarajův – dvě prohledávání do hloubky)
+      najdou kvazikomponenty i kondenzaci v lineárním čase $O(n + m)$. Lze je určit i z distanční matice, ale ta
+      sama stojí $O(n^3)$.
+    visualization: scc
+    related: [prop-kvazikomponenty-rozklad, def-kvazikomponenta, def-kondenzace]
+    source: "doplněno; skripta kap. 5.2 zmiňují lineární algoritmus"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 1.5
+  - id: def-acyklicky-graf
+    kind: definition
+    label: Definice
+    section: "1.5"
+    title: Acyklický graf
+    terms: [acyklický graf, DAG, orientovaný acyklický graf, graf bez cyklů]
+    statement: |
+      Buď $\vec{G}$ graf. Řekneme, že $\vec{G}$ je **acyklický**, jestliže $\vec{G}$ neobsahuje jako podgraf žádný cyklus.
+    intuition: |
+      Acyklické grafy modelují závislosti (úloha $B$ smí začít až po $A$), které se nesmějí zacyklit.
+      Pozor: acyklický orientovaný graf může mít symetrizaci s kružnicemi (např. hrany $1\to2$, $2\to3$, $1\to3$).
+      Smyčka je cyklus délky 1, takže acyklický graf nemá smyčky.
+    related: [thm-podgraf-acyklickeho, thm-acyklicke-grafy, prop-acyklicky-vstupni-vystupni, def-uzavreny-orientovany-sled-cyklus]
+    illustrations:
+      - title: Jedna hrana navíc a acykličnost je pryč
+        property: acyclic
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0, y: 5 }
+            - { id: b, x: 3, y: 1.5 }
+            - { id: c, x: 3, y: 8.5 }
+            - { id: d, x: 6.5, y: 1.5 }
+            - { id: e, x: 6.5, y: 8.5 }
+            - { id: f, x: 10, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: f }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Všechny hrany vedou „zleva doprava“. Kdo vyjde z libovolného uzlu, už se do něj nevrátí – graf je **acyklický**.
+          - caption: |
+              Symetrizace tohoto grafu kružnice má (např. $a, b, d, c$), ale orientovaný cyklus to není: hrany $c \to d$ a $b \to d$ míří do stejného uzlu.
+            edges: { a-b: active, b-d: active, a-c: active, c-d: active }
+            witness: true
+          - caption: |
+              Přidáme hranu $f \to a$ **proti směru** ostatních. Vznikne cyklus $a \to b \to d \to f \to a$ a graf přestane být acyklický.
+            add: [[f, a]]
+          - caption: |
+              Stačí odebrat jedinou hranu cyklu, třeba $d \to f$, a cyklus zmizí. Zůstane ale cyklus $a \to c \to e \to f \to a$ – hrana $f \to a$ jich uzavírala víc.
+            remove: [[d, f]]
+          - caption: |
+              Teprve odebráním hrany $f \to a$ je graf znovu acyklický. Zkus v režimu *Vyzkoušej sám* přidat jinou hranu, která cyklus vytvoří – a jinou, která ne.
+            remove: [[f, a]]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: thm-podgraf-acyklickeho
+    kind: theorem
+    label: Věta
+    section: "1.5"
+    title: Podgraf acyklického grafu je acyklický
+    terms: [acyklický graf, podgraf, dědičnost acykličnosti]
+    statement: |
+      Je-li $\vec{G}$ acyklický a $\vec{G}' \subset \vec{G}$, pak $\vec{G}'$ je acyklický.
+    intuition: |
+      Acykličnost je „dědičná" vlastnost: odebráním uzlů či hran cyklus vzniknout nemůže. Využívá se v důkazu
+      charakterizace acyklických grafů – i po odebrání uzlů máme stále acyklický graf a tedy vstupní/výstupní uzel.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Kdyby $\vec{G}'$ obsahoval cyklus $\vec{C}$ jako podgraf, pak z $\vec{C} \subset \vec{G}' \subset \vec{G}$
+      (relace „být podgrafem" je tranzitivní) plyne, že $\vec{C}$ je podgrafem $\vec{G}$ – spor s acykličností $\vec{G}$. $\square$
+    proof_steps:
+      - Předpokládáme pro spor, že podgraf G' obsahuje cyklus C.
+      - Relace být podgrafem je tranzitivní, takže C je i podgrafem G.
+      - To odporuje acykličnosti G, tedy G' je acyklický.
+    related: [def-acyklicky-graf, thm-acyklicke-grafy]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: def-vstupni-vystupni-uzel
+    kind: definition
+    label: Definice
+    section: "1.5"
+    title: Vstupní a výstupní uzel
+    terms: [vstupní uzel, výstupní uzel, zdroj, stok, source, sink]
+    statement: |
+      Uzel $u \in U(\vec{G})$ se nazývá
+
+      - (i) **vstupní uzel** grafu $\vec{G}$, jestliže $d^+_{\vec{G}}(u) = 0$,
+      - (ii) **výstupní uzel** grafu $\vec{G}$, jestliže $d^-_{\vec{G}}(u) = 0$.
+    intuition: |
+      Vstupní uzel = žádná hrana do něj nevede (začátek, „zdroj"); výstupní uzel = žádná hrana z něj nevede
+      (konec, „stok"). Připomeňme konvenci: $d^+$ je vstupní a $d^-$ výstupní polostupeň.
+    related: [def-polostupne, prop-acyklicky-vstupni-vystupni, thm-acyklicke-grafy]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: prop-acyklicky-vstupni-vystupni
+    kind: proposition
+    label: Větička
+    section: "1.5"
+    title: Acyklický graf má vstupní i výstupní uzel
+    terms: [acyklický graf, vstupní uzel, výstupní uzel, nejdelší cesta]
+    statement: |
+      Každý acyklický graf má vstupní a výstupní uzel.
+    intuition: |
+      Vydáme-li se po šipkách z libovolného uzlu, nemůžeme se nikdy vrátit (to by byl cyklus), a protože uzlů je
+      konečně mnoho, musíme uvíznout – v uzlu, ze kterého nic nevede. Obráceně, proti šipkám, najdeme vstupní uzel.
+      V grafu s cyklem to platit nemusí: cyklus $\vec{C}_3$ nemá ani vstupní, ani výstupní uzel.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Nechť $P: v_0, v_1, \dots, v_k$ je orientovaná cesta v $\vec{G}$ maximální délky (existuje, protože cesty mají
+      navzájem různé uzly, a je jich tedy konečně mnoho; cesta délky 0 existuje vždy).
+
+      Kdyby z $v_k$ vedla hrana $(v_k, x)$: leží-li $x$ na $P$, tj. $x = v_i$, pak $v_i, v_{i+1}, \dots, v_k, v_i$ je
+      cyklus (pro $i = k$ smyčka) – spor s acykličností; neleží-li $x$ na $P$, je $v_0, \dots, v_k, x$ delší cesta –
+      spor s maximalitou. Tedy $d^-(v_k) = 0$ a $v_k$ je výstupní uzel.
+
+      Symetricky: hrana $(x, v_0)$ by dala buď cyklus, nebo delší cestu, takže $d^+(v_0) = 0$ a $v_0$ je vstupní uzel. $\square$
+    proof_steps:
+      - Vezmeme orientovanou cestu P = v_0, …, v_k maximální délky.
+      - Kdyby z v_k vedla hrana do uzlu na P, vznikl by cyklus, což odporuje acykličnosti.
+      - Kdyby z v_k vedla hrana do uzlu mimo P, šla by P prodloužit, což odporuje maximalitě.
+      - Proto je v_k výstupní uzel, a symetrickou úvahou je v_0 vstupní uzel.
+    illustrations:
+      - title: Kde končí nejdelší cesta
+        for: proof
+        property: acyclic
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 5 }
+            - { id: b, x: 3.5, y: 1.5 }
+            - { id: c, x: 3.5, y: 8.5 }
+            - { id: d, x: 6.5, y: 5 }
+            - { id: e, x: 9.5, y: 1.5 }
+            - { id: f, x: 9.5, y: 8.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: d, to: f }
+        steps:
+          - caption: |
+              $P = a, b, d, e$ je jedna z nejdelších orientovaných cest. Do jejího začátku $a$ nevede žádná hrana a z konce $e$ žádná nevychází – $a$ je vstupní a $e$ výstupní uzel.
+            nodes: { a: source, e: sink }
+            edges: { a-b: path, b-d: path, d-e: path }
+          - caption: |
+              Kdyby z konce $e$ vedla hrana do uzlu na $P$ (zde $e \to b$), uzavřela by cyklus $b \to d \to e \to b$ – v acyklickém grafu to nejde.
+            add: [[e, b]]
+          - caption: |
+              Hrana z $e$ do uzlu mimo $P$ (zde $e \to f$) by zase $P$ prodloužila na $a, b, d, e, f$, takže $P$ by nebyla nejdelší. Konec nejdelší cesty je proto vždy výstupní uzel – teď je to $f$.
+            remove: [[e, b]]
+            add: [[e, f]]
+            nodes: { a: source, f: sink }
+            edges: { a-b: path, b-d: path, d-e: path, e-f: path }
+    related: [def-vstupni-vystupni-uzel, def-acyklicky-graf, thm-acyklicke-grafy]
+    source: "přednáška 2, folie 11"
+    supplemented: false
+
+  - id: thm-acyklicke-grafy
+    kind: theorem
+    label: Věta
+    section: "1.5"
+    title: Charakterizace acyklických grafů (topologické očíslování)
+    terms: [charakterizace acyklických grafů, topologické uspořádání, topologické očíslování, acyklické očíslování, číslování uzlů]
+    statement: |
+      Buď $\vec{G}$ orientovaný graf a $n = |U(\vec{G})|$. Následující tvrzení jsou ekvivalentní:
+
+      - (i) $\vec{G}$ je acyklický,
+      - (ii) každý neprázdný podgraf grafu $\vec{G}$ má výstupní uzel,
+      - (iii) každý neprázdný podgraf grafu $\vec{G}$ má vstupní uzel,
+      - (iv) existuje takové očíslování uzlů grafu $\vec{G}$ čísly $1, \dots, n$, že
+         $(i,j) \in H(\vec{G}) \Rightarrow i < j$.
+    intuition: |
+      Bod (iv) je **topologické uspořádání**: uzly lze seřadit do řady tak, že všechny šipky míří doprava.
+      Je to přesně pořadí, ve kterém lze provádět úlohy se závislostmi. Body (ii)/(iii) dávají návod, jak takové
+      očíslování najít: opakovaně odebírej vstupní uzel a přiděl mu nejmenší volné číslo (nebo výstupní uzel a
+      nejvyšší číslo). Pokud v nějakém kroku vstupní uzel neexistuje, graf obsahuje cyklus – tak se zároveň
+      ověřuje acykličnost.
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Dokážeme (i) ⇒ (ii) ⇒ (iv) ⇒ (i) a (i) ⇒ (iii) ⇒ (iv).
+
+      **(i) ⇒ (ii), (i) ⇒ (iii).** Neprázdný podgraf acyklického grafu je acyklický
+      ([věta](#thm-podgraf-acyklickeho)), a tedy má výstupní i vstupní uzel ([větička](#prop-acyklicky-vstupni-vystupni)).
+
+      **(ii) ⇒ (iv).** Čísla přidělujeme od $n$ dolů. Graf $\vec{G}_n = \vec{G}$ má výstupní uzel; přidělíme mu číslo $n$.
+      Obecně, mají-li uzly čísla $n, n-1, \dots, k+1$, je podgraf $\vec{G}_k$ indukovaný na zbylých uzlech neprázdný,
+      podle (ii) má výstupní uzel $x$ a ten dostane číslo $k$. Nechť $(x, y)$ je hrana a $x$ dostal číslo $k$. V okamžiku
+      číslování byl $x$ výstupním uzlem grafu $\vec{G}_k$, takže $y \notin U(\vec{G}_k)$, tj. $y$ už měl číslo větší než $k$
+      (smyčka $(x,x)$ by odporovala tomu, že $x$ je výstupní). Tedy hrany vedou z menšího čísla do většího.
+
+      **(iii) ⇒ (iv).** Symetricky: čísla $1, 2, \dots$ přidělujeme postupně vstupním uzlům podgrafů indukovaných na
+      dosud neočíslovaných uzlech; hrana $(y, x)$ do právě číslovaného uzlu $x$ nemůže vést ze zbylých uzlů, vede tedy
+      z uzlu s menším číslem.
+
+      **(iv) ⇒ (i).** Kdyby $\vec{G}$ obsahoval cyklus s uzly očíslovanými $i_1, i_2, \dots, i_k$ (v pořadí cyklu),
+      plynulo by z (iv) $i_1 < i_2 < \dots < i_k < i_1$ (pro smyčku $i_1 < i_1$) – spor. $\square$
+    proof_steps:
+      - "(i) ⇒ (ii), (iii): každý neprázdný podgraf acyklického grafu je acyklický, a proto má výstupní i vstupní uzel."
+      - "(ii) ⇒ (iv): opakovaně vybíráme výstupní uzel podgrafu indukovaného na neočíslovaných uzlech a přidělujeme čísla od n dolů."
+      - V okamžiku očíslování z uzlu nevede hrana do žádného neočíslovaného uzlu, takže všechny jeho hrany vedou do uzlů s větším číslem.
+      - "(iii) ⇒ (iv): symetricky přidělujeme čísla od 1 nahoru vstupním uzlům."
+      - "(iv) ⇒ (i): cyklus by dával ostře rostoucí posloupnost čísel, která se vrátí na začátek, což je spor."
+    examples:
+      - title: Topologické očíslování
+        body: |
+          Graf s uzly $a, b, c, d, e$ a hranami $a \to c$, $b \to c$, $b \to d$, $c \to e$, $d \to e$.
+          Vstupní uzly jsou $a, b$: očíslujeme $a = 1$ a odebereme jej. Vstupní je nyní jen $b$: $b = 2$.
+          Po odebrání $b$ jsou vstupní $c, d$: $c = 3$, $d = 4$. Zbývá $e = 5$.
+          Kontrola: všechny hrany ($1\to3$, $2\to3$, $2\to4$, $3\to5$, $4\to5$) vedou z menšího čísla do většího.
+          (Očíslování obecně není jednoznačné – např. $b = 1$, $a = 2$ vyhovuje také.)
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0, y: 1 }
+            - { id: b, x: 0, y: 7 }
+            - { id: c, x: 4, y: 2 }
+            - { id: d, x: 4, y: 8 }
+            - { id: e, x: 8, y: 5 }
+          edges:
+            - { from: a, to: c }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+    illustrations:
+      - title: Číslování odebíráním vstupních uzlů
+        for: proof
+        property: acyclic
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 7 }
+            - { id: c, x: 4, y: 2 }
+            - { id: d, x: 4, y: 8 }
+            - { id: e, x: 8, y: 5 }
+          edges:
+            - { from: a, to: c }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+        steps:
+          - caption: |
+              Graf je acyklický, takže má vstupní uzly – zde $a$ a $b$ (nevede do nich žádná hrana).
+            nodes: { a: source, b: source }
+          - caption: |
+              Uzlu $a$ přidělíme číslo 1 a „odebereme“ ho. Zbylý podgraf je opět acyklický, a má tedy vstupní uzel – teď jen $b$, protože do $c$ ještě vede hrana z $b$.
+            labels: { a: "1" }
+            nodes: { a: done, b: source }
+          - caption: |
+              $b$ dostane číslo 2. Po jeho odebrání jsou vstupní $c$ i $d$; na pořadí mezi nimi nezáleží.
+            labels: { a: "1", b: "2" }
+            nodes: { a: done, b: done, c: source, d: source }
+          - caption: |
+              Postupně $c = 3$, $d = 4$, $e = 5$. Každý uzel dostal číslo ve chvíli, kdy do něj už nevedla hrana z neočíslovaného uzlu – proto všechny hrany vedou z menšího čísla do většího.
+            labels: { a: "1", b: "2", c: "3", d: "4", e: "5" }
+            nodes: { a: done, b: done, c: done, d: done, e: done }
+          - caption: |
+              Přidáme hranu $e \to b$. Po očíslování $a = 1$ má každý ze zbylých uzlů $b, c, d, e$ hranu dovnitř, vstupní uzel neexistuje a číslování uvízne. Podle věty to znamená cyklus, např. $b \to c \to e \to b$.
+            add: [[e, b]]
+            labels: { a: "1" }
+            nodes: { a: done }
+            witness: true
+    related: [def-acyklicky-graf, alg-topologicke-cislovani, cor-acyc-polynomialni, prop-acyklicky-vstupni-vystupni, alg-kriticka-cesta]
+    source: "přednáška 2, folie 12"
+    supplemented: false
+
+  - id: alg-topologicke-cislovani
+    kind: algorithm
+    section: "1.5"
+    title: Algoritmus číslování uzlů (test acykličnosti, topologické uspořádání)
+    terms: [algoritmus číslování uzlů, topologické třídění, topological sort, test acykličnosti, acyklické očíslování]
+    statement: |
+      Vstup: orientovaný graf $\vec{G}$. Výstup: očíslování uzlů $1, \dots, n$ s vlastností
+      $(i,j) \in H(\vec{G}) \Rightarrow i < j$, nebo zjištění, že $\vec{G}$ obsahuje cyklus.
+    pseudocode: |
+      1. Spočti vstupní stupně $d^+(u)$ všech uzlů; všechny uzly s $d^+(u) = 0$ vlož do seznamu $S$; polož $k := 0$.
+      2. Dokud $S \ne \emptyset$:
+         1. vyjmi z $S$ uzel $x$, polož $k := k + 1$ a přiděl $x$ číslo $k$,
+         2. pro každou hranu $(x, y)$ sniž $d^+(y)$ o 1; klesne-li na 0, vlož $y$ do $S$.
+      3. Je-li $k = n$, je očíslování hotovo a graf je acyklický; je-li $k < n$, graf **obsahuje cyklus**
+         (zbylý podgraf nemá vstupní uzel).
+    complexity: "$O(n + m)$"
+    intuition: |
+      Algoritmus realizuje důkaz implikace (iii) ⇒ (iv): opakovaně odebírá vstupní uzel. Místo skutečného
+      mazání si jen pamatujeme, kolik neodebraných předchůdců má každý uzel. Každý uzel se do $S$ vloží nejvýše
+      jednou a každá hrana se zpracuje jednou, proto $O(n + m)$ (při zadání maticí sousednosti $O(n^2)$).
+
+      Skončí-li algoritmus dřív, než očísluje všechny uzly, má podgraf indukovaný na zbylých uzlech všechny
+      vstupní stupně kladné, tedy nemá vstupní uzel, a podle [věty](#thm-acyklicke-grafy) (iii) graf není acyklický.
+    visualization: critical-path
+    related: [thm-acyklicke-grafy, cor-acyc-polynomialni, alg-kriticka-cesta]
+    source: "doplněno podle důkazu věty o acyklických grafech (algoritmus známý z KMA/DMA)"
+    supplemented: true
+
+  - id: cor-acyc-polynomialni
+    kind: corollary
+    label: Důsledek
+    section: "1.5"
+    title: Úloha ACYC je polynomiální
+    terms: [ACYC, problém ACYC, test acykličnosti, polynomiální algoritmus]
+    statement: |
+      Uvažujme úlohu **ACYC**:
+
+      - **Vstup:** graf $\vec{G}$,
+      - **Úkol:** je graf $\vec{G}$ acyklický?
+      - **Výstup:** ANO / NE.
+
+      Úloha ACYC je řešitelná v polynomiálním čase.
+    intuition: |
+      Cyklů může být exponenciálně mnoho, ale není nutné je procházet: stačí se pokusit o topologické
+      očíslování. Podaří-li se, cyklus není; nepodaří-li se, cyklus je.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Podle [věty o acyklických grafech](#thm-acyklicke-grafy) je $\vec{G}$ acyklický, právě když každý neprázdný
+      podgraf má vstupní uzel, což ověří [algoritmus číslování uzlů](#alg-topologicke-cislovani): opakovaně odebírá
+      vstupní uzel a buď očísluje všech $n$ uzlů (graf je acyklický), nebo se zastaví na neprázdném podgrafu bez
+      vstupního uzlu (graf acyklický není). Algoritmus pracuje v čase $O(n + m)$, resp. $O(n^2)$, tedy polynomiálně. $\square$
+    proof_steps:
+      - Podle charakterizace je graf acyklický, právě když každý neprázdný podgraf má vstupní uzel.
+      - Algoritmus číslování uzlů opakovaně odebírá vstupní uzel podgrafu tvořeného zbylými uzly.
+      - Pokud očísluje všechny uzly, je graf acyklický; pokud uvízne, našel podgraf bez vstupního uzlu, a graf tedy obsahuje cyklus.
+      - Algoritmus běží v čase O(n + m), takže úloha ACYC je polynomiální.
+    complexity: "$O(n + m)$"
+    related: [thm-acyklicke-grafy, alg-topologicke-cislovani, rem-polynomialni-vs-exponencialni]
+    source: "přednáška 2, folie 12"
+    supplemented: false
+
+  - id: def-kondenzace
+    kind: definition
+    label: Definice
+    section: "1.5"
+    title: Kondenzace grafu
+    terms: [kondenzace, kondenzace grafu, graf kvazikomponent, condensation]
+    statement: |
+      Buď $\vec{G}$ orientovaný graf, $\vec{G}_1, \dots, \vec{G}_k$ jeho kvazikomponenty. Orientovaný graf $\vec{G}_C$ s
+      $$
+      U(\vec{G}_C) = \{\vec{G}_1, \dots, \vec{G}_k\}
+      $$
+      a
+      $$
+      H(\vec{G}_C) = \{(\vec{G}_i, \vec{G}_j) \mid i \ne j \text{ a existují } x \in U(\vec{G}_i),\ y \in U(\vec{G}_j) \text{ tak, že } (x,y) \in H(\vec{G})\}
+      $$
+      se nazývá **kondenzace** grafu $\vec{G}$.
+    intuition: |
+      Každou kvazikomponentu „smrštíme" do jednoho uzlu a mezi dvěma takovými uzly vedeme hranu, vede-li v původním
+      grafu aspoň jedna hrana odpovídajícím směrem (násobné hrany splynou, smyčky nevznikají). Kondenzace ukazuje
+      **hrubou strukturu** orientovaného grafu: uvnitř kvazikomponent je „vše propojeno", mezi nimi vedou hrany jen
+      jedním směrem a tvoří acyklický graf.
+    examples:
+      - title: Kondenzace grafu se 7 uzly
+        body: |
+          Pro graf z příkladu u [kvazikomponent](#def-kvazikomponenta) označme $A = \{1,2,3\}$, $B = \{4,5\}$,
+          $C = \{6,7\}$. Hrana $3 \to 4$ dává $(A, B)$, hrana $2 \to 6$ dává $(A, C)$ a hrana $5 \to 7$ dává $(B, C)$.
+          Kondenzace je acyklický graf s topologickým uspořádáním $A, B, C$.
+        graph:
+          directed: true
+          nodes:
+            - { id: A, x: 1, y: 2 }
+            - { id: B, x: 5, y: 7 }
+            - { id: C, x: 8, y: 2 }
+          edges:
+            - { from: A, to: B }
+            - { from: A, to: C }
+            - { from: B, to: C }
+    visualization: scc
+    related: [def-kvazikomponenta, thm-kondenzace, alg-kvazikomponenty]
+    source: "přednáška 2, folie 12"
+    supplemented: false
+
+  - id: thm-kondenzace
+    kind: theorem
+    label: Věta
+    section: "1.5"
+    title: Vlastnosti kondenzace
+    terms: [kondenzace, acykličnost kondenzace, silná souvislost a kondenzace]
+    statement: |
+      Buď $\vec{G}$ orientovaný graf. Platí:
+
+      - (i) $\vec{G}_C$ je acyklický graf,
+      - (ii) $\vec{G}$ je silně souvislý, právě když $\vec{G}_C$ je graf s jediným uzlem,
+      - (iii) $\vec{G}$ je acyklický graf, právě když $\vec{G} = \vec{G}_C$.
+
+      (V bodě (iii) se rovností rozumí isomorfismus při ztotožnění uzlu $x$ s kvazikomponentou $(\{x\}, \emptyset)$.)
+    intuition: |
+      Každý orientovaný graf je „acyklický graf silně souvislých kousků". Bod (i) je důležitý algoritmicky:
+      na kondenzaci lze použít topologické uspořádání. Využívá se např. u rozložitelnosti matic (blokově
+      trojúhelníkový tvar), u jádra grafu nebo u 2-SAT (kvazikomponenty implikačního grafu).
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Využijeme, že kvazikomponenty jsou třídy vzájemné dosažitelnosti
+      ([tvrzení](#prop-kvazikomponenty-rozklad)).
+
+      **(i)** $\vec{G}_C$ nemá smyčky (hrany jen pro $i \ne j$). Nechť $\vec{G}_{i_1} \to \vec{G}_{i_2} \to \dots \to \vec{G}_{i_r} \to \vec{G}_{i_1}$,
+      $r \ge 2$, je cyklus v $\vec{G}_C$. Každá jeho hrana pochází z hrany grafu $\vec{G}$ mezi příslušnými kvazikomponentami
+      a uvnitř každé kvazikomponenty se lze dostat z libovolného uzlu do libovolného. Lze tedy sestavit uzavřený
+      orientovaný sled, který prochází všemi $\vec{G}_{i_1}, \dots, \vec{G}_{i_r}$; libovolné dva jeho uzly jsou vzájemně
+      dosažitelné, takže uzly z $\vec{G}_{i_1}$ a $\vec{G}_{i_2}$ leží v téže kvazikomponentě – spor s tím, že jde o různé
+      kvazikomponenty.
+
+      **(ii)** $\vec{G}$ je silně souvislý ⇔ všechny uzly jsou navzájem dosažitelné ⇔ existuje jediná třída vzájemné
+      dosažitelnosti ⇔ $\vec{G}$ má jedinou kvazikomponentu ⇔ $\vec{G}_C$ má jediný uzel.
+
+      **(iii) (⇒)** Je-li $\vec{G}$ acyklický a $u \ne v$ leží v téže kvazikomponentě, pak orientované cesty $u \to v$ a
+      $v \to u$ tvoří uzavřený orientovaný sled kladné délky, který obsahuje cyklus – spor. Každá kvazikomponenta je tedy
+      jediný uzel (bez smyčky), a hrana $(\{x\}, \{y\})$ je v $\vec{G}_C$ právě když $(x,y) \in H(\vec{G})$, tj.
+      $x \mapsto (\{x\}, \emptyset)$ je isomorfismus $\vec{G} \to \vec{G}_C$.
+      **(⇐)** Je-li $\vec{G} \simeq \vec{G}_C$, je $\vec{G}$ acyklický podle (i). $\square$
+    proof_steps:
+      - Kondenzace nemá smyčky, protože hrany vedou jen mezi různými kvazikomponentami.
+      - Cyklus v kondenzaci by spolu se silnou souvislostí uvnitř kvazikomponent dal uzavřený orientovaný sled přes několik kvazikomponent.
+      - Uzly různých kvazikomponent by pak byly vzájemně dosažitelné, což je spor; kondenzace je tedy acyklická.
+      - Silná souvislost znamená, že všechny uzly tvoří jedinou třídu vzájemné dosažitelnosti, tj. kondenzace má jediný uzel.
+      - V acyklickém grafu jsou všechny kvazikomponenty jednouzlové, takže kondenzace je s ním isomorfní; obráceně plyne acykličnost z (i).
+    illustrations:
+      - title: Cyklus v kondenzaci by kvazikomponenty slil
+        for: proof
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 0.5 }
+            - { id: b, x: 2, y: 4 }
+            - { id: c, x: 4, y: 7 }
+            - { id: d, x: 6, y: 9.5 }
+            - { id: e, x: 8, y: 4 }
+            - { id: f, x: 9.5, y: 0.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: a }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: c }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: e }
+        steps:
+          - caption: |
+              Kvazikomponenty $A = \{a, b\}$, $B = \{c, d\}$, $C = \{e, f\}$. Hrany $b \to c$ a $d \to e$ dávají kondenzaci $A \to B \to C$ – acyklický graf se třemi uzly.
+          - caption: |
+              Kdyby kondenzace měla cyklus $A \to B \to C \to A$ (přidáme $f \to a$), vznikl by uzavřený sled $a \to b \to c \to d \to e \to f \to a$ a všechny uzly by byly vzájemně dosažitelné. Kvazikomponenty by tedy splynuly v jednu – graf je teď silně souvislý a jeho kondenzace má jediný uzel (bod (ii)).
+            add: [[f, a]]
+          - caption: |
+              Bod (iii): odebereme $f \to a$ i zpětné hrany $b \to a$, $d \to c$, $f \to e$. Graf je acyklický, každý uzel tvoří samostatnou kvazikomponentu a kondenzace je s grafem totožná.
+            remove: [[f, a], [b, a], [d, c], [f, e]]
+    related: [def-kondenzace, def-kvazikomponenta, prop-kvazikomponenty-rozklad, def-acyklicky-graf]
+    source: "přednáška 2, folie 12"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 1.6
+  - id: def-w-vzdalenost-orientovana
+    kind: definition
+    label: Definice
+    section: "1.6"
+    title: Ohodnocený orientovaný graf, w-délka a vzdálenosti v orientovaném grafu
+    terms: [ohodnocený orientovaný graf, w-délka orientované cesty, vzdálenost v orientovaném grafu, w-vzdálenost v orientovaném grafu]
+    statement: |
+      Buď $\vec{G}$ graf. Funkce $w : H(\vec{G}) \to (0, \infty)$ se nazývá **(hranové) ohodnocení** grafu $\vec{G}$;
+      graf se zadaným ohodnocením se nazývá **ohodnocený graf**.
+
+      Pro každou orientovanou cestu $\vec{P} \subset \vec{G}$ definujeme **$w$-délku** $w(\vec{P}) = \sum_{h \in H(\vec{P})} w(h)$.
+
+      Nechť $u, v \in U(\vec{G})$. Pak
+
+      - (i) **vzdáleností** uzlů $u, v$ v grafu $\vec{G}$ (značíme $d_{\vec{G}}(u,v)$) rozumíme nejmenší délku orientované
+         cesty z uzlu $u$ do uzlu $v$ v grafu $\vec{G}$,
+      - (ii) **$w$-vzdáleností** uzlů $u, v$ v grafu $\vec{G}$ (značíme $d^w_{\vec{G}}(u,v)$) rozumíme nejmenší $w$-délku
+         orientované cesty z uzlu $u$ do uzlu $v$ v grafu $\vec{G}$.
+
+      Neexistuje-li v $\vec{G}$ cesta z $u$ do $v$, klademe $d_{\vec{G}}(u,v) = d^w_{\vec{G}}(u,v) = \infty$.
+    intuition: |
+      V orientovaném grafu vzdálenost **není symetrická**: $d_{\vec{G}}(u,v)$ může být 1 a $d_{\vec{G}}(v,u) = \infty$.
+      Zůstává ale nezápornost a trojúhelníková nerovnost (tzv. kvazimetrika). Kladné váhy jsou opět podstatné –
+      na nich stojí správnost Dijkstrova algoritmu.
+    related: [def-w-delka-vzdalenost, alg-dijkstra, def-matice-sousednosti-orientovaneho, rem-distancni-matice]
+    source: "přednáška 3, folie 1"
+    supplemented: false
+
+  - id: def-matice-sousednosti-orientovaneho
+    kind: definition
+    label: Definice
+    section: "1.6"
+    title: Matice sousednosti a vážená matice sousednosti orientovaného grafu
+    terms: [matice sousednosti orientovaného grafu, vážená matice sousednosti, A(G), W(G)]
+    statement: |
+      Nechť $\vec{G}$ je ohodnocený graf s uzly očíslovanými $1, \dots, n$. Položme
+      $$
+      w_{ij} = \begin{cases} w((i,j)) & \text{jestliže } (i,j) \in H(\vec{G}),\\ 0 & \text{jinak.} \end{cases}
+      $$
+      Matice $\mathbf{W}(\vec{G}) = [w_{ij}]_{i,j=1}^n$ se nazývá **vážená matice sousednosti** grafu $\vec{G}$.
+      Neohodnocený graf považujeme za ohodnocený $w_{ij} = 1$.
+
+      **Matice sousednosti** grafu $\vec{G}$ je $\mathbf{A}(\vec{G}) = [a_{ij}]_{i,j=1}^n$, kde $a_{ij} = 1$, jestliže
+      $(i,j) \in H(\vec{G})$, a $a_{ij} = 0$ jinak.
+
+      Matice $w$-vzdáleností $\mathbf{D}^w(\vec{G}) = [d^w_{\vec{G}}(i,j)]$ a distanční matice
+      $\mathbf{D}(\vec{G}) = [d_{\vec{G}}(i,j)]$ se definují stejně jako v neorientovaném případě
+      (viz [w-distanční matice](#def-w-distancni-matice)).
+    intuition: |
+      Matice sousednosti orientovaného grafu obecně **není symetrická**: řádek $i$ popisuje hrany z uzlu $i$ ven,
+      sloupec $j$ hrany do uzlu $j$. Řádkové součty jsou výstupní stupně $d^-$, sloupcové vstupní stupně $d^+$.
+      Smyčka $(i,i)$ dává jedničku na diagonále.
+    related: [def-matice-sousednosti, thm-mocniny-matice-sousednosti, def-w-distancni-matice]
+    source: "přednáška 3, folie 2"
+    supplemented: false
+
+  - id: thm-mocniny-matice-sousednosti
+    kind: theorem
+    label: Věta
+    section: "1.6"
+    title: Mocniny matice sousednosti počítají sledy
+    terms: [mocniny matice sousednosti, počet sledů, sledy délky k, A^k]
+    statement: |
+      Nechť $\vec{G}$ je orientovaný graf a $k \ge 0$. Prvek $a^{(k)}_{ij}$ matice $(\mathbf{A}(\vec{G}))^k$ je roven
+      počtu sledů délky (přesně) $k$ z uzlu $i$ do uzlu $j$ v $\vec{G}$.
+    intuition: |
+      Násobení matic přesně odpovídá „prodlužování sledů o jednu hranu": sled délky $k+1$ z $i$ do $j$ je sled délky $k$
+      z $i$ do nějakého $l$ následovaný hranou $(l,j)$. Pozor, počítají se **sledy** (s opakováním uzlů), ne cesty.
+      Pro neorientovaný graf (symetrická matice) platí totéž.
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Indukcí podle $k$ (orientovaný sled délky $k$ chápeme jako posloupnost uzlů
+      $x_0, \dots, x_k$, kde $(x_{t}, x_{t+1}) \in H(\vec{G})$).
+
+      **$k = 0$:** $\mathbf{A}^0 = \mathbf{E}$ (jednotková matice). Sled délky 0 z $i$ do $j$ existuje jediný pro $i = j$
+      a žádný pro $i \ne j$ – souhlasí.
+
+      **$k \to k+1$:** $a^{(k+1)}_{ij} = \sum_{l=1}^n a^{(k)}_{il}\, a_{lj}$. Sledy délky $k+1$ z $i$ do $j$ rozdělíme podle
+      předposledního uzlu $l$: každý je jednoznačně tvořen sledem délky $k$ z $i$ do $l$ a hranou $(l,j)$. Pro pevné $l$
+      je jejich počet $a^{(k)}_{il}$ (indukční předpoklad) krát $a_{lj}$ (1, je-li hrana, jinak 0). Sečtením přes $l$
+      dostaneme právě $a^{(k+1)}_{ij}$. $\square$
+    proof_steps:
+      - Pro k = 0 je A^0 jednotková matice a sled délky 0 vede jen z uzlu do sebe.
+      - Pro indukční krok rozepíšeme a_ij^(k+1) jako součet a_il^(k)·a_lj přes všechny uzly l.
+      - Sledy délky k+1 z i do j rozdělíme podle předposledního uzlu l na sled délky k z i do l a hranu (l, j).
+      - Pro pevné l je jejich počet a_il^(k)·a_lj, a sečtením přes l dostaneme a_ij^(k+1).
+    examples:
+      - title: Sledy v orientovaném trojúhelníku
+        body: |
+          Pro cyklus $\vec{C}_3$: $1 \to 2 \to 3 \to 1$ je $\mathbf{A}$ permutační matice a $\mathbf{A}^3 = \mathbf{E}$:
+          z každého uzlu vede právě jeden sled délky 3, a to zpět do sebe. Prvek $a^{(2)}_{13} = 1$ (sled $1,2,3$),
+          zatímco $a^{(1)}_{13} = 0$, takže $d_{\vec{G}}(1,3) = 2$.
+    related: [def-matice-sousednosti-orientovaneho, cor-distancni-matice-mocniny, def-matice-sousednosti]
+    source: "přednáška 3, folie 3"
+    supplemented: false
+
+  - id: cor-distancni-matice-mocniny
+    kind: corollary
+    label: Důsledek
+    section: "1.6"
+    title: Distanční matice z mocnin matice sousednosti
+    terms: [distanční matice, výpočet distanční matice, mocniny matice sousednosti]
+    statement: |
+      Prvek $d_{ij}$ matice $\mathbf{D}(\vec{G})$ je roven nejmenší mocnině $k$, pro kterou je prvek $a^{(k)}_{ij}$
+      matice $(\mathbf{A}(\vec{G}))^k$ nenulový.
+    intuition: |
+      Vzdálenost = délka nejkratšího sledu (nejkratší sled je cesta). Stačí počítat mocniny $\mathbf{A}^0, \mathbf{A}^1, \dots, \mathbf{A}^{n-1}$:
+      cesta má nejvýše $n - 1$ hran, takže je-li $a^{(k)}_{ij} = 0$ pro všechna $k \le n-1$, je $d_{ij} = \infty$.
+      Složitost naivně $O(n \cdot n^3) = O(n^4)$ – pro praxi je lepší $n$-krát BFS ($O(n(n+m))$).
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Podle [věty](#thm-mocniny-matice-sousednosti) je $a^{(k)}_{ij} \ne 0$, právě když existuje orientovaný sled délky $k$
+      z $i$ do $j$. Nejmenší takové $k$ je délka nejkratšího sledu z $i$ do $j$. Ten je cestou
+      ([větička](#prop-silna-souvislost-cesta) – vynechání opakujících se úseků) a každá cesta je sledem, takže délka
+      nejkratšího sledu je rovna délce nejkratší cesty, tj. $d_{\vec{G}}(i,j) = d_{ij}$. Neexistuje-li žádný sled
+      (všechny mocniny mají na pozici $(i,j)$ nulu), je $d_{ij} = \infty$. $\square$
+    proof_steps:
+      - Podle věty o mocninách je a_ij^(k) nenulové, právě když existuje sled délky k z i do j.
+      - Nejmenší takové k je délka nejkratšího sledu z i do j.
+      - Nejkratší sled je cesta a každá cesta je sled, proto se tato délka rovná vzdálenosti d(i,j).
+      - Neexistuje-li žádný sled, jsou všechny prvky nulové a vzdálenost je nekonečná.
+    related: [thm-mocniny-matice-sousednosti, rem-distancni-matice, def-w-distancni-matice]
+    source: "přednáška 3, folie 3"
+    supplemented: false
+
+  - id: thm-minplus-mocniny-cenove-matice
+    kind: theorem
+    label: Věta
+    section: "1.6"
+    title: w-distanční matice jako (min,+) mocnina cenové matice
+    terms: [cenová matice, min-plus násobení, tropické násobení, mocniny cenové matice, C(G), D^(k)]
+    statement: |
+      Nechť $\vec{G}$ je ohodnocený orientovaný graf. Definujme **cenovou matici** $\mathbf{C}(\vec{G}) = [c_{ij}]_{i,j=1}^n$:
+      $$
+      c_{ij} = \begin{cases} 0 & \text{jestliže } i = j,\\ \infty & \text{jestliže } i \ne j \text{ a } (i,j) \notin H(\vec{G}),\\ w_{ij} & \text{jestliže } i \ne j \text{ a } (i,j) \in H(\vec{G}). \end{cases}
+      $$
+      Definujme operace $a \oplus b = \min\{a,b\}$, $a \odot b = a + b$ a $k$-tou mocninu matice $\mathbf{C}(\vec{G})$ při těchto
+      operacích označme $\mathbf{D}^{(k)}(\vec{G})$.
+
+      Buď $r$ nejmenší číslo, pro něž platí $\mathbf{D}^{(r)}(\vec{G}) = \mathbf{D}^{(r+1)}(\vec{G})$. Pak
+      $\mathbf{D}^{(r)}(\vec{G}) = \mathbf{D}^w(\vec{G})$.
+    intuition: |
+      V „(min,+) algebře" je součin matic $(\mathbf{X} \odot \mathbf{Y})_{ij} = \min_l (x_{il} + y_{lj})$ – místo sčítání
+      počtů sledů hledáme nejlevnější prodloužení. Prvek $d^{(k)}_{ij}$ je nejmenší $w$-délka sledu z $i$ do $j$ s nejvýše
+      $k$ hranami (nula na diagonále umožňuje „postát na místě"). Jakmile se mocnina přestane měnit, už se nic nezlepší.
+      Protože cesta má nejvýše $n-1$ hran, je $r \le n - 1$, a výpočet stojí $O(n^4)$ (resp. $O(n^3 \log n)$
+      opakovaným umocňováním). Floydův algoritmus to zvládne v $O(n^3)$ – viz [Floydův algoritmus](#alg-floyd).
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **Krok 1:** indukcí podle $k \ge 1$ ukážeme, že $d^{(k)}_{ij}$ je nejmenší $w$-délka orientovaného sledu z $i$ do $j$
+      s **nejvýše** $k$ hranami (prázdný sled z $i$ do $i$ má délku 0; neexistuje-li sled, je hodnota $\infty$). Pro $k = 1$
+      to je přesně definice $\mathbf{C}$. Dále $d^{(k+1)}_{ij} = \min_l \left(d^{(k)}_{il} + c_{lj}\right)$: člen s $l = j$ dává
+      $d^{(k)}_{ij}$ (sledy s nejvýše $k$ hranami) a členy s $l \ne j$ sledy, které končí hranou $(l,j)$ a mají nejvýše $k + 1$
+      hran. Každý sled s nejvýše $k+1$ hranami je jednoho z těchto typů.
+
+      **Krok 2:** protože váhy jsou kladné, lze z každého sledu vynecháním uzavřených úseků získat cestu se stejnými konci,
+      nejvýše stejnou $w$-délkou a menším nebo stejným počtem hran. Proto $d^{(k)}_{ij}$ je i nejmenší $w$-délka **cesty**
+      z $i$ do $j$ s nejvýše $k$ hranami. Cesta má nejvýše $n - 1$ hran, takže $\mathbf{D}^{(k)} = \mathbf{D}^w$ pro všechna $k \ge n-1$.
+
+      **Krok 3:** platí $\mathbf{D}^{(k+1)} = \mathbf{D}^{(k)} \odot \mathbf{C}$. Je-li $\mathbf{D}^{(r)} = \mathbf{D}^{(r+1)}$, pak
+      indukcí $\mathbf{D}^{(r+s+1)} = \mathbf{D}^{(r+s)} \odot \mathbf{C} = \mathbf{D}^{(r)} \odot \mathbf{C} = \mathbf{D}^{(r)}$ pro
+      všechna $s \ge 0$. Speciálně $\mathbf{D}^{(r)} = \mathbf{D}^{(\max(r, n-1))} = \mathbf{D}^w$. $\square$
+    proof_steps:
+      - Indukcí ukážeme, že d_ij^(k) je nejmenší w-délka sledu z i do j s nejvýše k hranami (nula na diagonále C dovoluje sled neprodlužovat).
+      - Kladnost vah umožní ze sledu vynechat uzavřené úseky, takže jde zároveň o nejmenší w-délku cesty s nejvýše k hranami.
+      - Cesta má nejvýše n − 1 hran, proto D^(k) = D^w pro všechna k ≥ n − 1.
+      - Protože D^(k+1) = D^(k) ⊙ C, jakmile se dvě po sobě jdoucí mocniny rovnají, zůstávají všechny další mocniny stejné.
+      - Proto se D^(r) rovná D^(n−1) = D^w.
+    related: [def-w-distancni-matice, alg-floyd, thm-floyd, rem-floyd-odkaz]
+    source: "přednáška 3, folie 3"
+    supplemented: false
+
+  - id: rem-floyd-odkaz
+    kind: remark
+    label: Algoritmus 3.1 (odkaz)
+    section: "1.6"
+    title: Floydův algoritmus (stručně)
+    terms: [Floydův algoritmus, Floyd-Warshall, všechny dvojice, w-distanční matice]
+    statement: |
+      Floydův algoritmus vychází z $\mathbf{D}_0 = \mathbf{C}(\vec{G})$ a pro $k = 1, \dots, n$ počítá
+      $d^k_{ij} = \min\{d^{k-1}_{ij},\ d^{k-1}_{ik} + d^{k-1}_{kj}\}$; přitom $d^k_{ij}$ je minimální $w$-délka cesty z $i$ do $j$,
+      jejíž vnitřní uzly leží v $\{1, \dots, k\}$. Platí $\mathbf{D}_n = \mathbf{D}^w(\vec{G})$ a algoritmus pracuje v čase $O(n^3)$.
+
+      Podrobně viz [Floydův algoritmus](#alg-floyd) a [větu 3.1](#thm-floyd) v kapitole Grafy a matice.
+    intuition: |
+      Floyd řeší úlohu **všech dvojic** najednou. Pro jediný výchozí uzel je výhodnější Dijkstra ($O(n^2)$);
+      opakováním Dijkstry z každého uzlu dostaneme také $O(n^3)$.
+    visualization: floyd
+    related: [alg-floyd, thm-floyd, def-w-distancni-matice, alg-dijkstra, thm-minplus-mocniny-cenove-matice]
+    source: "přednáška 3, folie 4"
+    supplemented: false
+
+  - id: alg-dijkstra
+    kind: algorithm
+    label: Dijkstrův algoritmus
+    section: "1.6"
+    title: Dijkstrův algoritmus (minimální cesta z u do v)
+    terms: [Dijkstrův algoritmus, Dijkstra, minimální cesta, nejkratší cesta v ohodnoceném grafu, trvalá hodnota, dočasná hodnota]
+    statement: |
+      Vstup: ohodnocený (orientovaný) graf $\vec{G}$ s kladným ohodnocením $w$ a uzly $u, v$.
+      Výstup: $w$-délka minimální cesty z $u$ do $v$ (a tato cesta).
+      Uzlům se přiřazují dočasné hodnoty $\mathrm{dh}$ (horní odhady vzdálenosti) a trvalé hodnoty $\mathrm{th}$ (už jisté vzdálenosti).
+    pseudocode: |
+      1. Uzlu $u$ přiřaď trvalou hodnotu $\mathrm{th}(u) = 0$, ostatním uzlům dočasnou hodnotu $\mathrm{dh} = \infty$.
+      2. Je-li $x$ poslední uzel, jemuž byla přiřazena trvalá hodnota $\mathrm{th}(x)$, pak všem uzlům $y$, pro něž
+         $(x,y) \in H(\vec{G})$ a které ještě nemají trvalou hodnotu, přiřaď novou dočasnou hodnotu
+         $\mathrm{dh}(y) := \min\{\mathrm{dh}(y),\ \mathrm{th}(x) + w(x,y)\}$.
+      3. Pro uzel $z$ s nejmenší dočasnou hodnotou polož $\mathrm{th}(z) := \mathrm{dh}(z)$.
+      4. Má uzel $v$ trvalou hodnotu?
+         - **Ne:** vrať se na 2.
+         - **Ano:** $\mathrm{th}(v)$ je $w$-délka minimální cesty z $u$ do $v$.
+
+      *Poznámka:* hrany $(x,y)$, na nichž $w(x,y) = \mathrm{th}(y) - \mathrm{th}(x)$, určují minimální cestu z $u$ do $v$
+      (stačí jít od $v$ zpět po takových hranách).
+    complexity: "$O(n^2)$ (s haldou $O((n+m)\\log n)$)"
+    intuition: |
+      Dijkstra „rozlévá vodu" z uzlu $u$: uzly dostávají trvalou hodnotu v pořadí podle vzdálenosti od $u$. Klíčový
+      argument: uzel $z$ s nejmenší dočasnou hodnotou už nelze dosáhnout levněji, protože jakákoli jiná cesta do $z$
+      musí opustit množinu trvalých uzlů přes uzel s dočasnou hodnotou $\ge \mathrm{dh}(z)$ a další hrany už jen přidávají
+      (váhy jsou **kladné**).
+
+      **Složitost:** nejvýše $n$ iterací; v každé se hledá minimum z $\le n$ dočasných hodnot ($O(n)$) a aktualizují se
+      následníci posledního uzlu (celkem přes všechny iterace $O(m)$). Celkem $O(n^2 + m) = O(n^2)$. S binární haldou
+      $O((n + m)\log n)$, což je lepší pro řídké grafy. Pokud algoritmus necháme doběhnout pro všechny uzly, dostaneme
+      jeden řádek matice $\mathbf{D}^w$; $n$ běhů dá celou matici v $O(n^3)$.
+
+      **Typické chyby:** použití se zápornými vahami (algoritmus pak může dát špatný výsledek – trvalá hodnota by se
+      dodatečně měla zlepšit); záměna s Jarníkovým algoritmem (ten minimalizuje váhu jedné hrany ke stromu, ne délku cesty od $u$).
+      Funguje stejně i pro neorientované grafy (každou hranu chápeme jako dvě protisměrné).
+    proof: |
+      *Důkaz správnosti není ve foliích, doplněno.* Označme $T$ množinu uzlů s trvalou hodnotou.
+
+      **Invariant:** (a) pro každé $z \in T$ je $\mathrm{th}(z) = d^w(u,z)$; (b) pro každé $y \notin T$ je $\mathrm{dh}(y)$
+      nejmenší $w$-délka orientované cesty z $u$ do $y$, jejíž všechny uzly kromě $y$ leží v $T$ (nebo $\infty$, žádná-li
+      není); (c) trvalé hodnoty jsou přidělovány v neklesajícím pořadí.
+
+      Na začátku $T = \{u\}$, $\mathrm{th}(u) = 0 = d^w(u,u)$, a po prvním kroku 2 jsou dočasné hodnoty přesně váhy hran z $u$.
+
+      **Krok 3 zachovává (a):** nechť $z$ má nejmenší dočasnou hodnotu a $P$ je libovolná orientovaná cesta z $u$ do $z$.
+      Nechť $y$ je první uzel cesty $P$ mimo $T$ (existuje, neboť $z \notin T$). Úsek $P$ od $u$ do $y$ má všechny uzly
+      kromě $y$ v $T$, takže podle (b) $w(P) \ge w(\text{úsek}) \ge \mathrm{dh}(y) \ge \mathrm{dh}(z)$ (zbytek cesty má
+      nezápornou váhu). Hodnota $\mathrm{dh}(z)$ je přitom $w$-délkou skutečné cesty, proto $\mathrm{th}(z) = \mathrm{dh}(z) = d^w(u,z)$.
+      Zároveň $\mathrm{dh}(z) \ge$ všechny dříve přidělené trvalé hodnoty, což dává (c).
+
+      **Krok 2 zachovává (b):** po přidání $z$ do $T$ přibudou cesty, jejichž všechny uzly kromě posledního $y$ jsou v $T$
+      a které procházejí $z$. Je-li $z$ předposlední, je jejich nejlepší délka $\mathrm{th}(z) + w(z,y)$, což krok 2 započítá.
+      Prochází-li $z$ dříve a předposlední je $x \in T$ přidaný před $z$, je úsek do $x$ dlouhý alespoň $\mathrm{th}(z) \ge \mathrm{th}(x)$,
+      takže taková cesta není kratší než $\mathrm{th}(x) + w(x,y)$, které už v $\mathrm{dh}(y)$ započteno je.
+
+      **Závěr:** algoritmus skončí nejpozději po $n$ iteracích a podle (a) je $\mathrm{th}(v) = d^w(u,v)$. Je-li $v$ z $u$
+      nedosažitelný, dostane trvalou hodnotu $\infty$. $\square$
+    proof_steps:
+      - Invariant – trvalé hodnoty jsou skutečné w-vzdálenosti od u a dočasná hodnota uzlu y je délka nejlepší cesty do y vedoucí jen přes trvalé uzly.
+      - Uvažujme uzel z s nejmenší dočasnou hodnotou a libovolnou cestu z u do z.
+      - Tato cesta opouští množinu trvalých uzlů v nějakém uzlu y s dh(y) ≥ dh(z) a zbytek cesty má díky kladným vahám nezápornou délku.
+      - Žádná cesta do z tedy není kratší než dh(z), takže přiřazení th(z) := dh(z) je správné.
+      - Aktualizace dočasných hodnot přes nový trvalý uzel z udržuje invariant, protože trvalé hodnoty přibývají v neklesajícím pořadí.
+      - Po přiřazení trvalé hodnoty uzlu v je th(v) = d^w(u, v).
+    examples:
+      - title: Dijkstrův algoritmus krok za krokem
+        body: |
+          Hledáme minimální cestu z $u$ do $v$ v grafu na obrázku (dočasné hodnoty, tučně trvalé):
+
+          | krok | trvalý uzel | $a$ | $b$ | $c$ | $d$ | $v$ |
+          |---|---|---|---|---|---|---|
+          | 1 | $u$ (0) | 4 | 2 | ∞ | ∞ | ∞ |
+          | 2 | $b$ (**2**) | 3 | – | 10 | 12 | ∞ |
+          | 3 | $a$ (**3**) | – | – | 8 | 12 | ∞ |
+          | 4 | $c$ (**8**) | – | – | – | 10 | 14 |
+          | 5 | $d$ (**10**) | – | – | – | – | 13 |
+          | 6 | $v$ (**13**) | | | | | |
+
+          $d^w(u,v) = 13$. Zpětně po hranách s $w(x,y) = \mathrm{th}(y) - \mathrm{th}(x)$: $v \leftarrow d \leftarrow c \leftarrow a \leftarrow b \leftarrow u$,
+          tj. minimální cesta $u, b, a, c, d, v$ ($2 + 1 + 5 + 2 + 3 = 13$). Všimněte si, že přímá hrana $u \to a$ (4) se nevyplatila.
+        graph:
+          directed: true
+          nodes:
+            - { id: u, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 8 }
+            - { id: c, x: 6, y: 2 }
+            - { id: d, x: 6, y: 8 }
+            - { id: v, x: 9, y: 5 }
+          edges:
+            - { from: u, to: a, w: 4 }
+            - { from: u, to: b, w: 2 }
+            - { from: b, to: a, w: 1 }
+            - { from: a, to: c, w: 5 }
+            - { from: b, to: c, w: 8 }
+            - { from: b, to: d, w: 10 }
+            - { from: c, to: d, w: 2 }
+            - { from: c, to: v, w: 6 }
+            - { from: d, to: v, w: 3 }
+    visualization: dijkstra
+    related: [def-w-vzdalenost-orientovana, def-w-delka-vzdalenost, alg-jarnik-prim, rem-floyd-odkaz, rem-distancni-matice]
+    source: "přednáška 3, folie 5"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 1.7
+  - id: def-kriticka-cesta
+    kind: definition
+    label: Definice
+    section: "1.7"
+    title: Kritická cesta
+    terms: [kritická cesta, CPM, metoda kritické cesty, nejdelší cesta, kritické činnosti, síťový graf projektu]
+    statement: |
+      Buď $\vec{G}$ acyklický ohodnocený orientovaný graf a $u, v \in U(\vec{G})$. Orientovaná cesta z $u$ do $v$
+      **maximální** $w$-délky se nazývá **kritická cesta** (z $u$ do $v$ v $\vec{G}$).
+    intuition: |
+      Model projektu: **uzly = stavy** (události, milníky), **hrany = činnosti** s dobou trvání jako vahou. Činnost může
+      začít, až když skončily všechny činnosti, které ji podmiňují. Nejkratší možná doba projektu je délka **nejdelší**
+      cesty ze startu do cíle – to je kritická cesta. Činnosti na ní jsou kritické: jejich zpoždění zpozdí celý projekt.
+
+      Proč acyklický graf: v grafu s cyklem by závislosti byly nesplnitelné (a „nejdelší cesta" je v obecných grafech
+      NP-těžká úloha, kdežto v acyklických grafech je lineární). Fiktivní činnosti s dobou 0 se přidávají, aby šly
+      vyjádřit závislosti (ve foliích jsou tři; formálně tak připouštíme i nulové váhy).
+    examples:
+      - title: Projekt s deseti činnostmi
+        body: |
+          | činnost | A | B | C | D | E | F | G | H | I | J |
+          |---|---|---|---|---|---|---|---|---|---|---|
+          | doba | 4 | 2 | 1 | 7 | 6 | 1 | 2 | 4 | 2 | 8 |
+          | podmiňující | – | – | – | A | A | A,B,C | A,B,C | C | E,F,G,H | G,H |
+
+          Sestrojíme graf, jehož uzly jsou stavy a hrany činnosti; aby šlo vyjádřit, že F a G čekají na A, B i C, ale
+          H jen na C, přidáme fiktivní činnosti s nulovou dobou ($2 \to 4$, $3 \to 4$, $5 \to 6$). Výpočet viz
+          [algoritmus kritické cesty](#alg-kriticka-cesta).
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 0, y: 5 }
+            - { id: "2", x: 3, y: 1 }
+            - { id: "3", x: 3, y: 9 }
+            - { id: "4", x: 3, y: 5 }
+            - { id: "5", x: 6.5, y: 9 }
+            - { id: "6", x: 6.5, y: 5 }
+            - { id: "7", x: 10, y: 5 }
+          edges:
+            - { from: "1", to: "2", w: 4, name: A }
+            - { from: "1", to: "4", w: 2, name: B }
+            - { from: "1", to: "3", w: 1, name: C }
+            - { from: "2", to: "7", w: 7, name: D }
+            - { from: "2", to: "6", w: 6, name: E }
+            - { from: "4", to: "6", w: 1, name: F }
+            - { from: "4", to: "5", w: 2, name: G }
+            - { from: "3", to: "5", w: 4, name: H }
+            - { from: "6", to: "7", w: 2, name: I }
+            - { from: "5", to: "7", w: 8, name: J }
+            - { from: "2", to: "4", w: 0 }
+            - { from: "3", to: "4", w: 0 }
+            - { from: "5", to: "6", w: 0 }
+    illustrations:
+      - title: Nejdelší cesta určuje dobu projektu
+        property: acyclic
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 0, y: 5 }
+            - { id: "2", x: 3, y: 1 }
+            - { id: "3", x: 3, y: 9 }
+            - { id: "4", x: 3, y: 5 }
+            - { id: "5", x: 6.5, y: 9 }
+            - { id: "6", x: 6.5, y: 5 }
+            - { id: "7", x: 10, y: 5 }
+          edges:
+            - { from: "1", to: "2", w: 4, name: A }
+            - { from: "1", to: "4", w: 2, name: B }
+            - { from: "1", to: "3", w: 1, name: C }
+            - { from: "2", to: "7", w: 7, name: D }
+            - { from: "2", to: "6", w: 6, name: E }
+            - { from: "4", to: "6", w: 1, name: F }
+            - { from: "4", to: "5", w: 2, name: G }
+            - { from: "3", to: "5", w: 4, name: H }
+            - { from: "6", to: "7", w: 2, name: I }
+            - { from: "5", to: "7", w: 8, name: J }
+            - { from: "2", to: "4", w: 0 }
+            - { from: "3", to: "4", w: 0 }
+            - { from: "5", to: "6", w: 0 }
+        steps:
+          - caption: |
+              Uzly jsou stavy, hrany činnosti s dobou trvání (graf je acyklický). Popisek $t(i)$ je nejdřívější čas stavu $i$ – **maximum** přes činnosti, které do něj vedou, protože stav nastane, až skončí všechny. Projekt trvá nejméně $t(7) = 14$.
+            labels: { "1": "t=0", "2": "t=4", "3": "t=1", "4": "t=4", "5": "t=6", "6": "t=10", "7": "t=14" }
+          - caption: |
+              Zpětně počítáme $T(i)$, nejpozdější přípustný čas (minimum přes navazující činnosti); popisky jsou $t/T$. Rozdíl $T(i) - t(i)$ je rezerva: stav 3 má rezervu 1, stav 6 rezervu 2.
+            labels: { "1": "0/0", "2": "4/4", "3": "1/2", "4": "4/4", "5": "6/6", "6": "10/12", "7": "14/14" }
+          - caption: |
+              Kritická cesta $1, 2, 4, 5, 7$ vede přes uzly s nulovou rezervou a má délku $4 + 0 + 2 + 8 = 14$ – je to **nejdelší** cesta ze startu do cíle. Zpoždění činností A, G, J zpozdí celý projekt.
+            labels: { "1": "0/0", "2": "4/4", "3": "1/2", "4": "4/4", "5": "6/6", "6": "10/12", "7": "14/14" }
+            nodes: { "1": path, "2": path, "4": path, "5": path, "7": path }
+            edges: { "1-2": path, "2-4": path, "4-5": path, "5-7": path }
+          - caption: |
+              Prodloužíme činnost H ze 4 na 6. Její rezerva byla jen 1, takže projekt se zpozdí na 15 a kritickou se stane cesta $1, 3, 5, 7$ (činnosti C, H, J).
+            remove: [["3", "5"]]
+            add: [["3", "5", 6]]
+            labels: { "1": "0/0", "2": "4/5", "3": "1/1", "4": "4/5", "5": "7/7", "6": "10/13", "7": "15/15" }
+            nodes: { "1": path, "3": path, "5": path, "7": path }
+            edges: { "1-3": path, "3-5": path, "5-7": path }
+    related: [alg-kriticka-cesta, def-acyklicky-graf, thm-acyklicke-grafy]
+    source: "přednáška 3, folie 6"
+    supplemented: false
+
+  - id: alg-kriticka-cesta
+    kind: algorithm
+    label: Algoritmus
+    section: "1.7"
+    title: Algoritmus kritické cesty
+    terms: [algoritmus kritické cesty, CPM, minimální časové ohodnocení, maximální časové ohodnocení, nejdříve možný začátek, nejpozději přípustný konec, časová rezerva]
+    statement: |
+      Vstup: acyklický ohodnocený orientovaný graf $\vec{G}$, v němž je $u$ jediný vstupní a $v$ jediný výstupní uzel.
+      Výstup: $w$-délka kritické cesty z $u$ do $v$ a všechny uzly a hrany ležící na kritických cestách.
+
+      - $t(i)$ – **minimální časové ohodnocení**: nejmenší doba, za kterou lze dosáhnout stavu $i$,
+      - $T(i)$ – **maximální časové ohodnocení**: čas, kdy je nutno stav $i$ opustit, aby nedošlo ke zpoždění projektu.
+    pseudocode: |
+      1. Očísluj uzly grafu $\vec{G}$ podle věty o acyklických grafech (tím se zároveň ověří acykličnost); $u$ dostane 1, $v$ číslo $n$.
+      2. Konstrukce minimálního časového ohodnocení $t(i)$:
+         1. uzlu 1 (tj. $u$) přiřaď $t(1) = 0$,
+         2. pro $i = 2, \dots, n$ uzlu $i$ přiřaď $t(i) = \max\{t(j) + w((j,i)) \mid (j,i) \in H(\vec{G})\}$,
+         3. $t(n)$ je $w$-délka kritické cesty.
+      3. Konstrukce maximálního časového ohodnocení $T(i)$:
+         1. uzlu $n$ (tj. $v$) přiřaď $T(n) = t(n)$,
+         2. pro $i = n-1, \dots, 1$ uzlu $i$ přiřaď $T(i) = \min\{T(j) - w((i,j)) \mid (i,j) \in H(\vec{G})\}$.
+      4. Kritická cesta prochází těmi uzly $i$, pro něž $T(i) = t(i)$, a hranami $(i,j)$, pro něž $w((i,j)) = t(j) - t(i)$.
+    complexity: "$O(n + m)$"
+    intuition: |
+      Dopředný průchod (krok 2) počítá „nejdříve možné" časy: stav $i$ nastane, až skončí **všechny** činnosti do něj
+      vedoucí, proto maximum. Zpětný průchod (krok 3) počítá „nejpozději přípustné" časy: stav $i$ musí nastat tak, aby
+      **každá** navazující činnost stihla svůj termín, proto minimum. Rozdíl $T(i) - t(i)$ je **časová rezerva** stavu;
+      kritické uzly mají rezervu 0.
+
+      Topologické očíslování zaručuje, že při výpočtu $t(i)$ jsou hodnoty všech předchůdců už známé (předchůdci mají menší
+      čísla), a při výpočtu $T(i)$ hodnoty všech následníků.
+
+      **Složitost:** očíslování $O(n + m)$, každý z průchodů projde každou hranu jednou – celkem $O(n + m)$
+      (při zadání maticí $O(n^2)$). Je to vlastně „Dijkstra s maximem" – v acyklickém grafu funguje díky
+      topologickému pořadí a nevadí mu ani nulové váhy.
+    proof: |
+      *Důkaz správnosti není ve foliích, doplněno.* Označme $L(i,j)$ maximální $w$-délku orientované cesty z $i$ do $j$.
+      Protože $u = 1$ je jediný vstupní uzel, je každý uzel z $u$ dosažitelný (půjdeme-li z uzlu proti šipkám, v acyklickém
+      grafu musíme skončit ve vstupním uzlu, tj. v $u$); symetricky z každého uzlu je dosažitelný $v = n$.
+
+      **$t(i) = L(1,i)$:** indukcí podle $i$. $t(1) = 0 = L(1,1)$. Pro $i \ge 2$ končí každá cesta z 1 do $i$ hranou $(j,i)$,
+      kde $j < i$ (topologické očíslování), a její $w$-délka je nejvýše $L(1,j) + w((j,i)) = t(j) + w((j,i))$; naopak
+      prodloužením nejdelší cesty do $j$ o hranu $(j,i)$ dostaneme cestu (acykličnost vylučuje opakování uzlu) délky
+      $t(j) + w((j,i))$. Tedy $t(i) = L(1,i)$; speciálně $t(n)$ je délka kritické cesty.
+
+      **$T(i) = t(n) - L(i,n)$:** symetricky indukcí od $i = n$ dolů.
+
+      **Kritické uzly a hrany:** uzel $i$ leží na nějaké kritické cestě, právě když $L(1,i) + L(i,n) = t(n)$, tj.
+      $t(i) = T(i)$. Hrana $(i,j)$ mezi kritickými uzly leží na kritické cestě, právě když
+      $L(1,i) + w((i,j)) + L(j,n) = t(n)$, tj. $w((i,j)) = t(j) - t(i)$. Cesta z 1 do $n$ složená z takových hran má
+      délku $\sum (t(j) - t(i)) = t(n) - t(1) = t(n)$ (teleskopický součet), je tedy kritická. $\square$
+    proof_steps:
+      - Díky jedinému vstupnímu a výstupnímu uzlu je každý uzel dosažitelný z u a z každého uzlu je dosažitelný v.
+      - Indukcí podle topologického očíslování dokážeme, že t(i) je maximální w-délka cesty z u do i, protože všichni předchůdci uzlu i mají menší čísla.
+      - Symetricky zpětnou indukcí dokážeme, že T(i) = t(n) − (maximální w-délka cesty z i do v).
+      - Uzel i leží na kritické cestě, právě když součet nejdelších cest u→i a i→v je t(n), tj. T(i) = t(i).
+      - Hrana (i,j) mezi kritickými uzly je kritická, právě když w(i,j) = t(j) − t(i); cesta z takových hran má teleskopicky délku t(n).
+    examples:
+      - title: Výpočet kritické cesty pro projekt s deseti činnostmi
+        body: |
+          Uzly grafu z [příkladu](#def-kriticka-cesta) jsou už očíslovány topologicky.
+
+          **Dopředný průchod:** $t(1) = 0$, $t(2) = 4$, $t(3) = 1$,
+          $t(4) = \max\{0+2,\ 4+0,\ 1+0\} = 4$, $t(5) = \max\{4+2,\ 1+4\} = 6$,
+          $t(6) = \max\{4+6,\ 4+1,\ 6+0\} = 10$, $t(7) = \max\{4+7,\ 10+2,\ 6+8\} = 14$.
+
+          **Zpětný průchod:** $T(7) = 14$, $T(6) = 14 - 2 = 12$, $T(5) = \min\{14-8,\ 12-0\} = 6$,
+          $T(4) = \min\{12-1,\ 6-2\} = 4$, $T(3) = \min\{4-0,\ 6-4\} = 2$,
+          $T(2) = \min\{4-0,\ 12-6,\ 14-7\} = 4$, $T(1) = \min\{4-4,\ 4-2,\ 2-1\} = 0$.
+
+          | uzel | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+          |---|---|---|---|---|---|---|---|
+          | $t(i)$ | 0 | 4 | 1 | 4 | 6 | 10 | 14 |
+          | $T(i)$ | 0 | 4 | 2 | 4 | 6 | 12 | 14 |
+
+          Projekt trvá nejméně **14** jednotek. Kritická cesta: $1, 2, 4, 5, 7$; kritické činnosti **A, G, J**
+          (hrana $2 \to 4$ je fiktivní). Stav 3 má rezervu 1 a stav 6 rezervu 2 – činnosti C, H, resp. I lze trochu
+          posunout bez ohrožení termínu.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 0, y: 5, t: 0, T: 0 }
+            - { id: "2", x: 3, y: 1, t: 4, T: 4 }
+            - { id: "3", x: 3, y: 9, t: 1, T: 2 }
+            - { id: "4", x: 3, y: 5, t: 4, T: 4 }
+            - { id: "5", x: 6.5, y: 9, t: 6, T: 6 }
+            - { id: "6", x: 6.5, y: 5, t: 10, T: 12 }
+            - { id: "7", x: 10, y: 5, t: 14, T: 14 }
+          edges:
+            - { from: "1", to: "2", w: 4, name: A }
+            - { from: "1", to: "4", w: 2, name: B }
+            - { from: "1", to: "3", w: 1, name: C }
+            - { from: "2", to: "7", w: 7, name: D }
+            - { from: "2", to: "6", w: 6, name: E }
+            - { from: "4", to: "6", w: 1, name: F }
+            - { from: "4", to: "5", w: 2, name: G }
+            - { from: "3", to: "5", w: 4, name: H }
+            - { from: "6", to: "7", w: 2, name: I }
+            - { from: "5", to: "7", w: 8, name: J }
+            - { from: "2", to: "4", w: 0 }
+            - { from: "3", to: "4", w: 0 }
+            - { from: "5", to: "6", w: 0 }
+    visualization: critical-path
+    related: [def-kriticka-cesta, thm-acyklicke-grafy, alg-topologicke-cislovani, alg-dijkstra]
+    source: "přednáška 3, folie 6–8"
+    supplemented: false
+
+quiz:
+  - id: q-metrika-01
+    question: |
+      Jaká je časová složitost Dijkstrova algoritmu v základní implementaci (pole dočasných hodnot, bez haldy)?
+    options:
+      - "$O(n + m)$"
+      - "$O(n^2)$"
+      - "$O(n^3)$"
+      - "$O(2^n)$"
+    correct: 1
+    explanation: |
+      Nejvýše $n$ iterací, v každé výběr minima z dočasných hodnot v čase $O(n)$; aktualizace přes všechny iterace
+      stojí $O(m) \subset O(n^2)$. Celkem $O(n^2)$. S haldou $O((n+m)\log n)$.
+    related: [alg-dijkstra]
+
+  - id: q-metrika-02
+    question: |
+      Proč Dijkstrův algoritmus vyžaduje **nezáporné** (v TGD1 kladné) váhy hran?
+    options:
+      - Jinak by nešlo uzly očíslovat topologicky.
+      - Protože jinak by w-vzdálenost nebyla symetrická.
+      - Argument, že uzel s nejmenší dočasnou hodnotou už nelze dosáhnout levněji, předpokládá, že prodloužení cesty její délku nesníží.
+      - Se zápornými vahami by algoritmus nikdy neskončil.
+    correct: 2
+    explanation: |
+      Uzel $z$ dostane trvalou hodnotu, protože každá jiná cesta do $z$ opouští trvalou množinu přes uzel s
+      $\mathrm{dh} \ge \mathrm{dh}(z)$ a zbytek cesty délku už jen zvětšuje. Se zápornou hranou by se trvalá hodnota
+      mohla dodatečně zlepšit, takže výsledek může být chybný (algoritmus ale skončí).
+    related: [alg-dijkstra]
+
+  - id: q-metrika-03
+    question: |
+      Souvislý graf má stupně $4, 4, 3, 3, 2, 2$. Co platí?
+    options:
+      - Je eulerovský.
+      - Není eulerovský, ale lze jej nakreslit jedním otevřeným tahem začínajícím v jednom uzlu stupně 3 a končícím ve druhém.
+      - Není eulerovský a nelze jej nakreslit jedním tahem.
+      - Je hamiltonovský.
+    correct: 1
+    explanation: |
+      Eulerovský graf musí mít všechny stupně sudé. Mají-li lichý stupeň přesně dva uzly, přidáním pomocné hrany mezi
+      nimi vznikne eulerovský graf, a jejím odebráním z uzavřeného tahu dostaneme otevřený tah přes všechny hrany.
+      O hamiltonovskosti stupně nic nezaručují.
+    related: [thm-euler, def-eulerovsky-graf]
+
+  - id: q-metrika-04
+    question: |
+      Graf $K_{3,4}$ má $n = 7$ a $\delta = 3$. Co z toho plyne pro Diracovu větu?
+    options:
+      - "$K_{3,4}$ je hamiltonovský podle Diracovy věty."
+      - "Předpoklad $\\delta \\ge n/2$ není splněn a $K_{3,4}$ opravdu hamiltonovský není – mez v Diracově větě nelze snížit."
+      - Diracova věta je pro $K_{3,4}$ ve sporu.
+      - "$K_{3,4}$ není hamiltonovský, protože není souvislý."
+    correct: 1
+    explanation: |
+      $\delta = 3 < 3{,}5 = n/2$, takže věta nic neříká. Kružnice v bipartitním grafu střídá partity, takže hamiltonovská
+      kružnice by vyžadovala stejně velké partity – $K_{3,4}$ hamiltonovský není. Ukazuje to, že podmínku $n/2$ nelze zeslabit.
+    related: [thm-dirac]
+
+  - id: q-metrika-05
+    question: |
+      Ceník jízdného dává Plzeň–Nezvěstice (16 km) 28 Kč, Plzeň–Starý Plzenec (10 km) 16 Kč a Starý Plzenec–Nezvěstice (6 km) 10 Kč. Která vlastnost metriky je porušena?
+    options:
+      - Nezápornost
+      - Symetrie
+      - Trojúhelníková nerovnost
+      - Nulovost pouze pro stejné body
+    correct: 2
+    explanation: |
+      $28 > 16 + 10$, tedy $\rho(x,z) > \rho(x,y) + \rho(y,z)$. W-vzdálenost v grafu tímto problémem netrpí – spojením
+      dvou cest vznikne sled, který obsahuje cestu nejvýše stejné délky.
+    related: [thm-w-metrika]
+
+  - id: q-metrika-06
+    question: |
+      Které tvrzení o kondenzaci $\vec{G}_C$ orientovaného grafu $\vec{G}$ platí vždy?
+    options:
+      - "$\\vec{G}_C$ je silně souvislý."
+      - "$\\vec{G}_C$ je acyklický."
+      - "$\\vec{G}_C$ má stejný počet hran jako $\\vec{G}$."
+      - "$\\vec{G}_C$ je isomorfní s $\\vec{G}$."
+    correct: 1
+    explanation: |
+      Cyklus v kondenzaci by znamenal, že uzly několika různých kvazikomponent jsou navzájem dosažitelné, takže by
+      tvořily jedinou kvazikomponentu – spor. Isomorfní s $\vec{G}$ je kondenzace jen pro acyklické $\vec{G}$.
+    related: [thm-kondenzace]
+
+  - id: q-metrika-07
+    question: |
+      V orientovaném grafu leží hrana $(x,y)$ mezi dvěma různými kvazikomponentami. Co z toho plyne?
+    options:
+      - V grafu existuje orientovaný sled z $y$ do $x$.
+      - Neexistuje orientovaný sled z $y$ do $x$; hrana nepatří žádné kvazikomponentě a neleží na žádném cyklu.
+      - Graf je silně souvislý.
+      - Hrana je smyčka.
+    correct: 1
+    explanation: |
+      Kdyby šlo dojít z $y$ do $x$, byly by $x$ a $y$ vzájemně dosažitelné a ležely by v téže kvazikomponentě. Proto
+      taková hrana neleží na cyklu (jinak by ze silně souvislého grafu s cyklem plynula vzájemná dosažitelnost).
+    related: [def-kvazikomponenta, prop-kvazikomponenty-rozklad, thm-silna-souvislost-cykly]
+
+  - id: q-metrika-08
+    question: |
+      Co je prvek $(i,j)$ matice $(\mathbf{A}(\vec{G}))^3$?
+    options:
+      - Počet cest délky 3 z $i$ do $j$
+      - Počet sledů délky přesně 3 z $i$ do $j$
+      - Vzdálenost uzlů $i$ a $j$
+      - 1, právě když $d_{\vec{G}}(i,j) \le 3$
+    correct: 1
+    explanation: |
+      Mocniny matice sousednosti počítají **sledy** (uzly i hrany se mohou opakovat) délky přesně $k$. Vzdálenost je
+      nejmenší $k$, pro které je $a^{(k)}_{ij} \ne 0$.
+    related: [thm-mocniny-matice-sousednosti, cor-distancni-matice-mocniny]
+
+  - id: q-metrika-09
+    question: |
+      Algoritmus číslování uzlů (opakované odebírání vstupního uzlu) se zastaví dříve, než očísluje všechny uzly. Co to znamená?
+    options:
+      - Graf je nesouvislý.
+      - Graf obsahuje cyklus.
+      - Graf má více vstupních uzlů.
+      - Graf je strom.
+    correct: 1
+    explanation: |
+      Zbylý neprázdný podgraf nemá vstupní uzel, což podle charakterizace acyklických grafů (bod iii) znamená, že graf
+      acyklický není. Více vstupních uzlů ani nesouvislost algoritmu nevadí.
+    related: [thm-acyklicke-grafy, alg-topologicke-cislovani, cor-acyc-polynomialni]
+
+  - id: q-metrika-10
+    question: |
+      V algoritmu kritické cesty má uzel $t(i) = 10$ a $T(i) = 12$. Jak to interpretovat?
+    options:
+      - Uzel leží na kritické cestě.
+      - Stav $i$ lze dosáhnout nejdříve v čase 10 a opustit nejpozději v čase 12 – má rezervu 2 a na kritické cestě neleží.
+      - Projekt trvá 22 jednotek.
+      - Ve výpočtu je chyba, musí platit $t(i) \ge T(i)$.
+    correct: 1
+    explanation: |
+      $t(i)$ je nejdříve možný čas dosažení stavu, $T(i)$ nejpozději přípustný čas jeho opuštění. Vždy $t(i) \le T(i)$;
+      rovnost platí právě pro uzly kritické cesty. Rozdíl je časová rezerva.
+    related: [alg-kriticka-cesta]
+
+  - id: q-metrika-11
+    question: |
+      Proč se při výpočtu $t(i)$ v algoritmu kritické cesty bere **maximum** přes předchůdce?
+    options:
+      - Protože hledáme minimální cestu.
+      - Stav $i$ nastane, až skončí všechny činnosti, které do něj vedou – rozhoduje ta, která skončí nejpozději.
+      - Protože váhy mohou být záporné.
+      - Protože graf obsahuje cykly.
+    correct: 1
+    explanation: |
+      Kritická cesta je cesta **maximální** w-délky; $t(i)$ je délka nejdelší cesty ze startu do $i$. Díky topologickému
+      očíslování jsou hodnoty všech předchůdců v době výpočtu známé.
+    related: [alg-kriticka-cesta, def-kriticka-cesta]
+
+  - id: q-metrika-12
+    question: |
+      Jakou složitost má výpočet $w$-distanční matice opakovaným spuštěním Dijkstrova algoritmu ze všech uzlů (implementace $O(n^2)$)?
+    options:
+      - "$O(n^2)$"
+      - "$O(n^3)$, stejně jako Floydův algoritmus"
+      - "$O(n^4)$"
+      - "$O(n!)$"
+    correct: 1
+    explanation: |
+      Jeden běh dá jeden řádek matice v $O(n^2)$, $n$ běhů tedy $O(n^3)$ – stejně jako Floydův algoritmus.
+    related: [alg-dijkstra, rem-floyd-odkaz, rem-distancni-matice]
+
+  - id: q-metrika-13
+    question: |
+      V TGD1 značí $d^-_{\vec{G}}(u)$…
+    options:
+      - vstupní stupeň (počet hran vedoucích do $u$),
+      - výstupní stupeň (počet hran vycházejících z $u$),
+      - rozdíl vstupního a výstupního stupně,
+      - stupeň symetrizace.
+    correct: 1
+    explanation: |
+      Ve skriptech TGD1 je $d^-$ výstupní a $d^+$ vstupní polostupeň (jiná literatura používá opačnou konvenci).
+      Výstupní uzel je tedy uzel s $d^-(u) = 0$.
+    related: [def-polostupne, def-vstupni-vystupni-uzel]
+
+  - id: q-metrika-14
+    question: |
+      Proč je rozhodnutí úlohy EUL polynomiální, zatímco pro HAM polynomiální algoritmus znám není?
+    options:
+      - Protože eulerovských tahů je vždy málo.
+      - Eulerovskost má charakterizaci pomocí snadno ověřitelných vlastností (souvislost, sudé stupně); pro hamiltonovskost žádná taková charakterizace známa není.
+      - Protože hamiltonovské grafy jsou vždy nesouvislé.
+      - EUL se řeší rozhodovacím stromem, HAM ne.
+    correct: 1
+    explanation: |
+      Díky Eulerově větě stačí test v čase $O(n+m)$. Pro HAM máme jen postačující (Dirac) a nutné podmínky; problém je
+      NP-úplný a hrubá síla (rozhodovací strom) má až $(n-1)!$ větví.
+    related: [cor-eul-polynomialni, thm-dirac, def-tsp]
+
+  - id: q-metrika-15
+    question: |
+      Kolikrát se zvětší velikost úlohy řešitelné ve stejném čase, zrychlíme-li počítač $1000\times$, u algoritmu se složitostí $2^n$ (původně $n = 100$)?
+    options:
+      - Na $n \approx 100\,000$
+      - Na $n \approx 3162$
+      - Na $n \approx 1000$
+      - Jen na $n \approx 109$
+    correct: 3
+    explanation: |
+      $2^{n'} = 1000 \cdot 2^{100}$ dává $n' = 100 + \log_2 1000 \approx 109{,}97$, tedy 109. U exponenciálních algoritmů rychlejší hardware
+      téměř nepomáhá, u $n^2$ by to bylo $\approx 3162$, u $n^3$ přesně 1000.
+    related: [rem-polynomialni-vs-exponencialni]

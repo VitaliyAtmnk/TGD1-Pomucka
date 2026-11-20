@@ -1,0 +1,682 @@
+# Otázky k ústní zkoušce KMA/TGD1 (podle otazky.pdf, rok 2023).
+# Ústní část: 2 otázky – jedna z 1.–10. (group 1) a jedna z 11.–20. (group 2), náhodný výběr.
+# U všech otázek je hlavní důraz na algoritmické aspekty (algoritmy řešení a jejich složitost).
+questions:
+  - number: 1
+    title: Homomorfismus a isomorfismus grafů; souvislost, stromy, kostry, minimální kostra
+    group: 1
+    chapters: [zaklady]
+    items:
+      - def-graf
+      - def-homomorfismus
+      - def-indukovane-zobrazeni
+      - def-druhy-homomorfismu
+      - prop-isomorfismus-vlastnosti
+      - def-souvisly-graf
+      - def-komponenta
+      - def-strom
+      - thm-charakterizace-stromu
+      - def-kostra
+      - prop-existence-kostry
+      - def-minimalni-kostra
+      - thm-minimalni-souvisly-faktor
+      - lemma-mst-rez
+      - alg-mst-odstranovani-kruznic
+      - alg-jarnik-prim
+      - alg-kruskal
+    outline: |
+      1. **Graf**, homomorfismus $f: G \to G'$ (zachovává hrany), indukované zobrazení $f^*$ na hranách.
+      2. Druhy homomorfismů (uzlový/hranový mono- a epimorfismus), **isomorfismus** = $f$ i $f^*$ bijekce; $\simeq$ je ekvivalence.
+         Invarianty isomorfismu (počet uzlů a hran, skóre, počet komponent…), ale shodné invarianty isomorfismus nezaručují.
+      3. **Souvislost**, komponenty jako třídy ekvivalence „existuje cesta“.
+      4. **Strom** – charakterizace (souvislý bez kružnic ⇔ mezi každými dvěma uzly právě jedna cesta ⇔ souvislý s $n-1$ hranami ⇔ …).
+      5. **Kostra** – existuje právě v souvislém grafu; **minimální kostra** ohodnoceného grafu.
+      6. Algoritmy minimální kostry a proč fungují (řezová vlastnost: nejlehčí hrana řezu leží v nějaké minimální kostře).
+    algorithms: |
+      - **Kruskal** (hladový): setřídění hran $O(m \log m)$, test kružnice přes komponenty (union–find) – celkem $O(m \log m)$.
+      - **Jarník (Prim)**: roste jediný strom, $O(n^2)$ s polem, $O(m \log n)$ s haldou.
+      - **Algoritmus 1 z přednášky** – odstraňování nejtěžší hrany kružnice (opak Kruskala).
+      - Test souvislosti / nalezení kostry prohledáváním: $O(n+m)$.
+      - Isomorfismus: zkoušení všech bijekcí je $n!$ – polynomiální algoritmus obecně není znám.
+    example_tasks: |
+      - Rozhodněte, které z daných grafů jsou isomorfní (najděte invariant, který je rozliší, nebo bijekci).
+      - Najděte minimální kostru daného grafu Kruskalovým i Jarníkovým algoritmem. Je jednoznačná?
+      - Proč hladový postup u minimální kostry dává optimum (a kde by selhal – např. u TSP)?
+
+  - number: 2
+    title: Metrika grafu, minimální cesta, distanční matice grafu
+    group: 1
+    chapters: [metrika-orientovane, grafy-matice]
+    items:
+      - def-vzdalenost
+      - thm-metrika-grafu
+      - def-w-delka-vzdalenost
+      - thm-w-metrika
+      - def-w-vzdalenost-orientovana
+      - alg-dijkstra
+      - def-matice-sousednosti-orientovaneho
+      - thm-mocniny-matice-sousednosti
+      - cor-distancni-matice-mocniny
+      - thm-minplus-mocniny-cenove-matice
+      - def-w-distancni-matice
+      - alg-floyd
+      - thm-floyd
+      - rem-floyd-dijkstra
+      - rem-floyd-rekonstrukce-cest
+    outline: |
+      1. **Vzdálenost** $d_G(u,v)$ – délka nejkratší cesty; je to **metrika** (nezápornost, symetrie, trojúhelníková nerovnost) na souvislém grafu.
+      2. Ohodnocený graf, **w-délka** cesty a **w-vzdálenost**; v orientovaném grafu obecně není symetrická.
+      3. **Minimální cesta** z jednoho uzlu – Dijkstrův algoritmus (předpoklad nezáporných vah).
+      4. **Distanční matice** $\mathbf D^w(\vec G)$: výpočet mocninami matice sousednosti / (min,+) násobením, a Floydovým algoritmem.
+      5. Myšlenka důkazu Floyda: $d^k_{ij}$ = délka minimální cesty s vnitřními uzly z $\{1,\dots,k\}$ (indukce podle $k$).
+    algorithms: |
+      - **Dijkstra**: $O(n^2)$ (s haldou $O((n+m)\log n)$), jen nezáporné váhy.
+      - **Floyd**: $O(n^3)$, $n$ matic $\mathbf D_1,\dots,\mathbf D_n$, každý prvek v konstantním čase.
+      - (min,+) mocniny cenové matice: $O(n^4)$ (opakovaným umocňováním $O(n^3 \log n)$).
+      - Dijkstra spuštěný z každého uzlu: také $O(n^3)$.
+      - Neohodnocený graf: vzdálenosti z jednoho uzlu prohledáváním do šířky v $O(n+m)$.
+    example_tasks: |
+      - Spočtěte Floydovým algoritmem matice $\mathbf D_0, \dots, \mathbf D_n$ pro daný orientovaný graf.
+      - Proč Dijkstra selže při záporných vahách? Ukažte protipříklad.
+      - Jak z Floydova algoritmu zrekonstruovat samotné minimální cesty?
+
+  - number: 3
+    title: Silná souvislost, kvazikomponenty, kondenzace, acyklické grafy, kritická cesta
+    group: 1
+    chapters: [metrika-orientovane]
+    items:
+      - def-polostupne
+      - def-slaba-souvislost
+      - def-silna-souvislost
+      - prop-silna-souvislost-cesta
+      - thm-silna-souvislost-cykly
+      - def-kvazikomponenta
+      - prop-kvazikomponenty-rozklad
+      - alg-kvazikomponenty
+      - def-kondenzace
+      - thm-kondenzace
+      - def-acyklicky-graf
+      - def-vstupni-vystupni-uzel
+      - prop-acyklicky-vstupni-vystupni
+      - thm-acyklicke-grafy
+      - alg-topologicke-cislovani
+      - def-kriticka-cesta
+      - alg-kriticka-cesta
+    outline: |
+      1. Orientovaný graf, polostupně, **slabá** a **silná souvislost**; silná souvislost ⇔ každá hrana leží na cyklu (pro souvislý graf).
+      2. **Kvazikomponenty** = třídy ekvivalence „vzájemná dosažitelnost“, rozklad uzlů.
+      3. **Kondenzace** – graf kvazikomponent; je vždy **acyklický**.
+      4. **Acyklické grafy**: existuje vstupní i výstupní uzel; ekvivalentní charakterizace – lze očíslovat uzly tak, že hrany vedou od menších k větším (topologické uspořádání).
+      5. **Kritická cesta** v acyklickém ohodnoceném grafu (síťový graf projektu) – nejdelší cesta, výpočet po topologickém pořadí.
+    algorithms: |
+      - **Test acykličnosti / topologické číslování**: opakované odebírání vstupního uzlu, $O(n+m)$.
+      - **Kvazikomponenty**: přes dosažitelnost tam a zpět $O(n(n+m))$; Tarjan / Kosaraju (dvojí DFS) $O(n+m)$.
+      - **Kritická cesta**: dynamické programování v topologickém pořadí $t(v) = \max\{t(u) + w(uv)\}$, $O(n+m)$.
+      - Pozor: nejdelší cesta v obecném grafu je NP-těžká – acykličnost je klíčová.
+    example_tasks: |
+      - Najděte kvazikomponenty a kondenzaci daného grafu.
+      - Vypočtěte kritickou cestu, nejdřívější a nejpozdější možné začátky činností.
+      - Proč je kondenzace acyklická?
+
+  - number: 4
+    title: Rozložitelnost a slabá rozložitelnost matic
+    group: 1
+    chapters: [grafy-matice]
+    items:
+      - def-rozlozitelna-matice
+      - rem-simultanni-permutace
+      - def-diagram-matice
+      - thm-rozlozitelnost-silna-souvislost
+      - cor-nerozlozitelnost-diagram
+      - alg-test-rozlozitelnosti
+      - def-slabe-rozlozitelna
+      - rem-slaba-rozlozitelnost
+      - def-bigraf
+      - def-bigraf-matice
+      - def-stabilni-mnozina
+      - thm-slaba-rozlozitelnost-stabilni-mnozina
+      - def-kvazikomponenta
+      - def-kondenzace
+    outline: |
+      1. **Rozložitelná matice**: simultánní permutací řádků a sloupců ($\mathbf{PAP}^T$) lze dostat blokově horní trojúhelníkový tvar s nulovým blokem.
+      2. **Diagram matice** $\vec G(\mathbf A)$; simultánní permutace = přečíslování uzlů.
+      3. **Věta 3.2**: silně souvislý ⇒ nerozložitelná; kvazikomponenty v pořadí kondenzace dávají blokově trojúhelníkový tvar s nerozložitelnými diagonálními bloky.
+         **Důsledek**: $\mathbf A$ je nerozložitelná ⇔ diagram je silně souvislý.
+      4. **Slabá rozložitelnost**: nezávislé permutace řádků a sloupců ($\mathbf{PAQ}$). Každá rozložitelná je slabě rozložitelná, ne naopak.
+      5. **Bigraf matice**, **stabilní množina**; Věta 3.3: slabě rozložitelná ⇔ bigraf má stabilní množinu.
+    algorithms: |
+      - Test rozložitelnosti = test silné souvislosti diagramu: $O(n^2)$ pro matici $n \times n$ (graf má až $n^2$ hran), kvazikomponenty v lineárním čase vůči velikosti grafu.
+      - Převod na blokový tvar: kvazikomponenty + topologické uspořádání kondenzace.
+      - Naivně (všechny permutace) $n!$ – proto převod na grafovou úlohu.
+      - Úplná nerozložitelnost lze testovat polynomiálně přes párování (Hall) – doplňkově.
+    example_tasks: |
+      - Převeďte danou matici simultánními permutacemi na horní blokově trojúhelníkový tvar.
+      - Rozhodněte, zda je matice rozložitelná, slabě rozložitelná, nebo úplně nerozložitelná.
+
+  - number: 5
+    title: Generická hodnost matice
+    group: 1
+    chapters: [grafy-matice]
+    items:
+      - def-linearni-bigraf
+      - def-parovani
+      - thm-regularni-matice-parovani
+      - rem-skoro-vsechny-hodnoty
+      - def-strukturalni-matice
+      - prop-dichotomie-strukturalni-matice
+      - def-genericky-regularni
+      - thm-genericka-regularita-parovani
+      - def-genericka-hodnost
+      - def-parovaci-cislo
+      - thm-genericka-hodnost-parovaci-cislo
+      - alg-parovani-max-tok
+      - prop-parovani-a-tok
+    outline: |
+      1. Lineární bigraf, **párování**, **perfektní párování** v bigrafu.
+      2. **Věta 3.4**: regulární matice ⇒ bigraf má perfektní párování (nenulový člen determinantu); opačně jen „existuje regulární matice s tímto bigrafem“ (volba $\varepsilon$). Ekvivalence obecně neplatí (protipříklad).
+      3. **Strukturální matice** – nenulové prvky jako nezávislé parametry; regularita pro „skoro všechny“ hodnoty.
+      4. **Generická regularita** ⇔ perfektní párování; **generická hodnost** = **párovací číslo** bigrafu (Věta 3.6).
+      5. Význam: vlastnost závislá jen na rozmístění nul (aplikace v teorii řízení – strukturální řiditelnost).
+    algorithms: |
+      - **Párovací číslo** (maximální párování v bigrafu) převodem na **maximální tok**: zdroj → řádky → sloupce → stok, jednotkové propustnosti; Ford–Fulkerson $O(nm)$ (tok ≤ n zlepšení po $O(m)$).
+      - Hopcroft–Karp $O(m\sqrt n)$ (doplňkově).
+      - Generickou hodnost tak lze spočítat polynomiálně, i když numerická hodnost závisí na hodnotách.
+    example_tasks: |
+      - Určete generickou hodnost dané strukturální matice (najděte maximální párování).
+      - Ukažte matici, jejíž bigraf má perfektní párování, a přesto je singulární.
+
+  - number: 6
+    title: Síť, tok, existence toku v síti
+    group: 1
+    chapters: [toky]
+    items:
+      - def-sit
+      - def-tok
+      - def-intenzita-propustnost
+      - def-rez
+      - def-oznaceni-souctu
+      - prop-bilance-mnoziny
+      - thm-existence-toku
+      - rem-fiktivni-zdroj-stok
+    outline: |
+      1. **Síť** – orientovaný graf s propustnostmi hran $r_{ij} > 0$ a intenzitami uzlů $a_i$ (zdroje, stoky, neutrální uzly).
+      2. **Tok**: zákon zachování $\sum_j x_{ij} - \sum_j x_{ji} = a_i$ a omezení $0 \le x_{ij} \le r_{ij}$. Motivace dopravní úlohou.
+      3. **Řez** $(A, \bar A)$, značení $f(A)$, $g(A,\bar A)$; Tvrzení 2.1: $a(A) = x(A,\bar A) - x(\bar A, A)$.
+      4. **Věta 2.1** (existence toku): tok existuje ⇔ $a(U) = 0$ a $a(A) \le r(A, \bar A)$ pro každou $A$.
+         Nutnost přímo z tvrzení 2.1; postačitelnost převodem na síť s jedním zdrojem a stokem (fiktivní $z$, $s$) a Ford–Fulkersonovou větou.
+    algorithms: |
+      - Existenci toku testujeme algoritmicky: přidáme fiktivní zdroj a stok, najdeme **maximální tok** (Ford–Fulkerson / Edmonds–Karp $O(nm^2)$) a ověříme, zda nasytí všechny hrany ze zdroje.
+      - Přímé ověření podmínky přes všechny množiny $A$ by bylo exponenciální ($2^n$ řezů).
+    example_tasks: |
+      - Rozhodněte, zda v dané síti existuje tok (najděte ho, nebo množinu $A$ porušující podmínku).
+      - Proč v sítích z příkladu ve skriptech tok neexistuje?
+
+  - number: 7
+    title: Maximální tok v síti, Ford–Fulkersonova věta
+    group: 1
+    chapters: [toky]
+    items:
+      - def-velikost-toku
+      - def-maximalni-tok
+      - def-minimalni-rez
+      - prop-tok-a-rez
+      - rem-naivni-orientovane-cesty
+      - def-polocesta
+      - def-rezervni-polocesta
+      - prop-rezervni-polocesta
+      - thm-ford-fulkerson
+      - cor-charakterizace-max-toku
+      - alg-ford-fulkerson
+      - prop-konecnost-ff
+      - rem-ff-zavislost-na-propustnostech
+      - alg-edmonds-karp
+      - thm-edmonds-karp-slozitost
+    outline: |
+      1. Síť s jedním zdrojem a stokem, **velikost toku**, **maximální tok**, propustnost řezu, **minimální řez**.
+      2. Tvrzení 2.2: $|x| = x(A,\bar A) - x(\bar A,A) \le r(A,\bar A)$ pro řez oddělující $z$ a $s$.
+      3. Proč nestačí hledat orientované cesty (protipříklad) → **polocesta**, **rezerva**, **rezervní polocesta**.
+      4. **Ford–Fulkersonova věta**: max. tok = min. řez. Důkaz: $R$ = uzly dosažitelné ze $z$ po rezervních polocestách; hrany z $R$ nasycené, do $R$ nulové.
+      5. Algoritmus a jeho konečnost (celočíselné propustnosti), patologie (závislost na propustnostech, iracionální čísla).
+    algorithms: |
+      - **Ford–Fulkerson**: každé zlepšení $O(m)$, počet zlepšení až $|x^*|$ (závisí na propustnostech – příklad s $2Q$ kroky); pro iracionální propustnosti nemusí skončit.
+      - **Edmonds–Karp**: nejkratší rezervní polocesta (BFS) ⇒ nejvýše $O(nm)$ zlepšení, celkem $O(nm^2)$, nezávisle na propustnostech.
+      - Minimální řez se získá zdarma z posledního prohledávání (množina $R$).
+    example_tasks: |
+      - Najděte maximální tok a minimální řez v dané síti.
+      - Ukažte, proč je zlepšení podél nesouhlasné hrany nutné.
+      - Kolik kroků potřebuje Ford–Fulkerson v síti s propustnostmi $Q$ při nešťastné volbě?
+
+  - number: 8
+    title: Míry souvislosti grafu
+    group: 1
+    chapters: [miry-souvislosti]
+    items:
+      - def-most
+      - thm-most-liche-stupne
+      - def-artikulace
+      - def-blok
+      - thm-bloky-hranove-disjunktni
+      - def-blokovy-graf
+      - thm-blokovy-graf-strom
+      - def-hranovy-rez
+      - def-hranovy-stupen-mezi-uzly
+      - def-uzlovy-rez
+      - def-uzlovy-stupen-mezi-uzly
+      - def-stupen-souvislosti-grafu
+      - thm-u-h-delta
+      - thm-h-odhad-hran
+      - thm-ford-fulkerson-hranova-souvislost
+      - thm-menger
+      - cor-whitney-globalni
+    outline: |
+      1. **Most**, **artikulace**, **blok**; bloky sdílejí nejvýše jeden uzel (artikulaci), **blokový graf** je strom.
+      2. Hranový / uzlový řez mezi $x$ a $y$, **hranový stupeň souvislosti** $h(G)$, **uzlový stupeň souvislosti** $u(G)$, $k$-souvislost.
+      3. Věta 4.4: $u(G) \le h(G) \le \delta(G)$; odhad počtu hran $k$-souvislého grafu.
+      4. **Charakterizační věty**: hranová verze (Ford–Fulkerson) – $k$ hranově disjunktních cest ⇔ hranově $k$-souvislý mezi $x,y$; **Menger** – uzlově disjunktní cesty; Whitneyho globální verze.
+      5. Spojení s toky: jednotkové propustnosti, půlení uzlů pro uzlovou souvislost.
+    algorithms: |
+      - Mosty, artikulace a bloky: jedno prohledávání do hloubky (Tarjan, dolní čísla) – $O(n+m)$.
+      - $h(x,y)$ = maximální tok s jednotkovými propustnostmi; $h(G)$ stačí $n-1$ toků z pevného uzlu.
+      - $u(x,y)$ přes půlení uzlů ($x' \to x''$ propustnost 1) a maximální tok; $u(G)$ přes všechny dvojice (resp. chytřejší výběr).
+      - Vše polynomiální (vs. např. hamiltonovskost).
+    example_tasks: |
+      - Najděte mosty, artikulace, bloky a blokový graf daného grafu.
+      - Určete $u(G)$ a $h(G)$ a najděte příslušné disjunktní cesty / minimální řezy.
+      - Ukažte graf s $u(G) < h(G) < \delta(G)$.
+
+  - number: 9
+    title: Algoritmy prohledávání a jejich použití
+    group: 1
+    chapters: [prohledavani]
+    items:
+      - alg-prohledavani
+      - thm-prohledavani-linearni
+      - alg-bfs
+      - alg-dfs
+      - def-strom-prohledavani
+      - prop-komponenty-linearne
+      - prop-test-acyklicnosti
+      - def-vetev-grafu
+      - prop-kriterium-artikulace
+      - alg-artikulace-tarjan
+      - prop-kriterium-mostu
+      - alg-bloky
+      - alg-hranova-souvislost
+      - alg-uzlova-souvislost
+    outline: |
+      1. **Obecný algoritmus prohledávání** (stavy uzlů: nový / otevřený / zavřený), **BFS** (fronta) a **DFS** (zásobník), strom prohledávání.
+      2. Věta 5.1: složitost $O(n+m)$ – každý uzel a hrana se zpracuje konstantněkrát.
+      3. Použití: komponenty souvislosti, test acykličnosti, vzdálenosti v neohodnoceném grafu (BFS), rezervní polocesty (Edmonds–Karp).
+      4. DFS a **dolní čísla** – kritérium artikulace a mostu, generování bloků (zásobník hran).
+      5. Algoritmy $k$-souvislosti (přes toky).
+    algorithms: |
+      - Prohledávání: $O(n+m)$ při seznamech sousedů ($O(n^2)$ s maticí sousednosti).
+      - Komponenty, test acykličnosti: $O(n+m)$.
+      - Artikulace, mosty, bloky (Tarjan): $O(n+m)$; kořen DFS stromu je artikulace ⇔ má ≥ 2 syny.
+      - Hranová / uzlová souvislost: polynomiálně přes maximální toky.
+    example_tasks: |
+      - Proveďte BFS / DFS z daného uzlu a vyznačte strom prohledávání.
+      - Spočtěte čísla prohledávání a dolní čísla a určete artikulace a bloky.
+
+  - number: 10
+    title: Eulerovské a hamiltonovské grafy
+    group: 1
+    chapters: [metrika-orientovane, prohledavani]
+    items:
+      - def-eulerovsky-graf
+      - thm-euler
+      - cor-eul-polynomialni
+      - alg-eulerovsky-tah
+      - def-hamiltonovsky-graf
+      - thm-dirac
+      - def-tsp
+      - alg-hamilton-backtracking
+      - rem-hamilton-casova-narocnost
+      - def-heuristika
+      - alg-posova-heuristika
+      - thm-dirac-5-2
+      - thm-ore-5-3
+      - lemma-ore-5-1
+      - def-uzaver-grafu
+      - thm-bondy-chvatal
+      - alg-hamilton-uzaver
+      - rem-hamilton-np
+    outline: |
+      1. **Eulerovský graf** (uzavřený tah přes všechny hrany); věta: souvislý a všechny stupně sudé. Problém EUL je v P.
+      2. **Hamiltonovský graf** (kružnice přes všechny uzly) – kontrast: žádná jednoduchá charakterizace, problém je NP-úplný.
+      3. Postačující podmínky: **Dirac** ($\delta \ge n/2$), **Ore** ($d(u)+d(v) \ge n$ pro nesousední), **uzávěr** a **Bondy–Chvátal** ($G$ hamiltonovský ⇔ $cl(G)$ hamiltonovský).
+      4. **Backtracking** pro generování hamiltonovských cest a kružnic; **heuristiky** (Pósova rotace).
+      5. Úloha obchodního cestujícího (TSP) jako optimalizační verze.
+    algorithms: |
+      - Test eulerovskosti: stupně + souvislost $O(n+m)$; nalezení eulerovského tahu (Hierholzer / Fleury) $O(n+m)$ (Fleury $O(m^2)$).
+      - Hamiltonovská kružnice: backtracking – v nejhorším exponenciálně (řádově $n!$); problém je **NP-úplný**.
+      - Uzávěr grafu: polynomiálně ($O(n^4)$ přímočaře); je-li uzávěr úplný, je graf hamiltonovský a kružnici lze zpětně zkonstruovat.
+      - Heuristiky: polynomiální, ale nezaručují nalezení kružnice.
+    example_tasks: |
+      - Rozhodněte, zda je graf eulerovský / hamiltonovský, a najděte příslušný tah / kružnici.
+      - Sestrojte uzávěr grafu a použijte Bondy–Chvátalovu větu.
+      - Proč je EUL v P, zatímco HAM je NP-úplný?
+
+  - number: 11
+    title: Nezávislost, dominance, klikovost a jádro v neorientovaných grafech
+    group: 2
+    chapters: [nezavislost-jadro]
+    items:
+      - def-nezavisla-mnozina
+      - def-nezavislost-grafu
+      - rem-maximalni-vs-nejvetsi
+      - def-pokryti
+      - def-pokryvaci-cislo
+      - thm-6-1-nezavisla-doplnek-pokryti
+      - cor-6-1-alfa-plus-beta
+      - thm-chvatal-erdos
+      - def-klika
+      - def-klikovost
+      - def-doplnek-grafu
+      - thm-6-4-alfa-omega-doplnku
+      - def-dominantni-mnozina
+      - def-cislo-dominance
+      - thm-6-5-maximalni-nezavisla-je-dominantni
+      - thm-6-6-maximalni-nezavisla-minimalni-dominantni
+      - cor-6-2-gamma-le-alfa
+      - def-jadro-neorientovaneho-grafu
+      - thm-6-7-kazdy-neorientovany-graf-ma-jadro
+      - alg-maximalni-nezavisla-mnozina
+      - alg-nejvetsi-nezavisla-mnozina-hrubou-silou
+      - rem-np-uplnost-nezavislosti
+    outline: |
+      1. **Nezávislá množina**, nezávislost $\alpha(G)$; rozdíl **maximální** (nerozšiřitelná) × **největší**.
+      2. **Pokrytí**, $\beta(G)$; $A$ nezávislá ⇔ $U \setminus A$ pokrytí, tedy $\alpha + \beta = n$.
+      3. **Klika**, klikovost $\omega(G)$, doplněk: $\alpha(G) = \omega(\bar G)$.
+      4. **Dominantní množina**, $\gamma(G)$; maximální nezávislá množina je minimální dominantní, $\gamma \le \alpha$.
+      5. **Jádro** (nezávislá + dominantní) – v neorientovaném grafu existuje vždy (každá maximální nezávislá množina).
+      6. Souvislost s hamiltonovskostí (Chvátal–Erdős: $\alpha \le k$ pro $k$-souvislý ⇒ hamiltonovský).
+    algorithms: |
+      - **Maximální** nezávislá množina (a tedy jádro): hladově, $O(n+m)$.
+      - **Největší** nezávislá množina: hrubou silou $O(2^n \cdot n^2)$, větvení; rozhodovací verze IND je **NP-úplná**.
+      - Totéž pro klikovost (CLIQUE) a pokrytí (COV) – vzájemně převoditelné přes doplněk.
+      - Pro pevné $k$ je INDₖ v P ($O(n^k)$ podmnožin), FPT pro pokrytí.
+    example_tasks: |
+      - Určete $\alpha, \beta, \omega, \gamma$ daného grafu a najděte jádro.
+      - Ukažte graf, kde maximální nezávislá množina není největší.
+      - Ukažte, že minimální dominantní množina nemusí být nezávislá.
+
+  - number: 12
+    title: Jádro orientovaného grafu
+    group: 2
+    chapters: [nezavislost-jadro]
+    items:
+      - def-nezavisla-mnozina-orientovaneho-grafu
+      - def-jadro-orientovaneho-grafu
+      - prop-lichy-cyklus-nema-jadro
+      - rem-jadro-a-teorie-her
+      - thm-6-8-acyklicky-graf-ma-jadro
+      - def-grundyho-funkce
+      - alg-jadro-acyklickeho-grafu
+      - thm-6-9-graf-bez-lichych-cyklu-ma-jadro
+      - alg-jadro-grafu-bez-lichych-cyklu
+      - rem-kdy-ma-graf-jadro
+    outline: |
+      1. Nezávislá a **dominantní** množina v orientovaném grafu (z každého uzlu mimo $C$ vede hrana do $C$); **jádro**.
+      2. Jádro nemusí existovat (lichý cyklus) a nemusí být jednoznačné.
+      3. **Věta 6.8**: každý acyklický graf má (právě jedno) jádro – konstrukce od výstupních uzlů / Grundyho funkce.
+      4. **Věta 6.9**: graf bez cyklů liché délky má jádro (Richardson).
+      5. Motivace: teorie her – jádro = vyhrávající pozice (hra na grafu, Nim).
+    algorithms: |
+      - Jádro acyklického grafu: zpracování v obráceném topologickém pořadí (výstupní uzly do jádra, jejich předchůdce vyřadit, opakovat) – $O(n+m)$; Grundyho funkce také $O(n+m)$.
+      - Graf bez lichých cyklů: konstrukce přes kvazikomponenty a paritu, $O(n(n+m))$.
+      - Obecně: rozhodnout existenci jádra je NP-úplné.
+    example_tasks: |
+      - Najděte jádro daného acyklického grafu (spočtěte Grundyho funkci).
+      - Proč orientovaný cyklus liché délky nemá jádro?
+
+  - number: 13
+    title: Barevnost grafu, chromatické číslo grafu
+    group: 2
+    chapters: [barevnost]
+    items:
+      - def-k-obarvitelnost
+      - def-chromaticke-cislo
+      - rem-barveni-a-nezavisle-mnoziny
+      - prop-7-1-klika-dolni-odhad
+      - thm-7-1-delta-plus-jedna
+      - thm-brooks
+      - thm-7-3-bipartitni-grafy
+      - alg-test-bipartitnosti
+      - thm-7-4-3col
+      - thm-7-5-chi-a-alfa
+      - alg-sekvencni-barveni
+      - alg-barveni-backtracking
+      - rem-odhady-chromatickeho-cisla
+      - thm-ctyri-barvy
+      - def-hranove-obarveni
+      - def-chromaticky-index
+      - thm-vizing
+    outline: |
+      1. **k-obarvitelnost**, **chromatické číslo** $\chi(G)$; obarvení = rozklad na nezávislé množiny.
+      2. Odhady: $\omega(G) \le \chi(G) \le \Delta(G) + 1$; **Brooks**: $\chi \le \Delta$ mimo úplné grafy a liché kružnice; $\chi \cdot \alpha \ge n$.
+      3. $\chi(G) \le 2$ ⇔ graf nemá lichou kružnici (bipartitní) – polynomiální.
+      4. **3-COL je NP-úplná** (věta 7.4) – i pro rovinné grafy; věta o čtyřech barvách.
+      5. **Hranové barvení**, chromatický index, Vizing: $\Delta \le \chi' \le \Delta + 1$.
+    algorithms: |
+      - Test 2-obarvitelnosti (bipartitnosti): BFS, $O(n+m)$.
+      - **Sekvenční (hladové) barvení**: $O(n+m)$, nejvýše $\Delta+1$ barev, výsledek závisí na pořadí (může být libovolně špatný).
+      - Přesné $\chi(G)$: backtracking – exponenciální; rozhodnout 3-obarvitelnost je NP-úplné.
+      - Rovinné grafy: 5-obarvení polynomiálně, 4-obarvení polynomiálně (ale složitě), test 3-obarvitelnosti NP-úplný.
+    example_tasks: |
+      - Určete chromatické číslo daného grafu (dolní odhad klikou / lichou kružnicí, horní obarvením).
+      - Ukažte pořadí uzlů, pro které hladový algoritmus použije zbytečně mnoho barev.
+
+  - number: 14
+    title: Třídy problémů P, NP
+    group: 2
+    chapters: [slozitost-uvod, modely-vypoctu, np-uplnost]
+    items:
+      - def-efektivni-algoritmus
+      - def-ram
+      - def-doba-a-pamet-vypoctu
+      - def-slovo-jazyk
+      - def-prijimaci-pocitac
+      - def-casova-slozitost-jazyka
+      - def-trida-p
+      - rem-rozhodovaci-vs-optimalizacni
+      - def-nedeterministicky-algoritmus
+      - def-nedeterministicky-prijimaci-pocitac
+      - def-prijimani-nedeterministickym-pocitacem
+      - def-polynomialne-omezeny-cas
+      - def-trida-np
+      - thm-p-podmnozina-np
+      - rem-polynomialni-verifikace
+      - rem-typy-algoritmu
+    outline: |
+      1. Model výpočtu – **počítač s libovolným přístupem (RAM)**, doba a paměť výpočtu, uniformní hodnocení.
+      2. Rozhodovací úloha jako **jazyk** nad abecedou; **přijímací počítač**, časová složitost.
+      3. **Třída P** – existuje přijímací počítač pracující v polynomiálním čase. Příklady: minimální kostra, toky, 2-SAT…
+      4. **Nedeterministický** algoritmus / počítač (instrukce „hádej“), přijetí slova, **třída NP**; ekvivalentně polynomiální **verifikace certifikátu**.
+      5. $P \subseteq NP$; otázka $P = NP$ je otevřená. Rozhodovací vs. optimalizační verze úloh.
+    algorithms: |
+      - Příklady nedeterministických polynomiálních algoritmů: IND (uhodni množinu, ověř $O(n^2)$), HAM (uhodni permutaci, ověř $O(n^2)$), SAT (uhodni přiřazení, ověř lineárně).
+      - Deterministická simulace nedeterminismu: exponenciální ($2^{p(n)}$ větví).
+      - Polynomiální × exponenciální růst (tabulky ze skript).
+    example_tasks: |
+      - Ukažte, že daný problém (např. COV, 3-COL) patří do NP.
+      - Proč je $P \subseteq NP$? Proč neplyne opačná inkluze?
+
+  - number: 15
+    title: Splnitelnost logických formulí, polynomialita problému 2-SAT
+    group: 2
+    chapters: [np-uplnost]
+    items:
+      - def-logicka-formule
+      - def-splnitelna-formule
+      - def-knf
+      - def-dnf
+      - thm-udnf-uknf
+      - def-sat
+      - def-k-sat
+      - def-2-sat
+      - def-implikacni-graf
+      - lemma-2sat-symetrie
+      - lemma-2sat-cesta
+      - lemma-2sat-kvazikomponenta
+      - lemma-2sat-splnitelnost
+      - thm-2sat-p
+      - alg-2sat
+    outline: |
+      1. Logické formule, **splnitelnost**, literály, klauzule, **KNF**/**DNF**, ÚDNF/ÚKNF (věta 9.1).
+      2. Problémy **SAT** a **k-SAT**.
+      3. **Implikační graf** 2-CNF formule: klauzule $(a \vee b)$ → hrany $\bar a \to b$, $\bar b \to a$.
+      4. Lemmata 9.1–9.4: symetrie, cesta $a \leadsto b$ vynucuje $a \Rightarrow b$, literály jedné kvazikomponenty mají stejnou hodnotu;
+         **formule je splnitelná ⇔ žádná kvazikomponenta neobsahuje $x$ i $\bar x$**.
+      5. **2-SAT ∈ P** (věta 9.2); kontrast: 3-SAT je NP-úplný.
+    algorithms: |
+      - **2-SAT**: sestavení implikačního grafu ($2n$ uzlů, $2m$ hran), kvazikomponenty (Tarjan) – celkem $O(n+m)$; splňující přiřazení z topologického pořadí kondenzace.
+      - Převod na ÚDNF/ÚKNF: exponenciální velikost.
+      - SAT hrubou silou $O(2^n \cdot |f|)$.
+    example_tasks: |
+      - Rozhodněte o splnitelnosti dané 2-CNF formule pomocí implikačního grafu a případně najděte splňující přiřazení.
+      - Proč stejný postup nefunguje pro 3-SAT?
+
+  - number: 16
+    title: NP-úplné problémy
+    group: 2
+    chapters: [np-uplnost]
+    items:
+      - def-prekladaci-pocitac
+      - def-polynomialni-redukce
+      - thm-vlastnosti-redukce
+      - def-np-uplny
+      - def-np-tezky
+      - thm-p-np-npc
+      - rem-npc-poznamky
+      - thm-cook
+      - rem-po-cookove-vete
+      - rem-dalsi-npc-problemy
+    outline: |
+      1. **Překládací počítač**, **polynomiální redukce** $J_1 \lhd J_2$; vlastnosti (tranzitivita, $J_2 \in P \Rightarrow J_1 \in P$).
+      2. **NP-úplný** jazyk: patří do NP a každý jazyk z NP se na něj redukuje; NP-těžký.
+      3. Věta 9.5: buď $P = NP$, nebo $P \cap NPC = \emptyset$.
+      4. **Cookova věta**: SAT ∈ NPC – myšlenka: výpočet nedeterministického počítače polynomiální délky popíšeme formulí (konfigurace, přechody, přijetí).
+      5. Strategie důkazu NP-úplnosti nového problému: příslušnost do NP + redukce známého NPC problému. Přehled NPC problémů (SAT, 3-SAT, IND, CLIQUE, COV, 3-COL, HAM, TSP…).
+    algorithms: |
+      - Redukce musí být **polynomiální** – velikost konstruované instance i čas konstrukce polynomiální.
+      - Formule v Cookově důkazu má polynomiálně mnoho klauzulí ($O(m^4)$ apod.) vzhledem k délce výpočtu $m$.
+      - Důsledek: polynomiální algoritmus pro jediný NPC problém ⇒ polynomiální algoritmy pro celé NP.
+    example_tasks: |
+      - Víme, že $X$ je NP-úplný a $Y \lhd X$. Co z toho plyne pro $Y$? A když $X \lhd Y$?
+      - Popište kroky důkazu NP-úplnosti libovolného problému.
+
+  - number: 17
+    title: Problém 3-splnitelnosti logických formulí a jeho NP-úplnost
+    group: 2
+    chapters: [np-uplnost]
+    items:
+      - def-3-sat
+      - thm-3sat-npc
+      - alg-sat-na-3sat
+      - thm-cook
+      - def-k-sat
+    outline: |
+      1. Problém **3-SAT** – formule v KNF s klauzulemi délky (nejvýše) 3.
+      2. 3-SAT ∈ NP (uhodnout přiřazení a ověřit).
+      3. Redukce **SAT ⊲ 3-SAT**: klauzule délky 1 a 2 doplnit, dlouhé klauzule $(a_1 \vee \dots \vee a_k)$ rozdělit pomocí nových proměnných
+         $(a_1 \vee a_2 \vee y_1)(\bar y_1 \vee a_3 \vee y_2)\cdots(\bar y_{k-3} \vee a_{k-1} \vee a_k)$.
+      4. Důkaz ekvivalence splnitelnosti (oba směry) a polynomiality konstrukce.
+    algorithms: |
+      - Převod je lineární ve velikosti formule (klauzule délky $k$ → $k-2$ klauzulí, $k-3$ nových proměnných).
+      - Kontrast: 2-SAT ∈ P (lineárně), 3-SAT NP-úplný – hranice mezi 2 a 3.
+    example_tasks: |
+      - Převeďte danou formuli na ekvisplnitelnou 3-CNF formuli.
+      - Proč analogicky nelze převést SAT na 2-SAT?
+
+  - number: 18
+    title: Nezávislost grafu a její NP-úplnost
+    group: 2
+    chapters: [np-uplnost, nezavislost-jadro]
+    items:
+      - def-ind
+      - alg-ind-nedeterministicky
+      - thm-ind-npc
+      - def-ind-rovno-a-ind-k
+      - prop-ind-rovno-npc
+      - prop-ind-k-p
+      - rem-hranice-ind-k
+      - def-cov
+      - thm-cov-npc
+      - def-clique
+      - thm-clique-npc
+      - def-nezavisla-mnozina
+      - cor-6-1-alfa-plus-beta
+    outline: |
+      1. Problém **IND**: existuje v $G$ nezávislá množina velikosti alespoň $k$? IND ∈ NP.
+      2. Redukce **3-SAT ⊲ IND**: pro každou klauzuli trojúhelník z jejích literálů, komplementární literály spojit hranou, $k$ = počet klauzulí.
+         Splňující přiřazení ⇔ nezávislá množina velikosti $k$ (z každého trojúhelníku jeden pravdivý literál).
+      3. Varianty: $IND_=$ je NP-úplná, $IND_k$ (pevné $k$) je v P.
+      4. **COV** (pokrytí – doplněk nezávislé množiny) a **CLIQUE** (nezávislá množina v doplňku) jsou NP-úplné triviální redukcí.
+    algorithms: |
+      - Konstrukce grafu: $3k$ uzlů, $O(k^2)$ hran – polynomiální.
+      - $IND_k$: všechny $k$-prvkové podmnožiny, $O(n^k \cdot k^2)$ – polynomiální pro pevné $k$, ale exponent roste s $k$ (není FPT, pravděpodobně W[1]-těžké).
+      - Hrubá síla pro $\alpha(G)$: $O(2^n n^2)$.
+    example_tasks: |
+      - Sestrojte graf z redukce 3-SAT ⊲ IND pro danou formuli a ukažte korespondenci řešení.
+      - Proč $IND_k \in P$ neodporuje NP-úplnosti IND?
+
+  - number: 19
+    title: Barevnost grafu a její NP-úplnost
+    group: 2
+    chapters: [np-uplnost, barevnost]
+    items:
+      - def-k-col
+      - lemma-gadgety-3col
+      - thm-3col-npc
+      - thm-7-4-3col
+      - thm-7-3-bipartitni-grafy
+      - def-chromaticke-cislo
+    outline: |
+      1. Problém **k-COL**; 2-COL ∈ P (bipartitnost), 3-COL ∈ NP.
+      2. Redukce **3-SAT ⊲ 3-COL**: dvojice uzlů $x_i, \bar x_i$ spojené hranou, trojúhelník $u, v, w$ (barvy „pravda, nepravda, základ“), $w$ spojen se všemi literály;
+         pro každou klauzuli gadget $G_2$, jehož výstup $d$ je spojen s $u$ – gadget je 3-obarvitelný právě když je alespoň jeden literál „pravdivý“.
+      3. Vlastnosti gadgetů (lemma), oba směry důkazu, polynomialita.
+      4. Důsledky: určit $\chi(G)$ je NP-těžké; k-COL ∈ NPC pro každé $k \ge 3$ (redukce 3-COL ⊲ k-COL přidáním kliky).
+    algorithms: |
+      - Konstrukce grafu: $O(n + k)$ uzlů a hran (n proměnných, k klauzulí) – lineární.
+      - 2-COL: BFS $O(n+m)$; 3-COL: zatím jen exponenciální algoritmy (backtracking, $O(3^n)$ naivně).
+    example_tasks: |
+      - Sestrojte graf z redukce pro danou formuli a ukažte, jak splňující přiřazení dává 3-obarvení.
+      - Proč je 2-COL polynomiální, ale 3-COL NP-úplný?
+
+  - number: 20
+    title: FPT-algoritmy
+    group: 2
+    chapters: [fpt]
+    items:
+      - rem-fpt-motivace
+      - def-parametrizovany-problem
+      - def-fpt
+      - def-xp
+      - prop-fpt-v-xp
+      - def-k-cov
+      - lemma-cov-hrana
+      - alg-cov-strom-hledani
+      - thm-cov-fpt
+      - alg-cov-vetveni-stupen
+      - def-kernelizace
+      - alg-buss-pravidla
+      - thm-buss-jadro
+      - thm-kernel-fpt
+      - rem-w1-tezkost
+    outline: |
+      1. Motivace: NP-úplné problémy bývají „snadné“, je-li nějaký **parametr** $k$ malý. **Parametrizovaný problém** $(x, k)$.
+      2. Třída **FPT**: čas $f(k) \cdot n^{O(1)}$; třída **XP**: $n^{f(k)}$. FPT ⊆ XP.
+      3. **k-COV** (vrcholové pokrytí velikosti ≤ k): **omezený strom hledání** – pro hranu $uv$ musí být $u$ nebo $v$ v pokrytí → větvení, hloubka ≤ k.
+      4. **Kernelizace** (Bussova pravidla): uzel stupně > k musí být v pokrytí; po redukci zbude ≤ $k^2$ hran. Problém je FPT ⇔ má jádro.
+      5. Kontrast: $IND_k$ / CLIQUE parametrizované $k$ jsou W[1]-těžké (pravděpodobně nejsou FPT).
+      *Pozn.: téma není ve skriptech ani foliích, které má portál k dispozici – doplněno ze standardní literatury.*
+    algorithms: |
+      - k-COV stromem hledání: $O(2^k (n+m))$; vylepšené větvení podle stupně $O(1{,}4656^k \cdot n^{O(1)})$; nejlepší známé ≈ $O(1{,}2738^k + kn)$.
+      - Bussova kernelizace: $O(n+m)$, jádro s $O(k^2)$ hranami, pak hrubá síla na jádru.
+      - Naivně $\binom{n}{k}$ podmnožin = $O(n^k)$ – jen XP.
+    example_tasks: |
+      - Proveďte algoritmus omezeného stromu hledání pro malý graf a $k = 2$ nebo $3$.
+      - Aplikujte Bussova pravidla a odhadněte velikost jádra.
+      - Proč je $2^k n$ „lepší“ než $n^k$, i když jsou obě pro pevné $k$ polynomiální?

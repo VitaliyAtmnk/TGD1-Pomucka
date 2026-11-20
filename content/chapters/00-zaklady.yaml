@@ -1,0 +1,1876 @@
+id: zaklady
+number: 0
+title: Základní pojmy, souvislost, stromy a kostry
+source: "Přednáška 1 (TGD1-01-folie, str. 3–12); navazuje na KMA/DMA"
+exam_questions: [1]
+summary: |
+  Úvodní kapitola zavádí jazyk, kterým se v celém předmětu mluví: graf, homomorfismus
+  a isomorfismus, stupně uzlů a skóre grafu, podgrafy, sledy, tahy a cesty, souvislost
+  a komponenty. Vrcholem je charakterizace stromů, existence kostry a algoritmy pro
+  hledání **minimální kostry** ohodnoceného grafu (Algoritmus 1 – odstraňování
+  nejdražších hran kružnic, Algoritmus 2 – Jarníkův/Primův algoritmus, a pro úplnost
+  i Kruskalův algoritmus) včetně důkazů správnosti a složitosti.
+sections:
+  - number: "0.1"
+    title: Graf, homomorfismus, isomorfismus
+  - number: "0.2"
+    title: Stupně uzlů a skóre grafu
+  - number: "0.3"
+    title: Podgrafy, sledy, tahy, cesty a souvislost
+  - number: "0.4"
+    title: Stromy a kostry
+  - number: "0.5"
+    title: Ohodnocené grafy a matice grafu
+  - number: "0.6"
+    title: Minimální kostra grafu
+items:
+  # ------------------------------------------------------------------ 0.1
+  - id: def-graf
+    kind: definition
+    label: Definice
+    section: "0.1"
+    title: Graf
+    terms: [graf, uzel, vrchol, hrana, neorientovaný graf, orientovaný graf, množina uzlů, množina hran]
+    statement: |
+      **Graf** je uspořádaná dvojice $G = (U, H)$, kde $U$ je konečná neprázdná množina
+      a $H \subset \binom{U}{2} \cup U^2$.
+
+      Prvky $U = U(G)$ jsou **uzly**, prvky $H = H(G)$ jsou **hrany**. Graf $G = (U,H)$ se nazývá
+
+      - **neorientovaný graf**, jestliže $H \subset \binom{U}{2}$ (hrany jsou dvouprvkové množiny $\{x,y\}$),
+      - **orientovaný graf**, jestliže $H \subset U^2$ (hrany jsou uspořádané dvojice $(x,y)$).
+
+      ($\binom{U}{2}$ značí množinu všech dvouprvkových podmnožin $U$; symbol $\subset$ zde znamená „je podmnožinou" včetně rovnosti.)
+    intuition: |
+      Neorientovaná hrana $\{x,y\}$ je „obousměrná silnice", orientovaná hrana $(x,y)$ je
+      „jednosměrka" z $x$ do $y$. Z definice plyne několik věcí, na které se často zapomíná:
+
+      - neorientovaný graf **nemá smyčky** ani násobné hrany ($\{x,x\}$ není dvouprvková množina
+        a množina hran nemůže obsahovat tutéž hranu dvakrát) – jde o tzv. prostý graf;
+      - orientovaný graf smyčku $(x,x)$ mít **může** (proto se později definuje i cyklus délky 1);
+      - množina uzlů je konečná a neprázdná, graf bez uzlů neexistuje.
+
+      Pokud neřekneme jinak, značíme $n = |U(G)|$ a $m = |H(G)|$.
+    related: [def-homomorfismus, def-specialni-grafy, def-stupen-uzlu]
+    source: "přednáška 1, folie 3"
+    supplemented: false
+
+  - id: def-homomorfismus
+    kind: definition
+    label: Definice
+    section: "0.1"
+    title: Homomorfismus grafů
+    terms: [homomorfismus, zobrazení grafů, homomorfismus grafu]
+    statement: |
+      Buďte $G$ a $G'$ grafy. Zobrazení $f : U(G) \to U(G')$ se nazývá **homomorfismus grafu $G$
+      do grafu $G'$**, jestliže
+
+      $$
+      (x,y) \in H(G) \Rightarrow (f(x), f(y)) \in H(G') \quad\text{a}\quad
+      \{x,y\} \in H(G) \Rightarrow \{f(x), f(y)\} \in H(G').
+      $$
+
+      Značíme $f : G \to G'$.
+    intuition: |
+      Homomorfismus je zobrazení uzlů, které **zachovává hrany**: kdykoli jsou dva uzly v $G$
+      spojeny hranou, jsou jejich obrazy spojeny hranou (stejného typu) v $G'$. Opačná implikace
+      se nevyžaduje – obrazy nesousedních uzlů klidně sousedit mohou.
+
+      Pozor: u neorientovaných grafů nesmí homomorfismus „slepit" dva sousední uzly do jednoho,
+      protože $\{f(x), f(x)\}$ není hrana. Proto např. homomorfismus $G \to K_k$ existuje právě
+      když lze $G$ obarvit $k$ barvami.
+
+      Homomorfismy jsou v TGD1 hlavně jazykem pro elegantní definice: sled, tah, cesta,
+      kružnice i isomorfismus se definují jako homomorfismy s jistými vlastnostmi.
+    examples:
+      - title: Homomorfismus cesty do trojúhelníku
+        body: |
+          Nechť $P_3$ má uzly $0,1,2,3$ a hrany $\{0,1\},\{1,2\},\{2,3\}$ a nechť $K_3$ má uzly $a,b,c$.
+          Zobrazení $f(0)=a,\ f(1)=b,\ f(2)=c,\ f(3)=a$ je homomorfismus: obrazy hran jsou
+          $\{a,b\},\{b,c\},\{c,a\}$, vesměs hrany $K_3$. Zobrazení s $f(0)=f(1)=a$ homomorfismem
+          není, protože hrana $\{0,1\}$ by se zobrazila na „hranu" $\{a,a\}$, která neexistuje.
+    related: [def-indukovane-zobrazeni, def-druhy-homomorfismu, def-sled-tah-cesta]
+    source: "přednáška 1, folie 3"
+    supplemented: false
+
+  - id: def-indukovane-zobrazeni
+    kind: definition
+    label: Definice
+    section: "0.1"
+    title: Zobrazení indukované zobrazením uzlů
+    terms: [indukované zobrazení, zobrazení hran, f hvězdička]
+    statement: |
+      Buďte $G$ a $G'$ grafy a $f : U(G) \to U(G')$ zobrazení. Zobrazení $f^* : H(G) \to H(G')$
+      definované vztahy
+
+      $$
+      f^*(\{u,v\}) = \{f(u), f(v)\}, \qquad f^*((u,v)) = (f(u), f(v))
+      $$
+
+      se nazývá **zobrazení indukované zobrazením $f$**.
+
+      Tedy: $f : U(G) \to U(G')$ je homomorfismus právě když $h \in H(G) \Rightarrow f^*(h) \in H(G')$.
+    intuition: |
+      $f$ říká, kam jdou uzly; $f^*$ je „důsledek" pro hrany – hrana jde tam, kam jdou její konce.
+      Homomorfismus je přesně takové $f$, pro které je $f^*$ dobře definované zobrazení do $H(G')$
+      (obraz každé hrany je opravdu hranou). Rozlišení $f$ a $f^*$ je klíčové pro definici
+      uzlových a hranových mono-/epimorfismů.
+    related: [def-homomorfismus, def-druhy-homomorfismu]
+    source: "přednáška 1, folie 3"
+    supplemented: false
+
+  - id: def-druhy-homomorfismu
+    kind: definition
+    label: Definice
+    section: "0.1"
+    title: Druhy homomorfismů (mono-, epi-, isomorfismus)
+    terms: [uzlový monomorfismus, uzlový epimorfismus, hranový monomorfismus, hranový epimorfismus, monomorfismus, epimorfismus, isomorfismus, izomorfismus]
+    statement: |
+      Buďte $G, G'$ grafy a $f : G \to G'$ homomorfismus. Řekneme, že $f$ je
+
+      - **uzlový monomorfismus**, je-li $f$ prosté,
+      - **uzlový epimorfismus**, je-li $f$ na,
+      - **hranový monomorfismus**, je-li $f^*$ prosté,
+      - **hranový epimorfismus**, je-li $f^*$ na,
+      - **monomorfismus**, je-li $f$ i $f^*$ prosté,
+      - **epimorfismus**, je-li $f$ i $f^*$ na,
+      - **isomorfismus**, je-li $f$ i $f^*$ prosté a na.
+    intuition: |
+      „Mono" = prosté (nic se neslepí), „epi" = na (všechno se pokryje), přívlastek uzlový/hranový
+      říká, zda mluvíme o $f$, nebo o indukovaném $f^*$.
+
+      - Uzlový monomorfismus je automaticky i hranový monomorfismus (různé hrany mají různou
+        dvojici konců, a ty se zobrazí na různé dvojice). Opak neplatí: sled, který projde uzlem
+        dvakrát, ale žádnou hranou dvakrát, je hranový, ale ne uzlový monomorfismus.
+      - Právě tento rozdíl odlišuje **tah** (hranový monomorfismus) od **cesty** (uzlový
+        monomorfismus), viz [sled, tah, cesta](#def-sled-tah-cesta).
+      - Isomorfismus znamená, že $G$ a $G'$ jsou „tentýž graf, jen jinak pojmenovaný / nakreslený".
+    related: [def-homomorfismus, def-indukovane-zobrazeni, prop-isomorfismus-vlastnosti, def-sled-tah-cesta]
+    source: "přednáška 1, folie 4"
+    supplemented: false
+
+  - id: prop-isomorfismus-vlastnosti
+    kind: proposition
+    label: Poznámky
+    section: "0.1"
+    title: Ekvivalentní popis isomorfismu, relace ≃
+    terms: [isomorfismus, isomorfní grafy, izomorfní grafy, relace isomorfismu, ekvivalence]
+    statement: |
+      1. Zobrazení $f : U(G) \to U(G')$ je isomorfismus právě když $f$ je bijekce a platí
+         $$
+         (x,y) \in H(G) \iff (f(x),f(y)) \in H(G'), \qquad
+         \{x,y\} \in H(G) \iff \{f(x),f(y)\} \in H(G').
+         $$
+      2. Existuje-li isomorfismus $G \to G'$, říkáme, že grafy jsou **isomorfní**, a značíme $G \simeq G'$.
+      3. Relace $\simeq$ je ekvivalence (na třídě všech grafů).
+    intuition: |
+      Isomorfismus zachovává hrany **i nehrany**. Pro důkaz, že dva grafy isomorfní **nejsou**,
+      stačí najít vlastnost, kterou isomorfismus zachovává a v níž se grafy liší (počet uzlů a
+      hran, soubor stupňů, počet trojúhelníků, existence kružnice dané délky, bipartitnost,
+      souvislost…). Pro důkaz isomorfismu je naopak potřeba bijekci explicitně najít.
+
+      Typická chyba: „mají stejný soubor stupňů, tedy jsou isomorfní" – to **neplatí**
+      (viz příklad).
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **1. (⇒)** Nechť $f$ je isomorfismus. Pak $f$ je bijekce podle definice. Implikace „⇒"
+      ve vztazích plyne z toho, že $f$ je homomorfismus. Implikace „⇐": nechť
+      $(f(x),f(y)) \in H(G')$. Protože $f^*$ je na, existuje hrana $(a,b) \in H(G)$ s
+      $(f(a),f(b)) = (f(x),f(y))$, tj. $f(a)=f(x)$ a $f(b)=f(y)$. Z prostoty $f$ plyne $a=x$, $b=y$,
+      tedy $(x,y) \in H(G)$. Pro neorientované hrany stejně.
+
+      **1. (⇐)** Nechť $f$ je bijekce splňující obě ekvivalence. Implikace „⇒" říká, že $f$ je
+      homomorfismus. $f^*$ je prosté: pokud $f^*(h_1) = f^*(h_2)$, mají obě hrany stejné obrazy konců,
+      a protože $f$ je prosté, mají stejné konce, tj. $h_1 = h_2$. $f^*$ je na: pro hranu
+      $(x',y') \in H(G')$ položme $x = f^{-1}(x')$, $y = f^{-1}(y')$; podle implikace „⇐" je
+      $(x,y) \in H(G)$ a $f^*((x,y)) = (x',y')$. Tedy $f$ i $f^*$ jsou bijekce.
+
+      **3.** *Reflexivita:* identita $\mathrm{id}_{U(G)}$ je isomorfismus $G \to G$.
+      *Symetrie:* je-li $f$ isomorfismus $G \to G'$, pak $f^{-1}$ je bijekce a podle bodu 1
+      (ekvivalence čtené zprava doleva) splňuje obě ekvivalence, je tedy isomorfismus $G' \to G$.
+      *Tranzitivita:* složení dvou bijekcí je bijekce a složením ekvivalencí
+      $h \in H(G) \iff f^*(h) \in H(G') \iff g^*(f^*(h)) \in H(G'')$ dostaneme, že $g \circ f$
+      je isomorfismus $G \to G''$. $\square$
+    proof_steps:
+      - Je-li f isomorfismus, je f bijekce a implikace „hrana ⇒ hrana obrazů" plyne z toho, že f je homomorfismus.
+      - Opačná implikace plyne z toho, že f* je na a f je prosté, takže hrana mezi obrazy musí pocházet právě z hrany mezi vzory.
+      - Naopak u bijekce splňující obě ekvivalence je f* prosté (různé hrany mají různé konce) a na (vzor hrany vezmeme přes inverzi f).
+      - Reflexivita relace ≃ plyne z identity, symetrie z toho, že inverze isomorfismu je opět isomorfismus.
+      - Tranzitivita plyne z toho, že složením dvou bijekcí zachovávajících hrany i nehrany je opět taková bijekce.
+    examples:
+      - title: Tři kubické grafy na šesti uzlech
+        body: |
+          Uvažujme tři 3-pravidelné grafy na 6 uzlech (všechny mají soubor stupňů $3,3,3,3,3,3$ a 9 hran):
+
+          1. $K_{3,3}$,
+          2. šestiúhelník $C_6$ s uzly $1,\dots,6$ doplněný o tři „dlouhé úhlopříčky" $\{1,4\},\{2,5\},\{3,6\}$,
+          3. trojboký hranol (dva trojúhelníky $abc$ a $a'b'c'$ spojené hranami $aa', bb', cc'$).
+
+          Graf 2 je isomorfní s $K_{3,3}$: liché uzly $1,3,5$ tvoří jednu partitu, sudé $2,4,6$ druhou –
+          každá hrana šestiúhelníku i každá úhlopříčka spojuje lichý uzel se sudým a každý lichý uzel má
+          tři sudé sousedy, tj. všechny. Hranol ale isomorfní **není**: obsahuje trojúhelník, zatímco
+          $K_{3,3}$ (bipartitní graf) žádnou lichou kružnici nemá. Stejný soubor stupňů tedy na isomorfismus nestačí.
+        graph:
+          directed: false
+          nodes:
+            - { id: "1", x: 3, y: 0 }
+            - { id: "2", x: 7, y: 0 }
+            - { id: "3", x: 9, y: 4 }
+            - { id: "4", x: 7, y: 8 }
+            - { id: "5", x: 3, y: 8 }
+            - { id: "6", x: 1, y: 4 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "2", to: "3" }
+            - { from: "3", to: "4" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "6" }
+            - { from: "6", to: "1" }
+            - { from: "1", to: "4" }
+            - { from: "2", to: "5" }
+            - { from: "3", to: "6" }
+    illustrations:
+      - title: Stejné stupně, a přesto různé grafy
+        property: bipartite
+        graph:
+          directed: false
+          nodes:
+            - { id: "1", x: 3, y: 0.5 }
+            - { id: "2", x: 7, y: 0.5 }
+            - { id: "3", x: 9.5, y: 5 }
+            - { id: "4", x: 7, y: 9.5 }
+            - { id: "5", x: 3, y: 9.5 }
+            - { id: "6", x: 0.5, y: 5 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "2", to: "3" }
+            - { from: "3", to: "4" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "6" }
+            - { from: "6", to: "1" }
+            - { from: "1", to: "4" }
+            - { from: "2", to: "5" }
+            - { from: "3", to: "6" }
+        steps:
+          - caption: |
+              Šestiúhelník se třemi dlouhými úhlopříčkami, všechny stupně jsou 3. Každá hrana spojuje lichý uzel se sudým, takže uzly jdou rozdělit do dvou tříd bez hran uvnitř – graf je bipartitní.
+          - caption: |
+              Bijekce $f$: liché uzly $1, 3, 5 \mapsto a_1, a_2, a_3$, sudé $2, 4, 6 \mapsto b_1, b_2, b_3$. Každý lichý uzel sousedí se **všemi** sudými a žádné dva liché spolu nesousedí, takže $f$ zachovává hrany i nehrany – je to jen jinak nakreslený $K_{3,3}$.
+            labels: { "1": "a₁", "3": "a₂", "5": "a₃", "2": "b₁", "4": "b₂", "6": "b₃" }
+          - caption: |
+              Vyměníme úhlopříčky $\{1,4\}, \{3,6\}$ za $\{1,3\}, \{4,6\}$. Všechny stupně zůstanou 3, ale vznikl trojúhelník $1, 2, 3$ a graf přestal být bipartitní. Isomorfismus trojúhelníky zachovává, takže tento trojboký hranol s $K_{3,3}$ isomorfní **není** – stejný soubor stupňů nestačí.
+            remove: [["1", "4"], ["3", "6"]]
+            add: [["1", "3"], ["4", "6"]]
+    related: [def-druhy-homomorfismu, def-soubor-stupnu, def-specialni-grafy]
+    source: "přednáška 1, folie 4–5"
+    supplemented: false
+
+  - id: def-specialni-grafy
+    kind: definition
+    label: Neorientované grafy
+    section: "0.1"
+    title: Speciální neorientované grafy (K_n, P_n, C_n, K_{p,q})
+    terms: [úplný graf, cesta, kružnice, úplný bipartitní graf, úplný sudý graf, bipartitní graf, Kn, Pn, Cn, Kpq]
+    statement: |
+      - **Úplný graf:** $K_n = \left(\langle 1,n\rangle, \binom{\langle 1,n\rangle}{2}\right)$.
+      - **Cesta délky $n \ge 0$:** $P_n = \left(\langle 0,n\rangle, \{\{i,i+1\} \mid i \in \langle 0,n-1\rangle\}\right)$.
+      - **Kružnice délky $n \ge 3$:** $C_n = \left(\langle 1,n\rangle, \{\{i,i+1\} \mid i \in \langle 1,n-1\rangle\} \cup \{\{1,n\}\}\right)$.
+      - **Úplný sudý (bipartitní) graf:** pro disjunktní množiny $U, U'$ ($U \cap U' = \emptyset$)
+        $K_{U,U'} = \left(U \cup U', \{\{x,y\} \mid x \in U,\ y \in U'\}\right)$.
+        Speciálně $K_{p,q} = K_{\langle 1,p\rangle, \langle p+1,p+q\rangle}$.
+
+      ($\langle a,b \rangle$ značí množinu celých čísel od $a$ do $b$.)
+    intuition: |
+      Pozor na indexování: $P_n$ má **$n$ hran a $n+1$ uzlů** (délka = počet hran), $C_n$ má $n$
+      uzlů i $n$ hran. $K_n$ má $\binom{n}{2}$ hran, $K_{p,q}$ má $pq$ hran.
+
+      Tyto „vzorové" grafy jsou důležité, protože sled, tah, cesta a kružnice v obecném grafu se
+      definují jako homomorfní obrazy $P_k$ a $C_k$.
+    related: [def-graf, def-sled-tah-cesta, def-uzavreny-sled-kruznice]
+    source: "přednáška 1, folie 6"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 0.2
+  - id: def-stupen-uzlu
+    kind: definition
+    label: Definice
+    section: "0.2"
+    title: Stupeň uzlu
+    terms: [stupeň uzlu, stupeň vrcholu, valence, d_G(u)]
+    statement: |
+      **Stupeň** uzlu $u$ v (neorientovaném) grafu $G$ je počet hran grafu $G$, které obsahují uzel $u$.
+      Značíme jej $d_G(u)$.
+    intuition: |
+      Stupeň je počet sousedů uzlu (v prostém neorientovaném grafu jsou to totéž, protože nejsou
+      smyčky ani násobné hrany). Uzel stupně 0 je izolovaný, uzel stupně 1 je list (koncový uzel).
+      Pro orientované grafy se zavádějí zvlášť vstupní a výstupní polostupně.
+    related: [thm-soucet-stupnu, def-soubor-stupnu, def-min-max-stupen]
+    source: "přednáška 1, folie 6"
+    supplemented: false
+
+  - id: thm-soucet-stupnu
+    kind: theorem
+    label: Věta
+    section: "0.2"
+    title: Součet stupňů (princip sudosti)
+    terms: [součet stupňů, princip sudosti, handshaking lemma, lemma o podávání rukou, lichý stupeň]
+    statement: |
+      Pro každý graf $G$ platí
+      $$
+      \sum_{u \in U(G)} d_G(u) = 2\,|H(G)|.
+      $$
+    intuition: |
+      Každá hrana má dva konce, a proto přispívá do součtu stupňů přesně dvakrát – jednou u každého
+      svého konce. Důležitý důsledek: **počet uzlů lichého stupně je v každém grafu sudý**
+      (součet stupňů je sudý). Tím se okamžitě vyřadí mnoho „podezřelých" posloupností:
+      např. graf se stupni $3,3,3$ neexistuje.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Počítejme dvojice $(u, h)$, kde $u \in U(G)$, $h \in H(G)$ a $u \in h$ (uzel leží na hraně),
+      dvěma způsoby.
+
+      - Seskupíme-li dvojice podle uzlu $u$, dostaneme pro každý uzel přesně $d_G(u)$ dvojic,
+        celkem tedy $\sum_{u} d_G(u)$.
+      - Seskupíme-li je podle hrany $h$, dostaneme pro každou hranu přesně 2 dvojice (hrana
+        $\{x,y\}$ má právě dva různé konce), celkem $2|H(G)|$.
+
+      Oba výsledky počítají tutéž množinu, jsou tedy rovny. $\square$
+    proof_steps:
+      - Uvažujeme množinu všech incidujících dvojic (uzel, hrana), kde uzel leží na hraně.
+      - Při počítání po uzlech přispívá každý uzel u přesně d_G(u) dvojicemi, celkem tedy součtem stupňů.
+      - Při počítání po hranách přispívá každá hrana přesně dvěma dvojicemi, protože má dva různé konce.
+      - Oba způsoby počítají tutéž množinu, proto je součet stupňů roven 2|H(G)|.
+    illustrations:
+      - title: Každá hrana přidá do součtu dvojku
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 3 }
+            - { id: b, x: 4, y: 0.5 }
+            - { id: c, x: 4, y: 6 }
+            - { id: d, x: 8, y: 4 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: a, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+        steps:
+          - caption: |
+              Popisky jsou stupně. Součet $2 + 2 + 3 + 2 + 1 = 10 = 2 \cdot 5$ – každá z pěti hran se započítá u obou svých konců. Lichý stupeň mají dva uzly, $c$ a $e$.
+            labels: { a: "2", b: "2", c: "3", d: "2", e: "1" }
+            nodes: { c: path, e: path }
+          - caption: |
+              Přidáme hranu $bd$: stupeň vzroste **dvěma** uzlům, součet tedy o 2 na $12 = 2 \cdot 6$. Uzly lichého stupně jsou teď čtyři ($b, c, d, e$) – jejich počet zůstává sudý.
+            add: [[b, d]]
+            labels: { a: "2", b: "3", c: "3", d: "3", e: "1" }
+            nodes: { b: path, c: path, d: path, e: path }
+            edges: { b-d: active }
+          - caption: |
+              Hrana $ce$ mezi dvěma lichými uzly udělá z obou uzly sudé: součet je $14 = 2 \cdot 7$ a liché zbyly jen $b, d$. Proto graf se stupni $3, 3, 3$ (lichý součet) neexistuje.
+            add: [[c, e]]
+            labels: { a: "2", b: "3", c: "4", d: "3", e: "2" }
+            nodes: { b: path, d: path }
+            edges: { c-e: active }
+    related: [def-stupen-uzlu, thm-skore, thm-soucet-polostupnu]
+    source: "přednáška 1, folie 6"
+    supplemented: false
+
+  - id: def-soubor-stupnu
+    kind: definition
+    label: Definice
+    section: "0.2"
+    title: Soubor stupňů (skóre) grafu, grafová posloupnost
+    terms: [soubor stupňů, skóre grafu, posloupnost stupňů, grafová posloupnost, grafické skóre]
+    statement: |
+      Nechť $|U(G)| = n$. Očíslujme uzly grafu $G$ tak, že $d_G(x_1) \ge d_G(x_2) \ge \dots \ge d_G(x_n)$.
+      Konečná nerostoucí posloupnost $d_G(x_1), d_G(x_2), \dots, d_G(x_n)$ se nazývá
+      **soubor stupňů** (skóre) grafu $G$.
+
+      Nerostoucí posloupnost přirozených čísel se nazývá **grafová**, jestliže je souborem stupňů
+      nějakého (neorientovaného) grafu.
+    intuition: |
+      Soubor stupňů je jednoduchý invariant: isomorfní grafy mají stejný soubor stupňů (ale ne
+      naopak). Otázka „je daná posloupnost grafová?" se řeší větou o skóre – opakovaným
+      „odebíráním" uzlu největšího stupně.
+
+      Nutné podmínky grafovosti: součet je sudý (věta o součtu stupňů) a $s_1 \le n-1$.
+      Nejsou ale postačující – např. $3,3,1,1$ má sudý součet, a přesto grafová není.
+    related: [thm-skore, alg-test-grafove-posloupnosti, thm-soucet-stupnu]
+    source: "přednáška 1, folie 7"
+    supplemented: false
+
+  - id: thm-skore
+    kind: theorem
+    label: Věta (o skóre)
+    section: "0.2"
+    title: Věta o skóre (Havel–Hakimi)
+    terms: [věta o skóre, Havel-Hakimi, grafová posloupnost, skóre grafu, test grafovosti]
+    statement: |
+      Nechť $s_1 \ge s_2 \ge \dots \ge s_n$, $n \ge 2$, je posloupnost přirozených čísel. Pak je
+      posloupnost $s_1, s_2, \dots, s_n$ grafová, právě když je grafová posloupnost
+
+      $$
+      \underbrace{s_2 - 1,\ s_3 - 1,\ \dots,\ s_{s_1+1} - 1}_{s_1},\ s_{s_1+2},\ \dots,\ s_n .
+      $$
+    intuition: |
+      Uzel s největším stupněm $s_1$ „spotřebuje" $s_1$ sousedů. Věta říká, že je vždy bezpečné
+      předpokládat, že jeho sousedy jsou **ti s největšími stupni** – pak stačí tento uzel odebrat
+      a sousedům snížit stupeň o 1. Posloupnost se tak zkrátí o jeden člen a postup lze opakovat,
+      dokud nedojdeme k triviálnímu případu (samé nuly = grafová, záporné číslo nebo $s_1 > n-1$ = negrafová).
+
+      Nově vzniklou posloupnost je před dalším krokem nutné znovu **seřadit nerostoucím způsobem**.
+      Implicitně se předpokládá $s_1 \le n-1$ (jinak by posloupnost vpravo nebyla definována
+      a $s$ zjevně grafová není – uzel nemůže mít více než $n-1$ sousedů).
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Předpokládejme $s_1 \le n-1$ (jinak $s$ grafová není
+      a pravá strana nedává smysl). Označme $s'$ posloupnost z pravé strany; grafovost nezávisí na
+      pořadí členů, proto ji můžeme kdykoli přerovnat.
+
+      **(⇐)** Nechť $s'$ je grafová, tj. existuje graf $G'$ na uzlech $x_2, \dots, x_n$ se stupni
+      $d(x_i) = s_i - 1$ pro $2 \le i \le s_1 + 1$ a $d(x_i) = s_i$ pro $i \ge s_1 + 2$. Přidáme nový uzel
+      $x_1$ a spojíme jej hranou s uzly $x_2, \dots, x_{s_1+1}$. Uzel $x_1$ má stupeň $s_1$ a stupně
+      jeho sousedů vzrostou o 1, takže nový graf má soubor stupňů $s$.
+
+      **(⇒)** Nechť $s$ je grafová. Mezi všemi grafy $G$ na uzlech $x_1, \dots, x_n$ s $d_G(x_i) = s_i$
+      vyberme takový, v němž má $x_1$ **co nejvíce** sousedů v množině $M = \{x_2, \dots, x_{s_1+1}\}$.
+      Tvrdíme, že $x_1$ sousedí se všemi uzly z $M$.
+
+      Kdyby ne, existuje $x_i \in M$ nesousedící s $x_1$, a protože $d(x_1) = s_1 = |M|$, existuje
+      soused $x_j$ uzlu $x_1$ mimo $M$, tj. $j > s_1 + 1$, a tedy $s_i \ge s_j$.
+      Ukážeme, že existuje uzel $x_k \ne x_j$, který sousedí s $x_i$, ale ne s $x_j$:
+
+      - je-li $x_i x_j$ hrana, má $N(x_i) \setminus \{x_j\}$ celkem $s_i - 1$ prvků, kdežto
+        $N(x_j) \setminus \{x_1, x_i\}$ jen $s_j - 2 < s_i - 1$ prvků;
+      - není-li, má $N(x_i)$ celkem $s_i$ prvků a $N(x_j) \setminus \{x_1\}$ jen $s_j - 1 < s_i$ prvků.
+
+      V obou případech takové $x_k$ existuje (a $x_k \ne x_1$, protože $x_1 \notin N(x_i)$).
+      Nyní hrany $\{x_1, x_j\}$, $\{x_i, x_k\}$ odebereme a přidáme $\{x_1, x_i\}$, $\{x_j, x_k\}$
+      (ty v grafu nebyly). Stupně všech uzlů se nezmění, ale $x_1$ má v $M$ o jednoho souseda víc –
+      spor s volbou $G$.
+
+      Tedy $x_1$ sousedí přesně s uzly $x_2, \dots, x_{s_1+1}$ a graf $G - x_1$ má soubor stupňů $s'$
+      (až na pořadí), takže $s'$ je grafová. $\square$
+    proof_steps:
+      - "(⇐) Z grafu realizujícího zkrácenou posloupnost dostaneme graf pro s přidáním nového uzlu spojeného s uzly x_2, …, x_{s_1+1}."
+      - "(⇒) Mezi všemi realizacemi posloupnosti s vybereme tu, v níž má x_1 nejvíce sousedů mezi uzly x_2, …, x_{s_1+1}."
+      - Pokud x_1 nesousedí s nějakým x_i z této množiny, musí sousedit s nějakým x_j mimo ni, přičemž d(x_i) ≥ d(x_j).
+      - Porovnáním okolí najdeme uzel x_k sousedící s x_i, ale nesousedící s x_j.
+      - Záměnou hran {x_1,x_j}, {x_i,x_k} za {x_1,x_i}, {x_j,x_k} se stupně nezmění, ale x_1 získá dalšího souseda v množině – spor s volbou grafu.
+      - Tedy x_1 sousedí právě s x_2, …, x_{s_1+1} a odebráním x_1 dostaneme realizaci zkrácené posloupnosti.
+    examples:
+      - title: Grafová a negrafová posloupnost
+        body: |
+          **$3,3,2,2,2$:** odebereme $3$ a první tři následující členy zmenšíme o 1: $2,1,1,2$,
+          seřadíme $2,2,1,1$. Odebereme $2$: $1,0,1$, seřadíme $1,1,0$. Odebereme $1$: $0,0$ –
+          to je soubor stupňů grafu se dvěma izolovanými uzly. Posloupnost **je grafová**
+          (realizuje ji např. kružnice $C_5$ s jednou přidanou „tětivou").
+
+          **$3,3,3,1$:** součet je sudý ($10$), ale: odebereme $3$: $2,2,0$; odebereme $2$: $1,-1$ –
+          záporné číslo, posloupnost **není grafová**.
+    illustrations:
+      - title: Záměna hran nezmění stupně
+        for: proof
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 0.5, y: 6 }
+            - { id: x2, x: 4.5, y: 2.5 }
+            - { id: x3, x: 4.5, y: 9.5 }
+            - { id: x4, x: 1.5, y: 0.5 }
+            - { id: x5, x: 9.5, y: 3 }
+          edges:
+            - { from: x1, to: x2 }
+            - { from: x1, to: x4 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: x5 }
+        steps:
+          - caption: |
+              Graf realizuje posloupnost $2, 2, 2, 1, 1$ (uzly $x_1, \dots, x_5$, popisky jsou stupně). Uzel $x_1$ má $s_1 = 2$, takže chceme, aby sousedil s $M = \{x_2, x_3\}$. Jeho soused $x_4$ ale leží mimo $M$.
+            labels: { x1: "2", x2: "2", x3: "2", x4: "1", x5: "1" }
+            nodes: { x1: active, x2: frontier, x3: frontier }
+          - caption: |
+              $x_i = x_3 \in M$ s $x_1$ nesousedí, $x_j = x_4 \notin M$ ano. Protože $d(x_3) \ge d(x_4)$, má $x_3$ souseda $x_k = x_5$, který s $x_4$ nesousedí. Hrany $x_1x_4$ a $x_3x_5$ označíme k odebrání.
+            labels: { x1: "2", x2: "2", x3: "2", x4: "1", x5: "1" }
+            nodes: { x1: active, x3: frontier, x4: rejected, x5: path }
+            edges: { x1-x4: rejected, x3-x5: rejected }
+          - caption: |
+              Nahradíme je hranami $x_1x_3$ a $x_4x_5$. Každý ze čtyř uzlů jednu hranu ztratil a jednu získal, stupně $2, 2, 2, 1, 1$ se tedy nezměnily – ale $x_1$ má v $M$ o souseda víc. To je spor s volbou grafu, kde jich má nejvíc.
+            remove: [[x1, x4], [x3, x5]]
+            add: [[x1, x3], [x4, x5]]
+            labels: { x1: "2", x2: "2", x3: "2", x4: "1", x5: "1" }
+            nodes: { x1: active, x2: frontier, x3: frontier }
+            edges: { x1-x3: active, x4-x5: active }
+          - caption: |
+              Teď $x_1$ sousedí přesně s $M$. Odebereme ho i s jeho hranami: stupně $x_2, x_3$ klesnou o 1 a zbylé uzly realizují zkrácenou posloupnost $1, 1, 1, 1$.
+            remove: [[x1, x2], [x1, x3]]
+            labels: { x2: "1", x3: "1", x4: "1", x5: "1" }
+            nodes: { x1: rejected }
+    related: [def-soubor-stupnu, alg-test-grafove-posloupnosti, thm-soucet-stupnu]
+    source: "přednáška 1, folie 7"
+    supplemented: false
+
+  - id: alg-test-grafove-posloupnosti
+    kind: algorithm
+    section: "0.2"
+    title: Test grafovosti posloupnosti (opakované užití věty o skóre)
+    terms: [test grafovosti, algoritmus Havel-Hakimi, skóre, grafová posloupnost]
+    statement: |
+      Vstup: nerostoucí posloupnost přirozených čísel $s_1 \ge \dots \ge s_n$.
+      Výstup: ANO, je-li posloupnost grafová (a případně graf, který ji realizuje), jinak NE.
+    pseudocode: |
+      1. Je-li posloupnost tvořena samými nulami, odpověz **ANO** (graf bez hran).
+      2. Je-li $s_1 > n - 1$ nebo se v posloupnosti vyskytuje záporné číslo, odpověz **NE**.
+      3. Odeber první člen $s_1$ a o 1 zmenši následujících $s_1$ členů.
+      4. Zbylou posloupnost seřaď nerostoucím způsobem a pokračuj krokem 1.
+    complexity: "$O(n^2 \\log n)$ (naivně), resp. $O(n^2)$"
+    intuition: |
+      Správnost plyne přímo z [věty o skóre](#thm-skore): každý krok zachovává odpověď
+      (grafová ⇔ grafová) a délka posloupnosti klesá o 1, po nejvýše $n$ krocích tedy skončíme.
+      Každý krok stojí $O(n)$ na odečtení a $O(n \log n)$ na seřazení (protože se mění jen
+      souvislý úsek, stačí ve skutečnosti $O(n)$ sléváním), celkem $O(n^2 \log n)$, resp. $O(n^2)$.
+
+      Zapamatujeme-li si, které uzly jsme v kroku 3 spojili, dostaneme rovnou i graf s daným skóre.
+    related: [thm-skore, def-soubor-stupnu]
+    source: "odvozeno z věty o skóre (přednáška 1, folie 7)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 0.3
+  - id: def-podgraf
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Podgraf, faktor, indukovaný podgraf
+    terms: [podgraf, faktor, faktor grafu, indukovaný podgraf, spanning subgraph, G1 ⊂ G]
+    statement: |
+      Buďte $G_1, G$ grafy. Řekneme, že
+
+      - $G_1$ je **podgrafem** grafu $G$, jestliže $U(G_1) \subset U(G)$ a $H(G_1) \subset H(G)$,
+      - $G_1$ je **faktorem** grafu $G$, jestliže $U(G_1) = U(G)$ a $H(G_1) \subset H(G)$.
+
+      Buď $X \subset U(G)$. Graf $G_1 = \left(X, H(G) \cap \binom{X}{2}\right)$ se nazývá
+      **podgraf grafu $G$ indukovaný na množině $X$**.
+
+      Je-li $G_1$ podgrafem grafu $G$, značíme $G_1 \subset G$.
+    intuition: |
+      Podgraf vznikne vynecháním některých uzlů a hran (hrana smí zůstat jen tehdy, zůstaly-li
+      oba její konce – jinak by $G_1$ nebyl graf). Faktor má **všechny uzly** a jen část hran
+      (anglicky *spanning subgraph*). Indukovaný podgraf na $X$ obsahuje z $G$ **všechny** hrany
+      mezi uzly z $X$ – je to „největší" podgraf s množinou uzlů $X$.
+
+      Značení: $G - u$ je podgraf indukovaný na $U(G) \setminus \{u\}$ (odebrání uzlu i se všemi
+      jeho hranami), $G - h$ je faktor vzniklý odebráním hrany $h$.
+    illustrations:
+      - title: Podgraf, indukovaný podgraf a faktor
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 0.5 }
+            - { id: b, x: 9.5, y: 3.5 }
+            - { id: c, x: 8, y: 9 }
+            - { id: d, x: 2, y: 9 }
+            - { id: e, x: 0.5, y: 3.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: a }
+            - { from: a, to: c }
+            - { from: a, to: d }
+        steps:
+          - caption: |
+              Výchozí graf $G$ s pěti uzly a sedmi hranami.
+          - caption: |
+              **Podgraf** na uzlech $\{a, b, c\}$ s hranami $ab, bc$. Indukovaný **není**: hrana $ac$ vede v $G$ mezi vybranými uzly, ale do podgrafu jsme ji nevzali.
+            nodes: { a: active, b: active, c: active }
+            edges: { a-b: active, b-c: active, c-d: dim, d-e: dim, e-a: dim, a-c: dim, a-d: dim }
+          - caption: |
+              **Indukovaný podgraf** na $X = \{a, b, c\}$ obsahuje **všechny** hrany grafu $G$ mezi uzly z $X$, tedy i $ac$. Je to největší podgraf s množinou uzlů $X$.
+            nodes: { a: active, b: active, c: active }
+            edges: { a-b: active, b-c: active, a-c: active, c-d: dim, d-e: dim, e-a: dim, a-d: dim }
+          - caption: |
+              **Faktor** má všechny uzly grafu $G$ a jen část hran. Tento faktor je navíc souvislý a bez kružnic, takže je to kostra.
+            nodes: { a: active, b: active, c: active, d: active, e: active }
+            edges: { a-b: active, a-c: active, c-d: active, d-e: active, b-c: dim, e-a: dim, a-d: dim }
+    related: [def-kostra, def-komponenta, def-homomorfni-obraz]
+    source: "přednáška 1, folie 8"
+    supplemented: false
+
+  - id: def-homomorfni-obraz
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Homomorfní obraz grafu
+    terms: [homomorfní obraz, obraz grafu, obraz při homomorfismu]
+    statement: |
+      Nechť $f : G_1 \to G$ je homomorfismus. Podgraf $f(G_1) \subset G$ definovaný předpisem
+
+      $$
+      f(G_1) = \left(f(U(G_1)),\ f^*(H(G_1))\right)
+      $$
+
+      se nazývá **obraz grafu $G_1$ při homomorfismu $f$** („homomorfní obraz").
+    intuition: |
+      Obraz tvoří ty uzly a hrany grafu $G$, „na které $G_1$ dopadne". Je to opravdu podgraf
+      grafu $G$ – díky tomu, že $f$ je homomorfismus, leží obrazy hran v $H(G)$.
+      Tímto pojmem se definují sledy, tahy, cesty a kružnice: jsou to obrazy $P_k$ resp. $C_k$.
+    related: [def-homomorfismus, def-sled-tah-cesta, def-uzavreny-sled-kruznice]
+    source: "přednáška 1, folie 8"
+    supplemented: false
+
+  - id: def-sled-tah-cesta
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Sled, tah, cesta
+    terms: [sled, tah, cesta, délka sledu, walk, trail, path, sled z u do v]
+    statement: |
+      1. Buď $G$ graf, $u, v \in U(G)$, a nechť $f : P_k \to G$ je homomorfismus takový, že
+         $f(0) = u$ a $f(k) = v$. Pak se graf $f(P_k)$ nazývá **sled délky $k$ z uzlu $u$ do uzlu $v$** v grafu $G$.
+      2. Je-li navíc $f$ hranový monomorfismus, pak se $f(P_k)$ nazývá **tah** (délky $k$ z $u$ do $v$ v $G$).
+      3. Je-li navíc $f$ uzlový monomorfismus, pak se $f(P_k)$ nazývá **cesta** (délky $k$ z $u$ do $v$ v $G$).
+    intuition: |
+      Představte si procházku po grafu $u = f(0), f(1), \dots, f(k) = v$, kde každé dva po sobě
+      jdoucí uzly sousedí.
+
+      - **Sled**: uzly i hrany se smějí opakovat.
+      - **Tah**: neopakuje se žádná **hrana** (uzly ano).
+      - **Cesta**: neopakuje se žádný **uzel** (a tedy ani hrana).
+
+      Každá cesta je tah a každý tah je sled. Délka se měří počtem hran ($k$), ne uzlů.
+      Formálně je sled podgraf (obraz), ale při práci si jej představujeme jako posloupnost
+      uzlů $f(0), \dots, f(k)$.
+    illustrations:
+      - title: Cesta, tah a sled v motýlku
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 5, y: 5 }
+            - { id: d, x: 9.5, y: 1 }
+            - { id: e, x: 9.5, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: c }
+        steps:
+          - caption: |
+              **Cesta** $b, a, c, d$ délky 3: žádný uzel se neopakuje. Čísla u hran udávají pořadí kroků.
+            nodes: { b: source, d: sink }
+            edges: { b-a: path, a-c: path, c-d: path }
+            edge_labels: { b-a: "1", a-c: "2", c-d: "3" }
+          - caption: |
+              **Tah** $b, a, c, d, e, c$ délky 5: uzlem $c$ projdeme dvakrát, ale žádnou hranou dvakrát. Je to tah, ne cesta.
+            nodes: { b: source, c: active }
+            edges: { b-a: path, a-c: path, c-d: path, d-e: path, e-c: path }
+            edge_labels: { b-a: "1", a-c: "2", c-d: "3", d-e: "4", e-c: "5" }
+          - caption: |
+              **Sled** $a, c, d, c, e$: hranou $cd$ projdeme tam i zpět (kroky 2 a 3), takže to není ani tah. Vystřižením úseku $c, d, c$ dostaneme cestu $a, c, e$ – proto z každého sledu jde vyrobit cestu se stejnými konci.
+            nodes: { a: source, e: sink }
+            edges: { a-c: path, c-d: rejected, c-e: path }
+            edge_labels: { a-c: "1", c-d: "2, 3", c-e: "4" }
+    related: [def-homomorfni-obraz, def-druhy-homomorfismu, def-souvisly-graf, def-uzavreny-sled-kruznice]
+    source: "přednáška 1, folie 8"
+    supplemented: false
+
+  - id: def-souvisly-graf
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Souvislý graf
+    terms: [souvislý graf, souvislost, nesouvislý graf]
+    statement: |
+      Řekneme, že graf $G$ je **souvislý**, jestliže pro každé $u, v \in U(G)$ existuje v $G$ sled z $u$ do $v$.
+    intuition: |
+      Z každého uzlu se dá „dojít" do každého. Definice používá sled, protože se s ním snadno
+      pracuje (sledy lze skládat za sebou); [větička](#prop-souvislost-cesta) ukazuje, že
+      ekvivalentně lze požadovat cestu.
+    related: [prop-souvislost-cesta, def-komponenta, prop-souvislost-min-stupen]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: prop-souvislost-cesta
+    kind: proposition
+    label: Větička
+    section: "0.3"
+    title: Souvislost pomocí cest
+    terms: [souvislost, sled obsahuje cestu, nejkratší sled]
+    statement: |
+      Graf $G$ je souvislý, právě když pro každé $u, v \in U(G)$ existuje v $G$ cesta z $u$ do $v$.
+    intuition: |
+      Klíčové pozorování: **z každého sledu lze „vystřihnout" cestu** se stejnými konci –
+      kdykoli se nějaký uzel zopakuje, vynecháme úsek mezi jeho dvěma výskyty (smyčku procházky).
+      Nejkratší sled z $u$ do $v$ je proto vždy cesta.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **(⇐)** Každá cesta je sled, takže existence cest dává existenci sledů.
+
+      **(⇒)** Nechť $u, v \in U(G)$. Ze souvislosti existuje sled z $u$ do $v$; zvolme mezi všemi
+      takovými sledy sled $u = x_0, x_1, \dots, x_k = v$ **nejmenší délky** $k$. Kdyby se v něm nějaký uzel
+      opakoval, tj. $x_i = x_j$ pro $i < j$, pak $x_0, \dots, x_i, x_{j+1}, \dots, x_k$ je opět sled
+      z $u$ do $v$ (sousední uzly sousedí i v místě „slepení", protože $x_i = x_j$ sousedí s $x_{j+1}$),
+      a to délky $k - (j - i) < k$ – spor s minimalitou. Uzly nejkratšího sledu jsou tedy navzájem
+      různé, takže jde o cestu. $\square$
+    proof_steps:
+      - Směr zprava doleva je triviální, protože každá cesta je zároveň sled.
+      - Pro směr zleva doprava vezmeme mezi všemi sledy z u do v sled nejmenší délky.
+      - Kdyby se v něm opakoval uzel x_i = x_j (i < j), vynecháním úseku mezi oběma výskyty dostaneme kratší sled se stejnými konci.
+      - To je spor s minimalitou, takže se v nejkratším sledu žádný uzel neopakuje a je to cesta.
+    related: [def-souvisly-graf, def-sled-tah-cesta]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: def-komponenta
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Komponenta grafu
+    terms: [komponenta, komponenta souvislosti, maximální souvislý podgraf]
+    statement: |
+      Buď $G' \subset G$. Řekneme, že graf $G'$ je **komponenta** grafu $G$, jestliže
+
+      1. $G'$ je souvislý graf,
+      2. je-li $G' \subset G'' \subset G$ a $G''$ je souvislý, pak $G' = G''$.
+
+      (Tedy: komponenty grafu $G$ jsou jeho maximální souvislé podgrafy.)
+    intuition: |
+      Komponenta je „ostrov" grafu: souvislý kus, ke kterému už nelze nic přidat, aniž by se
+      porušila souvislost. Komponenty jsou indukované podgrafy na třídách ekvivalence „mezi $u$ a $v$
+      existuje sled"; každý uzel leží v právě jedné komponentě. Souvislý graf má právě jednu komponentu.
+      Komponenty lze najít prohledáváním (BFS/DFS) v čase $O(n + m)$.
+    illustrations:
+      - title: Komponenty při odebírání hran
+        property: connected
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 2 }
+            - { id: b, x: 0.5, y: 8 }
+            - { id: c, x: 3.5, y: 5 }
+            - { id: d, x: 6, y: 5 }
+            - { id: e, x: 8, y: 1 }
+            - { id: f, x: 9.5, y: 5 }
+            - { id: g, x: 8, y: 9 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: g }
+            - { from: g, to: d }
+        steps:
+          - caption: |
+              Mezi každými dvěma uzly vede cesta, graf je souvislý – má jedinou komponentu, sebe sama.
+          - caption: |
+              Hrana $cd$ byla jediným spojením obou částí. Po jejím odebrání se graf rozpadne na dvě komponenty – maximální souvislé podgrafy, ke kterým už nejde nic přidat, aniž by se souvislost porušila.
+            remove: [[c, d]]
+          - caption: |
+              Hrana $ef$ leží na kružnici $d, e, f, g$, takže její odebrání nic nerozpojí: z $e$ do $f$ se dostaneme oklikou přes $d, g$. Komponenty jsou pořád dvě.
+            remove: [[e, f]]
+          - caption: |
+              Po odebrání $de$ je $e$ izolovaný uzel – i ten tvoří samostatnou komponentu. Každý uzel leží v právě jedné komponentě.
+            remove: [[d, e]]
+          - caption: |
+              Hrana mezi dvěma komponentami je slije do jedné: po přidání $bg$ zbývají komponenty $\{a, b, c, d, f, g\}$ a $\{e\}$.
+            add: [[b, g]]
+    related: [def-souvisly-graf, def-podgraf, def-kvazikomponenta]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: def-min-max-stupen
+    kind: definition
+    label: Označení
+    section: "0.3"
+    title: Minimální a maximální stupeň grafu
+    terms: [minimální stupeň, maximální stupeň, delta, δ(G), Δ(G), n, m]
+    statement: |
+      - Minimální stupeň grafu: $\delta(G) = \min\{d_G(u) \mid u \in U(G)\}$.
+      - Maximální stupeň grafu: $\Delta(G) = \max\{d_G(u) \mid u \in U(G)\}$.
+
+      Neřekneme-li jinak, vždy značíme $|U(G)| = n$ a $|H(G)| = m$.
+    intuition: |
+      (Ve foliích je v definici překlep $d_G(U)$ místo $d_G(u)$.) Minimální stupeň je oblíbený
+      předpoklad postačujících podmínek – např. $\delta(G) \ge n/2$ zaručuje souvislost a podle
+      Diracovy věty dokonce hamiltonovskost.
+    related: [def-stupen-uzlu, prop-souvislost-min-stupen, thm-dirac]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: prop-souvislost-min-stupen
+    kind: proposition
+    label: Větička
+    section: "0.3"
+    title: Velký minimální stupeň zaručuje souvislost
+    terms: [souvislost, minimální stupeň, δ(G) ≥ n/2]
+    statement: |
+      Je-li $\delta(G) \ge \frac{n}{2}$, pak je $G$ souvislý.
+    intuition: |
+      Dva nesousední uzly mají každý alespoň $n/2$ sousedů, ale jen $n - 2$ „ostatních" uzlů,
+      kam sousedy umístit – jejich okolí se proto musí protnout. Libovolné dva uzly jsou tak ve
+      vzdálenosti nejvýše 2. Mez je těsná: dvě disjunktní kopie $K_k$ mají $n = 2k$ a
+      $\delta = k - 1 = n/2 - 1$, a souvislé nejsou.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Buďte $u \ne v$ dva uzly grafu $G$. Sousedí-li, jsou spojeny cestou délky 1. Nesousedí-li,
+      leží všichni sousedé uzlu $u$ i uzlu $v$ v množině $U(G) \setminus \{u, v\}$, která má $n - 2$ prvků.
+      Přitom $|N(u)| + |N(v)| = d_G(u) + d_G(v) \ge \frac{n}{2} + \frac{n}{2} = n > n - 2$, takže
+      podle Dirichletova principu mají $u$ a $v$ společného souseda $w$. Pak $u, w, v$ je cesta
+      z $u$ do $v$. Graf je tedy souvislý. $\square$
+    proof_steps:
+      - Vezmeme dva různé uzly u, v; sousedí-li, jsou spojeny hranou.
+      - Nesousedí-li, leží všichni jejich sousedé mezi zbývajícími n − 2 uzly.
+      - Součet jejich stupňů je alespoň n > n − 2, proto mají společného souseda w.
+      - Cesta u, w, v ukazuje, že každé dva uzly jsou propojeny, a G je souvislý.
+    illustrations:
+      - title: Mez n/2 je těsná
+        property: connected
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 9 }
+            - { id: c, x: 3.5, y: 5 }
+            - { id: x, x: 9.5, y: 1 }
+            - { id: y, x: 9.5, y: 9 }
+            - { id: z, x: 6.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: a }
+            - { from: x, to: y }
+            - { from: y, to: z }
+            - { from: z, to: x }
+        steps:
+          - caption: |
+              $n = 6$ a každý uzel má stupeň $2 = n/2 - 1$. Dvě disjunktní kopie $K_3$ souvislé nejsou – předpoklad $\delta(G) \ge n/2$ tedy nejde zeslabit ani o jedničku.
+            labels: { a: "2", b: "2", c: "2", x: "2", y: "2", z: "2" }
+          - caption: |
+              Přidáním hran $ax$, $by$, $cz$ stoupne minimální stupeň na $3 = n/2$ a graf je souvislý, jak větička slibuje.
+            add: [[a, x], [b, y], [c, z]]
+            labels: { a: "3", b: "3", c: "3", x: "3", y: "3", z: "3" }
+          - caption: |
+              Proč to funguje: nesousední uzly $a$ a $y$ mají dohromady $3 + 3 = 6$ sousedů, ale k dispozici je jen $n - 2 = 4$ ostatních uzlů. Okolí se musí protnout – společným sousedem je např. $b$, takže $a, b, y$ je cesta.
+            nodes: { a: active, y: active, b: path }
+            edges: { a-b: path, b-y: path }
+    related: [def-souvisly-graf, def-min-max-stupen, thm-dirac]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: prop-vlastnosti-souvislych
+    kind: proposition
+    label: Tvrzení
+    section: "0.3"
+    title: Vlastnosti souvislých grafů
+    terms: [souvislý graf, odebrání uzlu, počet hran souvislého grafu, m ≥ n − 1]
+    statement: |
+      Nechť $G$ je souvislý graf (s $n \ge 2$ uzly). Pak
+
+      1. existuje uzel $u \in U(G)$ tak, že graf $G - u$ je souvislý,
+      2. $m \ge n - 1$.
+    intuition: |
+      Bod 1: souvislý graf lze „rozebírat" po jednom uzlu, aniž by se rozpadl – stačí vždy
+      odebrat konec nejdelší cesty (v kostře by to byl list). To umožňuje indukci podle počtu uzlů.
+      Bod 2: souvislost něco stojí – na propojení $n$ uzlů je potřeba alespoň $n - 1$ hran;
+      grafy, kde nastává rovnost, jsou právě stromy.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      **1.** Zvolme v $G$ cestu $P$ maximální délky a nechť $u$ je její koncový uzel. Všichni
+      sousedé uzlu $u$ leží na $P$ (jinak bychom $P$ prodloužili). Ukážeme, že $G - u$ je souvislý.
+      Graf $P - u$ je cesta, tedy souvislý (a neprázdný, protože $n \ge 2$ a $G$ souvislý dává délku $P$
+      alespoň 1). Buď $x \ne u$ libovolný uzel. V $G$ existuje cesta z $x$ do $u$; její předposlední uzel
+      $y$ je soused $u$, tedy leží na $P - u$, a úsek cesty z $x$ do $y$ neobsahuje $u$. Každý uzel $G - u$
+      je tak v $G - u$ spojen s cestou $P - u$, a $G - u$ je proto souvislý.
+
+      **2.** Indukcí podle $n$. Pro $n = 1$ je $m \ge 0 = n - 1$. Nechť $n \ge 2$ a tvrzení platí pro
+      grafy s $n - 1$ uzly. Podle bodu 1 existuje $u$ s $G - u$ souvislým; ten má $n - 1$ uzlů, tedy podle
+      indukčního předpokladu alespoň $n - 2$ hran. Uzel $u$ má v souvislém grafu s $n \ge 2$ uzly stupeň
+      alespoň 1 a jeho hrany v $G - u$ nejsou. Proto $m \ge (n - 2) + 1 = n - 1$. $\square$
+    proof_steps:
+      - Zvolíme nejdelší cestu P v G a za u vezmeme její koncový uzel; všichni sousedé u leží na P, jinak by šla P prodloužit.
+      - Každý uzel x ≠ u spojíme s u cestou; její předposlední uzel leží na P − u a úsek do něj se uzlu u vyhne.
+      - Protože P − u je souvislá a každý uzel je s ní v G − u spojen, je G − u souvislý.
+      - Odhad m ≥ n − 1 dokážeme indukcí podle n; v indukčním kroku odebereme uzel u z bodu 1.
+      - Graf G − u má podle indukčního předpokladu alespoň n − 2 hran a u přispívá alespoň jednou hranou, celkem m ≥ n − 1.
+    illustrations:
+      - title: Konec nejdelší cesty jde odebrat
+        for: proof
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 2 }
+            - { id: b, x: 0.5, y: 8 }
+            - { id: c, x: 3.5, y: 5 }
+            - { id: d, x: 6.5, y: 5 }
+            - { id: e, x: 9.5, y: 2 }
+            - { id: f, x: 9.5, y: 8 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: a, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: d, to: f }
+        steps:
+          - caption: |
+              $P = b, a, c, d, e, f$ je nejdelší cesta. Všichni sousedé jejího konce $f$ (uzly $e$ a $d$) leží na $P$ – jinak by šla $P$ prodloužit. Proto $G - f$ zůstane souvislý a $f$ **není** uzlový řez.
+            set: [f]
+            edges: { b-a: path, a-c: path, c-d: path, d-e: path, e-f: path }
+            witness: true
+          - caption: |
+              Pro srovnání vnitřní uzel $c$: jeho odebráním se graf rozpadne na $\{a, b\}$ a $\{d, e, f\}$, je to artikulace. Proto důkaz nebere libovolný uzel, ale konec nejdelší cesty.
+            set: [c]
+          - caption: |
+              Totéž platí pro druhý konec $b$: $G - b$ je souvislý. Odebraný uzel nese aspoň jednu hranu, takže indukcí $m \ge (n - 2) + 1 = n - 1$; zde $m = 7 \ge 5$.
+            set: [b]
+    related: [def-souvisly-graf, thm-charakterizace-stromu]
+    source: "přednáška 1, folie 9"
+    supplemented: false
+
+  - id: def-uzavreny-sled-kruznice
+    kind: definition
+    label: Definice
+    section: "0.3"
+    title: Uzavřený sled, uzavřený tah, kružnice
+    terms: [uzavřený sled, uzavřený tah, kružnice, cyklus v neorientovaném grafu, délka kružnice]
+    statement: |
+      1. Buď $f : C_k \to G$ homomorfismus. Pak se graf $f(C_k)$ nazývá **uzavřený sled** v grafu $G$.
+      2. Je-li navíc $f$ hranový monomorfismus, pak se $f(C_k)$ nazývá **uzavřený tah** v $G$.
+      3. Je-li navíc $f$ uzlový monomorfismus, pak se $f(C_k)$ nazývá **kružnice** v $G$.
+
+      Číslo $k$ se nazývá **délka** (uzavřeného sledu, uzavřeného tahu, kružnice).
+    intuition: |
+      Uzavřené varianty sledu, tahu a cesty – procházka, která skončí tam, kde začala.
+      Kružnice má navzájem různé uzly a délku alespoň 3 (protože $C_k$ je definována pro $k \ge 3$).
+      Uzavřené tahy jsou základem [eulerovských grafů](#def-eulerovsky-graf), kružnice délky $n$
+      [hamiltonovských grafů](#def-hamiltonovsky-graf).
+    related: [def-sled-tah-cesta, def-strom, def-eulerovsky-graf, def-hamiltonovsky-graf]
+    source: "přednáška 1, folie 10"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 0.4
+  - id: def-strom
+    kind: definition
+    label: Definice
+    section: "0.4"
+    title: Strom
+    terms: [strom, acyklický souvislý graf, les, list]
+    statement: |
+      Souvislý graf, který neobsahuje jako podgraf žádnou kružnici, se nazývá **strom**.
+    intuition: |
+      Strom je „minimální kostra propojení": vše je spojeno, ale nic navíc. Graf bez kružnic
+      (ne nutně souvislý) se nazývá les – jeho komponenty jsou stromy. Každý strom s alespoň dvěma
+      uzly má alespoň dva listy (uzly stupně 1) – např. konce nejdelší cesty.
+    related: [thm-charakterizace-stromu, def-kostra, def-uzavreny-sled-kruznice]
+    source: "přednáška 1, folie 10"
+    supplemented: false
+
+  - id: thm-charakterizace-stromu
+    kind: theorem
+    label: Věta
+    section: "0.4"
+    title: Charakterizace stromů
+    terms: [charakterizace stromů, strom, jediná cesta, m = n − 1, minimálně souvislý graf]
+    statement: |
+      Následující tvrzení jsou ekvivalentní:
+
+      1. $G$ je strom.
+      2. Pro každé $u, v \in U(G)$ existuje v $G$ právě jedna cesta z $u$ do $v$.
+      3. $G$ je souvislý a $m = n - 1$.
+      4. $G$ je souvislý a nemá žádný souvislý vlastní faktor.
+    intuition: |
+      Čtyři pohledy na tutéž věc:
+
+      - (2) „mezi každými dvěma uzly vede jediná trasa" – kdyby vedly dvě, vznikla by kružnice;
+      - (3) „souvislý s nejmenším možným počtem hran" – srovnej s $m \ge n - 1$ pro souvislé grafy;
+      - (4) „minimálně souvislý" – odebráním libovolné hrany se graf rozpadne (každá hrana je most).
+
+      Prakticky nejužitečnější je (3): o souvislém grafu stačí spočítat hrany. Pozor: samotné
+      $m = n - 1$ bez souvislosti nestačí (např. trojúhelník plus izolovaný uzel).
+    proof: |
+      *Důkaz není ve foliích, doplněno.* Dokážeme $1 \Rightarrow 2 \Rightarrow 4 \Rightarrow 1$
+      a $1 \Leftrightarrow 3$.
+
+      **1 ⇒ 2.** Strom je souvislý, takže cesta z $u$ do $v$ existuje
+      ([větička](#prop-souvislost-cesta)). Nechť existují dvě různé cesty $P \ne Q$ z $u$ do $v$.
+      Jdeme po $P$ od $u$; nechť $x$ je poslední společný uzel, po němž se cesty poprvé rozejdou, a $y$
+      první další uzel cesty $P$, který opět leží na $Q$. Úsek $P$ z $x$ do $y$ a úsek $Q$ z $y$ zpět do $x$
+      nemají kromě $x, y$ společné uzly a dohromady tvoří kružnici – spor.
+
+      **2 ⇒ 4.** $G$ je souvislý, protože cesty existují. Nechť $F$ je souvislý vlastní faktor, tj. chybí
+      v něm nějaká hrana $\{x,y\} \in H(G)$. V $F$ existuje cesta z $x$ do $y$, která hranu $\{x,y\}$
+      nepoužívá; v $G$ je tak z $x$ do $y$ i cesta $x, y$ (jediná hrana) – dvě různé cesty, spor.
+
+      **4 ⇒ 1.** Kdyby $G$ obsahoval kružnici $C$ a $h$ byla její hrana, je $G - h$ stále souvislý
+      (každý sled používající $h$ lze přesměrovat po zbytku kružnice $C - h$). Pak $G - h$ je souvislý
+      vlastní faktor – spor. Tedy $G$ je souvislý bez kružnic, tj. strom.
+
+      **1 ⇒ 3.** Indukcí podle $n$; pro $n = 1$ platí $m = 0$. Pro $n \ge 2$ uvažme nejdelší cestu
+      v $G$ a její koncový uzel $u$. Ten má stupeň 1: všichni jeho sousedé leží na cestě (maximalita)
+      a soused jiný než následující uzel by uzavřel kružnici. Graf $G - u$ je souvislý (list nespojuje
+      žádné jiné uzly) a bez kružnic, tedy strom s $n - 1$ uzly a podle indukce s $n - 2$ hranami.
+      Proto $m = n - 2 + 1 = n - 1$.
+
+      **3 ⇒ 1.** Nechť $G$ je souvislý s $m = n - 1$, ale obsahuje kružnici. Dokud graf obsahuje kružnici,
+      odebírejme hranu ležící na kružnici – souvislost se zachovává (viz 4 ⇒ 1). Skončíme se souvislým
+      grafem bez kružnic, tj. stromem s $n$ uzly, který má podle 1 ⇒ 3 právě $n - 1$ hran. Odebrali jsme
+      ale alespoň jednu hranu, takže původně bylo $m > n - 1$ – spor. $\square$
+    proof_steps:
+      - "1 ⇒ 2: dvě různé cesty mezi u a v by v místě, kde se rozejdou a znovu sejdou, vytvořily kružnici."
+      - "2 ⇒ 4: chybí-li ve faktoru hrana {x,y}, dávala by cesta ve faktoru spolu s hranou {x,y} dvě různé cesty z x do y."
+      - "4 ⇒ 1: hranu ležící na kružnici lze odebrat bez ztráty souvislosti, takže graf s kružnicí má souvislý vlastní faktor."
+      - "1 ⇒ 3: konec nejdelší cesty ve stromu je list; jeho odebráním dostaneme menší strom a indukcí m = n − 1."
+      - "3 ⇒ 1: odebíráním hran z kružnic bychom dostali strom s n − 1 hranami, tedy původní graf by měl více než n − 1 hran."
+    illustrations:
+      - title: Hrana navíc dá kružnici, hrana méně rozpojí
+        property: tree
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 5 }
+            - { id: b, x: 3.5, y: 2 }
+            - { id: c, x: 3.5, y: 8 }
+            - { id: d, x: 6.5, y: 0.5 }
+            - { id: e, x: 6.5, y: 4 }
+            - { id: f, x: 6.5, y: 9.5 }
+            - { id: g, x: 9.5, y: 4 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: b, to: e }
+            - { from: c, to: f }
+            - { from: e, to: g }
+        steps:
+          - caption: |
+              Souvislý graf bez kružnic na $n = 7$ uzlech má $m = 6 = n - 1$ hran – je to strom.
+          - caption: |
+              Mezi $d$ a $f$ vede **jediná** cesta $d, b, a, c, f$. Kdyby existovala jiná, spolu s touto by uzavřela kružnici (bod 2).
+            nodes: { d: active, f: active }
+            edges: { d-b: path, b-a: path, a-c: path, c-f: path }
+          - caption: |
+              Přidáme hranu $ef$: z $e$ do $f$ teď vedou dvě cesty ($e, f$ a $e, b, a, c, f$) a dohromady tvoří kružnici. Graf má $m = n$ hran a stromem už není.
+            add: [[e, f]]
+          - caption: |
+              Odebereme jinou hranu této kružnice, $ab$. Souvislost zůstane – zbytek kružnice ji „jistí“ – a dostaneme **jiný** strom na stejných uzlech.
+            remove: [[a, b]]
+          - caption: |
+              Ve stromu je ale každá hrana most: odebráním $cf$ se graf rozpadne na dvě komponenty. Strom je minimálně souvislý (bod 4).
+            remove: [[c, f]]
+          - caption: |
+              S hranou $bf$ máme opět $m = 6 = n - 1$, ale vznikla kružnice $b, e, f$ a $\{a, c\}$ zůstává odtržená. Samotná rovnost $m = n - 1$ bez souvislosti na strom nestačí.
+            add: [[b, f]]
+    related: [def-strom, prop-vlastnosti-souvislych, prop-souvislost-cesta, def-kostra]
+    source: "přednáška 1, folie 10"
+    supplemented: false
+
+  - id: def-kostra
+    kind: definition
+    label: Definice
+    section: "0.4"
+    title: Kostra grafu
+    terms: [kostra, kostra grafu, spanning tree, faktor strom]
+    statement: |
+      Buď $G$ souvislý graf. Graf $T \subset G$ se nazývá **kostra** grafu $G$, jestliže
+
+      1. $T$ je strom,
+      2. $T$ je faktor grafu $G$.
+    intuition: |
+      Kostra je „úsporná páteř" grafu: obsahuje všechny uzly a jen tolik hran, aby zůstal graf
+      souvislý – přesně $n - 1$. Graf má obvykle mnoho koster (např. $K_n$ jich má $n^{n-2}$, Cayleyho
+      vzorec). Kostru lze najít prohledáním grafu (strom BFS/DFS) v čase $O(n + m)$.
+    examples:
+      - title: Kostra grafu
+        body: |
+          Ve čtverci s úhlopříčkou (uzly $a,b,c,d$, hrany $ab, bc, cd, da, ac$) je kostrou např.
+          $\{ab, bc, cd\}$ nebo $\{ac, ab, ad\}$ – každá má 3 = $n - 1$ hran. Množina $\{ab, bc, ca\}$
+          kostrou není (obsahuje kružnici a nepokrývá $d$).
+    illustrations:
+      - title: Co je a co není kostra
+        property: spanning-tree
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 1 }
+            - { id: b, x: 7, y: 1 }
+            - { id: c, x: 7, y: 6 }
+            - { id: d, x: 1, y: 6 }
+            - { id: e, x: 4, y: 9.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: a }
+            - { from: a, to: c }
+            - { from: c, to: e }
+            - { from: d, to: e }
+        steps:
+          - caption: |
+              Hrany $ab, bc, cd, de$ propojí všech 5 uzlů a kružnici netvoří – je to kostra se $4 = n - 1$ hranami.
+            edge_set: [a-b, b-c, c-d, d-e]
+          - caption: |
+              Kostra není jediná: kostrou je i „hvězda“ kolem $a$ doplněná hranou $ce$. Každá kostra má ale stejný počet hran, $n - 1$.
+            edge_set: [a-b, a-c, a-d, c-e]
+          - caption: |
+              Také 4 hrany, ale tvoří kružnici $a, b, c$ a uzel $d$ zůstal nepřipojený. Správný počet hran sám nestačí.
+            edge_set: [a-b, b-c, a-c, c-e]
+          - caption: |
+              Tři hrany jsou málo: vzniknou dvě komponenty $\{a, b\}$ a $\{c, d, e\}$. Kostra musí být souvislá **a** bez kružnic.
+            edge_set: [a-b, c-d, d-e]
+    related: [def-strom, prop-existence-kostry, def-minimalni-kostra]
+    source: "přednáška 1, folie 10"
+    supplemented: false
+
+  - id: prop-existence-kostry
+    kind: proposition
+    label: Větička
+    section: "0.4"
+    title: Existence kostry
+    terms: [existence kostry, kostra]
+    statement: |
+      V každém souvislém grafu existuje alespoň jedna kostra.
+    intuition: |
+      Z grafu stačí odebírat hrany ležící na kružnicích, dokud nějaká kružnice zbývá – souvislost
+      se tím neporuší a na konci zbude strom. Právě tuto myšlenku (s ohledem na ohodnocení) používá
+      Algoritmus 1 pro minimální kostru.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Buď $G$ souvislý. Množina souvislých faktorů grafu $G$ je neprázdná (obsahuje $G$) a konečná,
+      vyberme tedy souvislý faktor $T$ s **nejmenším počtem hran**. Pak $T$ nemá žádný souvislý vlastní
+      faktor (ten by byl souvislým faktorem $G$ s menším počtem hran). Podle
+      [charakterizace stromů](#thm-charakterizace-stromu) (4 ⇒ 1) je $T$ strom, a protože je faktorem $G$,
+      je to kostra. $\square$
+    proof_steps:
+      - Souvislých faktorů grafu G je konečně mnoho a aspoň jeden existuje (samotné G).
+      - Zvolíme souvislý faktor T s nejmenším počtem hran.
+      - T nemá souvislý vlastní faktor, jinak bychom našli souvislý faktor G s menším počtem hran.
+      - Podle charakterizace stromů (bod 4) je T strom, a tedy kostra grafu G.
+    related: [def-kostra, thm-charakterizace-stromu, thm-minimalni-souvisly-faktor]
+    source: "přednáška 1, folie 10"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 0.5
+  - id: def-ohodnoceny-graf
+    kind: definition
+    label: Definice
+    section: "0.5"
+    title: Ohodnocený graf, vážená matice sousednosti
+    terms: [ohodnocení, hranové ohodnocení, ohodnocený graf, váha hrany, vážená matice sousednosti, W(G)]
+    statement: |
+      Buď $G$ graf. Funkce $w : H(G) \to (0, \infty)$ se nazývá **(hranové) ohodnocení** grafu $G$;
+      graf se zadaným ohodnocením se nazývá **ohodnocený graf**.
+
+      Nechť $G$ je ohodnocený graf s uzly očíslovanými $1, \dots, n$. Pro $1 \le i, j \le n$ položme
+      $$
+      w_{ij} = \begin{cases} w(\{i,j\}) & \text{jestliže } \{i,j\} \in H(G),\\ 0 & \text{jinak.} \end{cases}
+      $$
+      Matice $\mathbf{W}(G) = [w_{ij}]_{i,j=1}^n$ se nazývá **vážená matice sousednosti** grafu $G$.
+
+      Neohodnocený graf považujeme za ohodnocený $w_{ij} = 1$ (pro všechny hrany).
+    intuition: |
+      Váhy jsou délky silnic, ceny, časy… Důležité: v TGD1 jsou váhy **kladné** – na tom stojí
+      např. věta o minimálním souvislém faktoru i správnost Dijkstrova algoritmu. Nula v matici
+      $\mathbf{W}(G)$ znamená „hrana neexistuje", proto nulové váhy nedávají smysl.
+    related: [def-matice-sousednosti, thm-minimalni-souvisly-faktor, def-minimalni-kostra, def-w-delka-vzdalenost]
+    source: "přednáška 1, folie 11"
+    supplemented: false
+
+  - id: def-matice-sousednosti
+    kind: definition
+    label: Definice
+    section: "0.5"
+    title: Matice sousednosti
+    terms: [matice sousednosti, adjacency matrix, A(G)]
+    statement: |
+      **Matice sousednosti** neorientovaného grafu $G$ s uzly $1, \dots, n$ je
+      $\mathbf{A}(G) = [a_{ij}]_{i,j=1}^n$, kde
+      $$
+      a_{ij} = \begin{cases} 1 & \text{jestliže } \{i,j\} \in H(G),\\ 0 & \text{jinak.} \end{cases}
+      $$
+    intuition: |
+      Pro neorientovaný graf je $\mathbf{A}(G)$ symetrická s nulami na diagonále a řádkové součty
+      jsou stupně uzlů. Paměť $O(n^2)$ – výhodná pro husté grafy, pro řídké se používají seznamy sousedů
+      ($O(n + m)$). Mocniny matice sousednosti počítají sledy dané délky
+      (viz [větu o mocninách](#thm-mocniny-matice-sousednosti)).
+    related: [def-ohodnoceny-graf, def-matice-incidence, thm-incidence-sousednost, thm-mocniny-matice-sousednosti]
+    source: "přednáška 1, folie 11"
+    supplemented: false
+
+  - id: def-matice-incidence
+    kind: definition
+    label: Definice
+    section: "0.5"
+    title: Matice incidence (uzlo-hranová)
+    terms: [matice incidence, incidenční matice, uzlo-hranová matice, I(G)]
+    statement: |
+      Očíslujme uzly $u_1, \dots, u_n$ a hrany $h_1, \dots, h_m$ grafu $G$. **Matice incidence**
+      (uzlo-hranová) je $\mathbf{I}(G) = [b_{ij}]$ typu $n \times m$, kde
+      $$
+      b_{ij} = \begin{cases} 1 & \text{jestliže } u_i \in h_j,\\ 0 & \text{jinak.} \end{cases}
+      $$
+    intuition: |
+      Řádky odpovídají uzlům, sloupce hranám. V každém sloupci jsou právě dvě jedničky (dva konce hrany),
+      součet $i$-tého řádku je stupeň $d_G(u_i)$. Součet všech prvků spočítaný po řádcích a po sloupcích
+      dává znovu $\sum d_G(u) = 2m$.
+    related: [def-matice-sousednosti, thm-incidence-sousednost, thm-soucet-stupnu]
+    source: "přednáška 1, folie 11"
+    supplemented: false
+
+  - id: thm-incidence-sousednost
+    kind: theorem
+    label: Věta
+    section: "0.5"
+    title: Vztah matice incidence a matice sousednosti
+    terms: [matice incidence, matice sousednosti, I I^T, matice stupňů]
+    statement: |
+      Pro neorientovaný graf $G$ platí
+      $$
+      \mathbf{I}(G)\,(\mathbf{I}(G))^T = \mathbf{A}(G) + \mathbf{S}(G),
+      $$
+      kde $\mathbf{S}(G) = \operatorname{diag}(d_G(u_1), \dots, d_G(u_n))$.
+    intuition: |
+      Prvek $(i,j)$ součinu je skalární součin řádků $i$ a $j$ matice incidence – počítá hrany,
+      které obsahují **oba** uzly $u_i$ a $u_j$. Pro $i = j$ jsou to všechny hrany u uzlu (stupeň),
+      pro $i \ne j$ nejvýše jedna hrana $\{u_i, u_j\}$ (sousednost).
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      Prvek na pozici $(i,j)$ matice $\mathbf{I}\mathbf{I}^T$ je
+      $$
+      \sum_{k=1}^m b_{ik}\, b_{jk},
+      $$
+      a součin $b_{ik} b_{jk}$ je roven 1 právě tehdy, když hrana $h_k$ obsahuje oba uzly $u_i$ i $u_j$.
+      Součet je tedy počet hran obsahujících zároveň $u_i$ a $u_j$.
+
+      - Pro $i = j$ jde o počet hran obsahujících $u_i$, tj. $d_G(u_i)$ – to je diagonální prvek $\mathbf{S}(G)$
+        (a $a_{ii} = 0$).
+      - Pro $i \ne j$ obsahuje oba uzly jen hrana $\{u_i, u_j\}$, pokud existuje (hrana má právě dva konce
+        a násobné hrany nejsou). Prvek je tedy 1 nebo 0 podle toho, zda $u_i, u_j$ sousedí, tj. $a_{ij}$
+        (a mimodiagonální prvky $\mathbf{S}(G)$ jsou nulové). $\square$
+    proof_steps:
+      - Prvek (i,j) součinu I·I^T je součet součinů b_ik·b_jk přes všechny hrany h_k.
+      - Součin b_ik·b_jk je 1 právě tehdy, když hrana h_k obsahuje oba uzly u_i a u_j, takže prvek počítá společné hrany.
+      - Na diagonále (i = j) dostaneme počet hran u uzlu u_i, tedy jeho stupeň.
+      - Mimo diagonálu (i ≠ j) může oba uzly obsahovat jen hrana {u_i, u_j}, takže dostaneme prvek a_ij matice sousednosti.
+    related: [def-matice-incidence, def-matice-sousednosti, def-stupen-uzlu]
+    source: "přednáška 1, folie 11"
+    supplemented: false
+
+  # ------------------------------------------------------------------ 0.6
+  - id: def-minimalni-kostra
+    kind: definition
+    section: "0.6"
+    title: Minimální kostra
+    terms: [minimální kostra, minimum spanning tree, MST, nejlevnější kostra, váha kostry]
+    statement: |
+      Buď $G$ souvislý ohodnocený graf. **Váha** podgrafu $K \subset G$ je
+      $w(K) = \sum_{\{i,j\} \in H(K)} w_{ij}$. Kostra grafu $G$ s nejmenší vahou mezi všemi kostrami
+      grafu $G$ se nazývá **minimální kostra** grafu $G$.
+    intuition: |
+      Úloha: propojit všechna města (uzly) sítí (vodovod, elektřina, optika) tak, aby celková cena
+      byla co nejmenší. Minimální kostra existuje vždy (koster je konečně mnoho), ale nemusí být
+      jediná – jednoznačná je, jsou-li všechny váhy různé.
+
+      Pozor na záměnu s **minimální cestou**: minimální kostra nemusí obsahovat nejkratší cestu mezi
+      dvěma danými uzly.
+    related: [thm-minimalni-souvisly-faktor, alg-mst-odstranovani-kruznic, alg-jarnik-prim, alg-kruskal, lemma-mst-rez]
+    source: "přednáška 1, folie 12 (nadpis Minimální kostra grafu; pojem definován implicitně)"
+    supplemented: false
+
+  - id: thm-minimalni-souvisly-faktor
+    kind: theorem
+    label: Věta
+    section: "0.6"
+    title: Nejlevnější souvislý faktor je kostra
+    terms: [minimální souvislý faktor, minimální kostra, kladné ohodnocení]
+    statement: |
+      Buď $G$ souvislý ohodnocený graf a $K$ jeho souvislý faktor, pro který číslo
+      $\sum_{\{i,j\} \in H(K)} w_{ij}$ nabývá minimální hodnoty. Pak $K$ je kostra grafu $G$.
+    intuition: |
+      Chceme-li co nejlevněji propojit všechny uzly, nikdy se nevyplatí kružnice – její
+      libovolnou hranu lze vynechat, propojení zůstane a ušetříme. Úloha „nejlevnější souvislý faktor"
+      je proto totéž co „minimální kostra".
+
+      Podstatné je, že váhy jsou **kladné**. Při nulových vahách by nejlevnější souvislý faktor mohl
+      obsahovat kružnici (váha by se odebráním hrany nezměnila), při záporných vahách by se
+      kružnice dokonce vyplatily.
+    proof: |
+      *Důkaz není ve foliích, doplněno.*
+
+      $K$ je souvislý faktor, stačí tedy ukázat, že neobsahuje kružnici. Kdyby $K$ obsahoval kružnici $C$
+      a $h$ byla hrana na $C$, pak $K - h$ je stále souvislý faktor grafu $G$: každý sled v $K$ používající
+      hranu $h = \{x,y\}$ lze upravit tak, že hranu $h$ nahradíme zbytkem kružnice $C - h$, což je cesta
+      z $x$ do $y$. Protože $w(h) > 0$, je
+      $$
+      w(K - h) = w(K) - w(h) < w(K),
+      $$
+      což je spor s minimalitou $K$. Tedy $K$ je souvislý bez kružnic, tj. strom, a jako faktor je kostrou $G$. $\square$
+    proof_steps:
+      - K je souvislý faktor, stačí ukázat, že neobsahuje kružnici.
+      - Kdyby K obsahoval kružnici C s hranou h, zůstane K − h souvislý, protože h lze nahradit zbytkem kružnice.
+      - Protože w(h) > 0, má K − h menší váhu než K, což je spor s minimalitou.
+      - K je tedy souvislý bez kružnic, tj. strom, a jako faktor grafu G je to kostra.
+    illustrations:
+      - title: Hrana kružnice je zbytečný výdaj
+        for: proof
+        property: connected
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 1 }
+            - { id: b, x: 0.5, y: 8.5 }
+            - { id: c, x: 5, y: 8.5 }
+            - { id: d, x: 5, y: 1 }
+            - { id: e, x: 9.5, y: 5 }
+          edges:
+            - { from: a, to: b, w: 3 }
+            - { from: b, to: c, w: 4 }
+            - { from: c, to: d, w: 2 }
+            - { from: d, to: a, w: 5 }
+            - { from: c, to: e, w: 1 }
+            - { from: d, to: e, w: 6 }
+        steps:
+          - caption: |
+              Souvislý faktor $K$ s vahou $3 + 4 + 2 + 5 + 1 + 6 = 21$. Obsahuje kružnici $a, b, c, d$ – a ta se při kladných vahách nevyplatí.
+            edges: { a-b: path, b-c: path, c-d: path, d-a: path }
+          - caption: |
+              Odebereme hranu $da$. Graf zůstane souvislý, protože z $d$ do $a$ vede zbytek kružnice $d, c, b, a$, a váha klesne o $w(da) = 5 > 0$ na 16. Faktor s kružnicí proto minimální být nemůže.
+            remove: [[d, a]]
+            edges: { d-c: path, c-b: path, b-a: path }
+          - caption: |
+              Stejně u kružnice $c, d, e$: bez hrany $de$ je váha 10 a graf je stále souvislý. Kružnice už žádná nezbyla – máme kostru.
+            remove: [[d, e]]
+          - caption: |
+              Další hranu už odebrat nelze: $bc$ je most a bez ní se graf rozpadne. Nejlevnější souvislý faktor je proto strom, tedy kostra.
+            remove: [[b, c]]
+    related: [def-minimalni-kostra, prop-existence-kostry, alg-mst-odstranovani-kruznic]
+    source: "přednáška 1, folie 12"
+    supplemented: false
+
+  - id: lemma-mst-rez
+    kind: lemma
+    section: "0.6"
+    title: Řezová a kružnicová vlastnost minimální kostry
+    terms: [řezová vlastnost, kružnicová vlastnost, cut property, cycle property, výměna hran, minimální kostra]
+    statement: |
+      Buď $G$ souvislý ohodnocený graf.
+
+      1. **(Řez)** Buď $A \subset U(G)$, $\emptyset \ne A \ne U(G)$, a nechť $F$ je les, který je obsažen
+         v nějaké minimální kostře grafu $G$ a jehož žádná hrana nevede mezi $A$ a $U(G) \setminus A$.
+         Je-li $e$ hrana nejmenší váhy mezi všemi hranami s jedním koncem v $A$ a druhým mimo $A$, pak
+         existuje minimální kostra obsahující $F$ i $e$.
+      2. **(Kružnice)** Buď $G'$ souvislý faktor grafu $G$, $T$ minimální kostra grafu $G'$ a $h$ hrana
+         maximální váhy na nějaké kružnici $C$ v $G'$. Pak existuje minimální kostra grafu $G'$, která
+         neobsahuje $h$.
+    intuition: |
+      Obě vlastnosti stojí na **výměně hran**: přidáním hrany do kostry vznikne právě jedna kružnice
+      a odebráním libovolné jiné hrany této kružnice dostaneme opět kostru. Je-li přidaná hrana
+      lehčí (nebo stejně těžká) než odebraná, nová kostra není horší.
+
+      Řezová vlastnost zdůvodňuje Jarníkův a Kruskalův algoritmus (bereme nejlehčí hranu přes řez),
+      kružnicová vlastnost Algoritmus 1 (vyhazujeme nejtěžší hranu kružnice).
+    proof: |
+      *Lemma není ve foliích, doplněno jako pomocné tvrzení pro důkazy správnosti algoritmů.*
+
+      **1.** Nechť $e = \{x,y\}$, $x \in A$, $y \notin A$, a $T$ je minimální kostra s $F \subset T$.
+      Je-li $e \in H(T)$, jsme hotovi. Jinak v $T$ existuje cesta z $x$ do $y$; ta začíná v $A$ a končí
+      mimo $A$, takže obsahuje hranu $f$ vedoucí mezi $A$ a $U(G) \setminus A$. Pak $f \notin F$
+      a z volby $e$ plyne $w(e) \le w(f)$. Graf $T' = T - f + e$ je souvislý (cestu přes $f$ lze objet
+      přes $e$ a zbytek kružnice v $T + e$) a má $n - 1$ hran, je to tedy kostra
+      ([charakterizace stromů](#thm-charakterizace-stromu), bod 3). Platí $w(T') = w(T) - w(f) + w(e) \le w(T)$,
+      takže $T'$ je také minimální a obsahuje $F$ i $e$.
+
+      **2.** Je-li $h \notin T$, jsme hotovi. Jinak $T - h$ má dvě komponenty s množinami uzlů $A$
+      a $U \setminus A$. Kružnice $C$ přechází mezi $A$ a $U \setminus A$ sudě-krát, a protože ji
+      $h$ přechází jednou, obsahuje i jinou hranu $e \ne h$ mezi $A$ a $U \setminus A$; $e \notin T$
+      (jediná hrana $T$ přes tento řez je $h$) a $w(e) \le w(h)$. Pak $T - h + e$ je kostra grafu $G'$
+      s vahou nejvýše $w(T)$, tedy minimální, a neobsahuje $h$. $\square$
+    proof_steps:
+      - Je-li hledaná hrana už v minimální kostře T, není co dokazovat.
+      - Jinak přidání hrany e do T vytvoří kružnici, která protíná uvažovaný řez ještě v jiné hraně f.
+      - Z volby e (nejlehčí přes řez), resp. h (nejtěžší na kružnici), plyne vhodná nerovnost mezi vahami vyměňovaných hran.
+      - Výměnou hran vznikne souvislý faktor s n − 1 hranami, tedy kostra.
+      - Její váha není větší než váha T, takže je to opět minimální kostra s požadovanou vlastností.
+    illustrations:
+      - title: Výměna hrany přes řez
+        for: proof
+        property: spanning-tree
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 2 }
+            - { id: b, x: 4, y: 0 }
+            - { id: c, x: 8, y: 2 }
+            - { id: d, x: 0, y: 7 }
+            - { id: g, x: 4, y: 9 }
+            - { id: h, x: 8, y: 7 }
+          edges:
+            - { from: a, to: b, w: 4 }
+            - { from: b, to: c, w: 6 }
+            - { from: a, to: d, w: 2 }
+            - { from: b, to: d, w: 5 }
+            - { from: b, to: g, w: 3 }
+            - { from: b, to: h, w: 7 }
+            - { from: c, to: h, w: 1 }
+            - { from: d, to: g, w: 8 }
+            - { from: g, to: h, w: 9 }
+        steps:
+          - caption: |
+              Množina $A = \{a, d\}$ určuje řez; přes něj vedou hrany $ab$ (4), $db$ (5) a $dg$ (8), nejlehčí je $e = ab$. Vybraná kostra $T$ s vahou 17 obsahuje les $F = \{ad\}$, ale hranu $e$ ne.
+            edge_set: [a-d, b-d, b-g, b-c, c-h]
+            nodes: { a: source, d: source }
+            witness: true
+          - caption: |
+              Přidáním $e = ab$ do $T$ vznikne kružnice $a, b, d$. Kružnice z $A$ odejde a musí se vrátit, proto přechází řez ještě jinou hranou – zde $f = db$.
+            edge_set: [a-d, b-d, b-g, b-c, c-h, a-b]
+            nodes: { a: source, d: source }
+            witness: true
+          - caption: |
+              Vyměníme $f$ za $e$: $T' = T - db + ab$ je opět kostra a $w(T') = 17 - 5 + 4 = 16 \le w(T)$, protože $w(e) \le w(f)$. Výměna váhu nikdy nezhorší, takže existuje minimální kostra obsahující $F$ i $e$.
+            edge_set: [a-d, a-b, b-g, b-c, c-h]
+            nodes: { a: source, d: source }
+            witness: true
+    related: [def-minimalni-kostra, alg-mst-odstranovani-kruznic, alg-jarnik-prim, alg-kruskal]
+    source: "doplněno (standardní lemma)"
+    supplemented: true
+
+  - id: alg-mst-odstranovani-kruznic
+    kind: algorithm
+    label: Algoritmus 1
+    section: "0.6"
+    title: Algoritmus 1 – odstraňování nejtěžších hran kružnic
+    terms: [algoritmus 1, minimální kostra, odstraňování hran, reverse delete, hladový algoritmus, kružnicová vlastnost]
+    statement: |
+      Vstup: souvislý ohodnocený graf $G$. Výstup: minimální kostra grafu $G$.
+      Algoritmus opakovaně hledá kružnici a odstraňuje z ní hranu s maximálním ohodnocením.
+    pseudocode: |
+      1. Polož $G_0 = G$, $i := 0$.
+      2. Existuje v $G_i$ kružnice $C_i$?
+         - **Ano:** v $C_i$ najdi hranu $h_i$ s maximálním ohodnocením, polož
+           $G_{i+1} = (U(G_i), H(G_i) \setminus \{h_i\})$, $i := i + 1$ a opakuj krok 2.
+         - **Ne:** $G_i$ je hledaná minimální kostra.
+    complexity: "$O(m \\cdot (n+m))$"
+    intuition: |
+      Opačný pohled na problém než Jarník či Kruskal: místo přidávání nejlehčích hran **vyhazujeme
+      nejtěžší** – ale jen takové, bez nichž se graf neobejde (leží na kružnici, takže jejich odebrání
+      nenaruší souvislost).
+
+      **Složitost:** proběhne přesně $m - n + 1$ odebrání (výsledná kostra má $n - 1$ hran). Kružnici lze
+      najít prohledáním do hloubky v čase $O(n + m)$, takže celkem $O(m(n + m))$. Algoritmus je tedy
+      polynomiální, ale pomalejší než Jarník ($O(n^2)$) nebo Kruskal ($O(m \log m)$). Varianta
+      „projdi hrany od nejtěžší a odeber hranu, jejíž odebrání nenaruší souvislost" je známa jako
+      *reverse-delete*.
+
+      Typická chyba: odebrat nejtěžší hranu **celého grafu** – ta může být most a pak musí v kostře zůstat.
+    proof: |
+      *Důkaz správnosti není ve foliích, doplněno.*
+
+      **Invariant:** každé $G_i$ je souvislý faktor grafu $G$, který obsahuje nějakou minimální kostru grafu $G$.
+
+      - Pro $G_0 = G$ to platí (minimální kostra existuje, koster je konečně mnoho).
+      - Nechť platí pro $G_i$ a $T$ je minimální kostra grafu $G$ obsažená v $G_i$. Hrana $h_i$ leží na kružnici,
+        takže $G_{i+1} = G_i - h_i$ je stále souvislý. Neleží-li $h_i$ v $T$, je $T \subset G_{i+1}$. Leží-li,
+        $T - h_i$ má dvě komponenty a kružnice $C_i$ obsahuje další hranu $e \ne h_i$ mezi nimi; $e \in G_{i+1}$,
+        $e \notin T$ a $w(e) \le w(h_i)$, protože $h_i$ je na $C_i$ nejtěžší. $T' = T - h_i + e$ je kostra s
+        $w(T') \le w(T)$, tedy minimální, a leží v $G_{i+1}$ (viz [lemma](#lemma-mst-rez), bod 2).
+
+      **Konečnost:** v každém kroku ubude hrana, takže algoritmus skončí po nejvýše $m$ krocích.
+
+      **Výsledek:** po skončení je $G_i$ souvislý bez kružnic, tedy strom, a obsahuje minimální kostru $T$.
+      Obě mají $n - 1$ hran a $T \subset G_i$, proto $G_i = T$. $\square$
+    proof_steps:
+      - Invariant – každé G_i je souvislý faktor grafu G obsahující nějakou minimální kostru.
+      - Odebraná hrana leží na kružnici, proto se odebráním neporuší souvislost.
+      - Pokud odebraná hrana h_i leží v minimální kostře T, nahradíme ji jinou hranou e kružnice C_i vedoucí mezi komponentami T − h_i; w(e) ≤ w(h_i), takže vznikne opět minimální kostra uvnitř G_{i+1}.
+      - Algoritmus skončí, protože v každém kroku ubude jedna hrana.
+      - Po skončení je G_i souvislé bez kružnic, tj. kostra, a protože obsahuje minimální kostru se stejným počtem hran, je s ní totožné.
+    examples:
+      - title: Algoritmus 1 na grafu se 6 uzly
+        body: |
+          Graf má 9 hran, kostra bude mít 5, odebereme tedy 4 hrany:
+
+          1. kružnice $a, b, d$ (hrany 4, 5, 2): odeber $\{b,d\}$ (5),
+          2. kružnice $b, e, f$ (3, 9, 7): odeber $\{e,f\}$ (9),
+          3. kružnice $b, c, f$ (6, 1, 7): odeber $\{b,f\}$ (7),
+          4. kružnice $a, d, e, b$ (2, 8, 3, 4): odeber $\{d,e\}$ (8).
+
+          Zbude kostra $\{c,f\}, \{a,d\}, \{b,e\}, \{a,b\}, \{b,c\}$ s vahou $1+2+3+4+6 = 16$ – stejná,
+          jakou najde Jarníkův i Kruskalův algoritmus. Pořadí, v jakém kružnice vybíráme, výsledek
+          nezmění (jsou-li váhy různé, je minimální kostra jediná).
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 2 }
+            - { id: b, x: 4, y: 0 }
+            - { id: c, x: 8, y: 2 }
+            - { id: d, x: 0, y: 7 }
+            - { id: e, x: 4, y: 9 }
+            - { id: f, x: 8, y: 7 }
+          edges:
+            - { from: a, to: b, w: 4 }
+            - { from: b, to: c, w: 6 }
+            - { from: a, to: d, w: 2 }
+            - { from: b, to: d, w: 5 }
+            - { from: b, to: e, w: 3 }
+            - { from: b, to: f, w: 7 }
+            - { from: c, to: f, w: 1 }
+            - { from: d, to: e, w: 8 }
+            - { from: e, to: f, w: 9 }
+    visualization: mst
+    related: [def-minimalni-kostra, thm-minimalni-souvisly-faktor, lemma-mst-rez, alg-jarnik-prim, alg-kruskal]
+    source: "přednáška 1, folie 12"
+    supplemented: false
+
+  - id: alg-jarnik-prim
+    kind: algorithm
+    label: Algoritmus 2
+    section: "0.6"
+    title: Algoritmus 2 – Jarníkův (Primův) algoritmus
+    terms: [algoritmus 2, Jarníkův algoritmus, Primův algoritmus, Jarník-Prim, minimální kostra, růst stromu]
+    statement: |
+      Vstup: souvislý ohodnocený graf $G$. Výstup: minimální kostra grafu $G$.
+      Algoritmus nechává růst strom z jednoho uzlu; v každém kroku k němu připojí nejlehčí hranu
+      vedoucí ze stromu ven.
+    pseudocode: |
+      1. Zvol $u \in U(G)$ a polož $G_0 = (\{u\}, \emptyset)$, $i := 0$.
+      2. Je $G_i$ faktor grafu $G$?
+         - **Ne:** mezi všemi hranami $\{x,y\}$, pro něž $x \in U(G_i)$ a $y \notin U(G_i)$, najdi tu,
+           která má nejmenší ohodnocení, polož
+           $G_{i+1} = (U(G_i) \cup \{y\},\ H(G_i) \cup \{\{x,y\}\})$, $i := i + 1$ a opakuj krok 2.
+         - **Ano:** $G_i$ je hledaná minimální kostra.
+    complexity: "$O(n^2)$ (s haldou $O(m \\log n)$)"
+    intuition: |
+      Strom roste jako krystal: vždy přibere nejbližší dosud nepřipojený uzel. Proběhne přesně
+      $n - 1$ kroků. Uchováváme-li pro každý nepřipojený uzel $y$ hodnotu
+      $\lambda(y) = \min\{w(\{x,y\}) \mid x \in U(G_i)\}$, je výběr minima $O(n)$ a aktualizace po připojení
+      uzlu $y$ stojí $O(d(y))$, celkem tedy $O(n^2)$ – optimální pro husté grafy zadané maticí. S binární
+      haldou dostaneme $O(m \log n)$.
+
+      Algoritmus objevil V. Jarník (1930), později nezávisle R. C. Prim (1957) – proto „Jarníkův" nebo „Primův".
+      Je velmi podobný Dijkstrovu algoritmu; rozdíl je v tom, **co** se minimalizuje: Jarník bere vzdálenost
+      uzlu od *stromu* (váhu jedné hrany), Dijkstra vzdálenost od *startovního uzlu* (délku celé cesty).
+    proof: |
+      *Důkaz správnosti není ve foliích, doplněno.*
+
+      **Invariant:** $G_i$ je strom a existuje minimální kostra $T$ grafu $G$ s $G_i \subset T$.
+
+      - Pro $G_0 = (\{u\}, \emptyset)$ platí triviálně.
+      - Nechť platí pro $G_i$, $A = U(G_i) \ne U(G)$. Graf $G$ je souvislý, takže nějaká hrana vede z $A$ ven;
+        nechť $e = \{x, y\}$ je vybraná nejlehčí z nich. Přidáním listu $y$ zůstane $G_{i+1}$ stromem.
+        Žádná hrana $G_i$ nevede mezi $A$ a $U(G) \setminus A$, a podle [řezové vlastnosti](#lemma-mst-rez)
+        existuje minimální kostra obsahující $G_i$ i $e$, tedy $G_{i+1}$.
+
+      **Konečnost:** v každém kroku přibude uzel, po $n - 1$ krocích je $G_i$ faktorem.
+
+      **Výsledek:** $G_{n-1}$ je strom a faktor, tj. kostra, obsažená v minimální kostře $T$; obě mají
+      $n - 1$ hran, proto $G_{n-1} = T$. $\square$
+    proof_steps:
+      - Invariant – G_i je strom obsažený v nějaké minimální kostře grafu G.
+      - Dokud G_i není faktor, vede ze souvislosti G aspoň jedna hrana z U(G_i) ven a algoritmus vybere nejlehčí z nich.
+      - Podle řezové vlastnosti existuje minimální kostra obsahující G_i i vybranou hranu, takže invariant platí i pro G_{i+1}.
+      - V každém kroku přibude jeden uzel, takže po n − 1 krocích je G_i faktorem grafu G.
+      - Výsledný strom je kostra obsažená v minimální kostře se stejným počtem hran, a je s ní tedy totožný.
+    examples:
+      - title: Jarníkův algoritmus ze startu v uzlu a
+        body: |
+          Na grafu z příkladu u Algoritmu 1, start v $a$:
+
+          | krok | uzly stromu | kandidáti (hrana: váha) | vybráno |
+          |---|---|---|---|
+          | 1 | $a$ | $ab$:4, $ad$:2 | $ad$ (2) |
+          | 2 | $a,d$ | $ab$:4, $db$:5, $de$:8 | $ab$ (4) |
+          | 3 | $a,d,b$ | $bc$:6, $be$:3, $bf$:7, $de$:8 | $be$ (3) |
+          | 4 | $a,d,b,e$ | $bc$:6, $bf$:7, $ef$:9 | $bc$ (6) |
+          | 5 | $a,d,b,e,c$ | $cf$:1, $bf$:7, $ef$:9 | $cf$ (1) |
+
+          Minimální kostra má váhu $2+4+3+6+1 = 16$. Všimněte si, že nejlehčí hrana $cf$ přibyla až na konci –
+          Jarník ji „vidí", až když se strom přiblíží.
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 2 }
+            - { id: b, x: 4, y: 0 }
+            - { id: c, x: 8, y: 2 }
+            - { id: d, x: 0, y: 7 }
+            - { id: e, x: 4, y: 9 }
+            - { id: f, x: 8, y: 7 }
+          edges:
+            - { from: a, to: b, w: 4 }
+            - { from: b, to: c, w: 6 }
+            - { from: a, to: d, w: 2 }
+            - { from: b, to: d, w: 5 }
+            - { from: b, to: e, w: 3 }
+            - { from: b, to: f, w: 7 }
+            - { from: c, to: f, w: 1 }
+            - { from: d, to: e, w: 8 }
+            - { from: e, to: f, w: 9 }
+    visualization: mst
+    related: [def-minimalni-kostra, lemma-mst-rez, alg-mst-odstranovani-kruznic, alg-kruskal, alg-dijkstra]
+    source: "přednáška 1, folie 12"
+    supplemented: false
+
+  - id: alg-kruskal
+    kind: algorithm
+    section: "0.6"
+    title: Kruskalův algoritmus (hladový algoritmus)
+    terms: [Kruskalův algoritmus, Kruskal, hladový algoritmus, greedy, minimální kostra, union-find]
+    statement: |
+      Vstup: souvislý ohodnocený graf $G$. Výstup: minimální kostra grafu $G$.
+      Hrany se procházejí od nejlehčí a hrana se přidá, pokud s dosud vybranými hranami nevytvoří kružnici.
+    pseudocode: |
+      1. Seřaď hrany tak, aby $w(h_1) \le w(h_2) \le \dots \le w(h_m)$; polož $F := (U(G), \emptyset)$.
+      2. Pro $j = 1, \dots, m$: neobsahuje-li $F + h_j$ kružnici (tj. konce $h_j$ leží v různých komponentách $F$),
+         polož $F := F + h_j$.
+      3. (Lze skončit, jakmile má $F$ právě $n - 1$ hran.) $F$ je minimální kostra.
+    complexity: "$O(m \\log m)$"
+    intuition: |
+      Hladový přístup v nejčistší podobě: „ber nejlevnější hranu, která neuškodí". Na rozdíl od Jarníka
+      roste **les**, ne jeden strom – komponenty se postupně slévají.
+
+      **Složitost:** seřazení hran $O(m \log m)$; test „leží konce v různých komponentách?" se dělá strukturou
+      union-find (disjunktní množiny) prakticky v konstantním čase, takže řazení dominuje: $O(m \log m) = O(m \log n)$.
+      Bez union-find (test kružnice prohledáním) by to bylo $O(m \cdot n)$.
+
+      Ve foliích přednášky Kruskalův algoritmus explicitně není (Algoritmus 1 je jeho „zrcadlová" varianta
+      odebírající hrany), je ale standardní součástí látky o minimálních kostrách.
+    proof: |
+      *Doplněno (algoritmus není ve foliích).*
+
+      **Invariant:** $F$ je les obsažený v nějaké minimální kostře $T$.
+
+      Nechť algoritmus přidává hranu $h_j = \{x,y\}$, kde $x, y$ leží v různých komponentách lesa $F$.
+      Nechť $A$ je množina uzlů komponenty obsahující $x$. Žádná hrana $F$ nevede mezi $A$ a zbytkem.
+      Každá hrana opouštějící $A$, která je lehčí než $h_j$, byla zpracována dříve. Kdyby byla přidána,
+      ležela by v $F$ a její konce by byly v téže komponentě; kdyby přidána nebyla, ležely její konce
+      v téže komponentě už tehdy, a protože se komponenty jen slévají, leží v ní i nyní. Obojí odporuje
+      tomu, že hrana opouští komponentu $A$. Tedy $h_j$ je nejlehčí hrana přes řez $(A, U \setminus A)$
+      a podle [řezové vlastnosti](#lemma-mst-rez) existuje minimální kostra obsahující $F + h_j$.
+
+      Na konci je $F$ souvislý: kdyby měl alespoň dvě komponenty, nějaká hrana $G$ by mezi nimi vedla
+      (G je souvislý) a v okamžiku jejího zpracování by byla přidána. $F$ je tedy kostra obsažená
+      v minimální kostře, tudíž s ní totožná. $\square$
+    proof_steps:
+      - Invariant – vybrané hrany tvoří les obsažený v nějaké minimální kostře.
+      - Přidávaná hrana spojuje komponentu A lesa s jinou komponentou; všechny lehčí hrany opouštějící A by už byly přidány, takže je nejlehčí přes řez A.
+      - Podle řezové vlastnosti lze invariant zachovat i po přidání této hrany.
+      - Na konci je les souvislý, protože hranu mezi dvěma komponentami by algoritmus nezahodil.
+      - Výsledkem je kostra obsažená v minimální kostře, tedy minimální kostra.
+    examples:
+      - title: Kruskalův algoritmus
+        body: |
+          Na grafu z příkladu u Algoritmu 1 seřadíme hrany: $cf$:1, $ad$:2, $be$:3, $ab$:4, $bd$:5, $bc$:6,
+          $bf$:7, $de$:8, $ef$:9.
+
+          - $cf$, $ad$, $be$, $ab$ přidáme (vždy spojují různé komponenty),
+          - $bd$ vynecháme ($b$ a $d$ už jsou spojeny přes $a$ – vznikla by kružnice $a,b,d$),
+          - $bc$ přidáme – tím máme $5 = n - 1$ hran a můžeme skončit.
+
+          Kostra $\{cf, ad, be, ab, bc\}$ má váhu 16.
+    visualization: mst
+    related: [def-minimalni-kostra, lemma-mst-rez, alg-mst-odstranovani-kruznic, alg-jarnik-prim]
+    source: "doplněno (standardní algoritmus; ve foliích jsou Algoritmus 1 a 2)"
+    supplemented: true
+
+quiz:
+  - id: q-zaklady-01
+    question: |
+      Který homomorfismus $f : P_k \to G$ definuje **tah**, který ale obecně **není** cestou?
+    options:
+      - Uzlový monomorfismus
+      - Hranový monomorfismus, který není uzlovým monomorfismem
+      - Uzlový epimorfismus
+      - Libovolný homomorfismus
+    correct: 1
+    explanation: |
+      Tah = obraz $P_k$ při hranovém monomorfismu (hrany se neopakují). Cesta vyžaduje uzlový monomorfismus
+      (neopakují se uzly). Hranový monomorfismus, který není uzlový, prochází některým uzlem vícekrát –
+      je to tah, ale ne cesta. Libovolný homomorfismus dává jen sled.
+    related: [def-sled-tah-cesta, def-druhy-homomorfismu]
+
+  - id: q-zaklady-02
+    question: |
+      Dva grafy mají stejný počet uzlů, stejný počet hran a stejný soubor stupňů. Co z toho plyne?
+    options:
+      - Jsou isomorfní.
+      - Nejsou isomorfní.
+      - Isomorfní být mohou i nemusí; soubor stupňů je jen nutná podmínka.
+      - Jsou isomorfní, pokud jsou oba souvislé.
+    correct: 2
+    explanation: |
+      Isomorfismus zachovává stupně, takže stejný soubor stupňů je nutná, nikoli postačující podmínka.
+      Protipříklad: $K_{3,3}$ a trojboký hranol – oba souvislé, 3-pravidelné na 6 uzlech, ale hranol
+      obsahuje trojúhelník a $K_{3,3}$ ne.
+    related: [prop-isomorfismus-vlastnosti, def-soubor-stupnu]
+
+  - id: q-zaklady-03
+    question: |
+      Je posloupnost $3, 3, 3, 1$ grafová?
+    options:
+      - Ano, realizuje ji $K_4$ bez dvou hran.
+      - Ne, protože součet stupňů je lichý.
+      - Ne – po dvou krocích věty o skóre vyjde záporné číslo.
+      - Ano, protože součet je sudý a $s_1 \le n-1$.
+    correct: 2
+    explanation: |
+      Součet je $10$ (sudý) a $s_1 = 3 = n-1$, nutné podmínky jsou tedy splněny. Věta o skóre ale dává
+      $3,3,3,1 \to 2,2,0 \to 1,-1$, takže posloupnost grafová není. Sudý součet nestačí.
+    related: [thm-skore, thm-soucet-stupnu]
+
+  - id: q-zaklady-04
+    question: |
+      Kolik uzlů lichého stupně může mít graf se 7 uzly?
+    options:
+      - Libovolný počet od 0 do 7
+      - Jen sudý počet (0, 2, 4 nebo 6)
+      - Jen lichý počet
+      - Nejvýše 1
+    correct: 1
+    explanation: |
+      Podle věty o součtu stupňů je $\sum d_G(u) = 2m$ sudé číslo, takže uzlů lichého stupně je v každém
+      grafu sudý počet.
+    related: [thm-soucet-stupnu]
+
+  - id: q-zaklady-05
+    question: |
+      Graf $G$ má $n$ uzlů a $n - 1$ hran. Které tvrzení platí **vždy**?
+    options:
+      - $G$ je strom.
+      - $G$ je strom, právě když je souvislý.
+      - $G$ obsahuje kružnici.
+      - $G$ má alespoň jeden izolovaný uzel.
+    correct: 1
+    explanation: |
+      Podle charakterizace stromů (bod 3) je souvislý graf s $m = n-1$ strom. Bez souvislosti to neplatí:
+      trojúhelník s izolovaným uzlem má $n = 4$, $m = 3$ a stromem není. Naopak strom je souvislý vždy.
+    related: [thm-charakterizace-stromu]
+
+  - id: q-zaklady-06
+    question: |
+      Proč věta „souvislý faktor s minimální vahou je kostra" potřebuje, aby váhy byly **kladné**?
+    options:
+      - Jinak by kostra nemusela existovat.
+      - Při nulové váze by bylo možné ponechat hranu na kružnici, aniž by se váha zvýšila, takže minimální souvislý faktor by nemusel být strom.
+      - Kladné váhy jsou potřeba jen kvůli algoritmu 2.
+      - Při záporných vahách by graf nebyl souvislý.
+    correct: 1
+    explanation: |
+      Důkaz odebírá hranu $h$ kružnice a využívá $w(K-h) = w(K) - w(h) < w(K)$. Při $w(h) = 0$ nerovnost
+      není ostrá, takže minimální souvislý faktor může kružnici obsahovat; při záporných vahách se kružnice
+      dokonce vyplatí.
+    related: [thm-minimalni-souvisly-faktor]
+
+  - id: q-zaklady-07
+    question: |
+      Jakou časovou složitost má Jarníkův (Primův) algoritmus při implementaci s polem hodnot $\lambda(y)$ (bez haldy)?
+    options:
+      - "$O(n)$"
+      - "$O(n^2)$"
+      - "$O(n^3)$"
+      - "$O(2^n)$"
+    correct: 1
+    explanation: |
+      Provede se $n-1$ kroků, v každém se v čase $O(n)$ vybere uzel s nejmenším $\lambda(y)$ a aktualizují
+      se hodnoty jeho sousedů. Celkem $O(n^2)$; s haldou $O(m \log n)$.
+    related: [alg-jarnik-prim]
+
+  - id: q-zaklady-08
+    question: |
+      Student v Algoritmu 1 místo „nejtěžší hrany kružnice" odstraní vždy **nejtěžší hranu celého grafu**. Co se může stát?
+    options:
+      - Nic, výsledek je stejný.
+      - Algoritmus se zacyklí.
+      - Může odstranit most a výsledek přestane být souvislý.
+      - Výsledkem bude maximální kostra.
+    correct: 2
+    explanation: |
+      Nejtěžší hrana grafu nemusí ležet na žádné kružnici – může to být most, bez něhož se graf rozpadne
+      (např. jediná hrana spojující dva „ostrovy"). Algoritmus 1 smí odstraňovat jen hrany na kružnicích;
+      kružnicová vlastnost pak zaručuje, že nejtěžší hrana kružnice v nějaké minimální kostře chybí.
+    related: [alg-mst-odstranovani-kruznic, lemma-mst-rez]
+
+  - id: q-zaklady-09
+    question: |
+      Která datová struktura zrychlí Kruskalův algoritmus na $O(m \log m)$ (dominuje řazení)?
+    options:
+      - Fronta (BFS)
+      - Union-find (disjunktní množiny)
+      - Matice sousednosti
+      - Zásobník
+    correct: 1
+    explanation: |
+      Kruskal potřebuje opakovaně zjišťovat, zda konce hrany leží v různých komponentách lesa, a komponenty
+      slévat. Union-find to umí téměř v konstantním čase, takže celková složitost je dána řazením hran.
+    related: [alg-kruskal]
+
+  - id: q-zaklady-10
+    question: |
+      Co je prvek $(i,i)$ matice $\mathbf{I}(G)\,\mathbf{I}(G)^T$?
+    options:
+      - Vždy 0
+      - Vždy 1
+      - Stupeň uzlu $u_i$
+      - Počet kružnic procházejících $u_i$
+    correct: 2
+    explanation: |
+      $(\mathbf{I}\mathbf{I}^T)_{ii} = \sum_k b_{ik}^2$ počítá hrany obsahující $u_i$, tedy $d_G(u_i)$.
+      Mimo diagonálu dostaneme matici sousednosti: $\mathbf{I}\mathbf{I}^T = \mathbf{A} + \mathbf{S}$.
+    related: [thm-incidence-sousednost]
+
+  - id: q-zaklady-11
+    question: |
+      Graf na 10 uzlech má minimální stupeň $\delta(G) = 5$. Co lze o něm s jistotou říci?
+    options:
+      - Je souvislý a každé dva uzly mají vzdálenost nejvýše 2.
+      - Je strom.
+      - Může být nesouvislý.
+      - Má nejvýše 25 hran.
+    correct: 0
+    explanation: |
+      $\delta(G) \ge n/2$: dva nesousední uzly mají dohromady alespoň $10$ sousedů mezi zbývajícími 8 uzly,
+      takže mají společného souseda. Graf je tedy souvislý s vzdálenostmi nejvýše 2. Strom to být nemůže
+      (má alespoň $25$ hran), a hran je naopak **alespoň** 25.
+    related: [prop-souvislost-min-stupen]
+
+  - id: q-zaklady-12
+    question: |
+      Které tvrzení o minimální kostře je **nepravdivé**?
+    options:
+      - Mají-li všechny hrany různé váhy, je minimální kostra jediná.
+      - Nejlehčí hrana grafu leží v každé minimální kostře, pokud jsou váhy různé.
+      - Minimální kostra vždy obsahuje nejkratší cestu mezi libovolnými dvěma uzly.
+      - Jarníkův algoritmus a Kruskalův algoritmus najdou kostru stejné váhy.
+    correct: 2
+    explanation: |
+      Minimální kostra minimalizuje **součet** vah, ne vzdálenosti. Např. v trojúhelníku s vahami 2, 2, 3
+      kostra vynechá hranu váhy 3, přestože je to nejkratší spojení jejích konců. Ostatní tvrzení platí
+      (nejlehčí hrana je nejlehčí přes každý řez, který ji obsahuje).
+    related: [def-minimalni-kostra, lemma-mst-rez]
+
+  - id: q-zaklady-13
+    question: |
+      Proč má každý strom s $n \ge 2$ uzly list (uzel stupně 1)?
+    options:
+      - Protože součet stupňů je sudý.
+      - Konec nejdelší cesty nemá souseda mimo cestu (maximalita) ani jiného souseda na cestě (vznikla by kružnice).
+      - Protože strom má $n-1$ hran a každý uzel má stupeň nejvýše 1.
+      - Protože strom je bipartitní.
+    correct: 1
+    explanation: |
+      To je klíčový krok důkazu $m = n-1$: koncový uzel nejdelší cesty má všechny sousedy na cestě, a soused
+      jiný než následující uzel by s úsekem cesty vytvořil kružnici. Stupeň je tedy přesně 1 (a konce jsou dva).
+    related: [thm-charakterizace-stromu, def-strom]

@@ -1,0 +1,505 @@
+id: slozitost-uvod
+number: 2
+title: Algoritmy a výpočetní složitost – intuitivní přístup
+source: "TGD1 skripta kap. 1 (str. 3–4)"
+exam_questions: [14]
+summary: |
+  Motivační kapitola: proč rozlišujeme polynomiální („efektivní“) a exponenciální
+  („neefektivní“) algoritmy a proč u exponenciálních nepomůže ani mnohem rychlejší počítač.
+  Na intuitivní úrovni zavádí třídy P a NP, NP-úplné úlohy a otevřený problém P = NP.
+  Přesné definice přijdou až v kapitolách o výpočetní složitosti (skripta kap. 8–9).
+sections:
+  - number: "1.1"
+    title: Polynomiální a exponenciální algoritmy
+  - number: "1.2"
+    title: Třídy P a NP – intuitivně
+items:
+  - id: def-efektivni-algoritmus
+    kind: definition
+    section: "1.1"
+    title: Efektivní (polynomiální) algoritmus
+    terms:
+      - efektivní algoritmus
+      - neefektivní algoritmus
+      - polynomiální algoritmus
+      - exponenciální algoritmus
+      - časová náročnost
+      - časová složitost
+      - výpočetní složitost
+      - velikost vstupu
+      - hrubá síla
+      - brute force
+      - polynomial time algorithm
+    statement: |
+      Nechť $f(n)$ udává počet elementárních kroků (časovou náročnost) algoritmu v závislosti
+      na velikosti $n$ vstupních dat (v nejhorším případě).
+
+      * Algoritmus nazýváme **efektivní** (polynomiální), jestliže existuje polynom $p(n)$
+        takový, že $f(n) \le p(n)$ pro všechna $n$.
+      * Pokud takový polynomiální horní odhad neexistuje, algoritmus považujeme za
+        **neefektivní**.
+
+      Typické efektivní algoritmy mají náročnost $n$, $n \log n$, $n^2$, $n^3$, …
+      Algoritmy typu „hrubá síla“, které probírají všechny možnosti, potřebují obvykle
+      alespoň $2^n$ kroků (všechny podmnožiny $n$-prvkové množiny), $n!$ kroků
+      (všechny permutace) nebo dokonce $n^n$ kroků (všechna zobrazení $n$-prvkové množiny
+      do sebe) – jejich náročnost je tedy alespoň exponenciální.
+    intuition: |
+      Hranice „polynom vs. exponenciála“ je zvolena proto, že se chová robustně: součet,
+      součin i skládání polynomů je zase polynom, takže když efektivní algoritmus
+      volá jiný efektivní algoritmus jako podprogram, zůstane efektivní. Exponenciální funkce
+      naopak roste rychleji než jakýkoli polynom – od jisté velikosti vstupu je vždy horší.
+
+      **Typická chyba:** zaměňovat „efektivní“ s „rychlý v praxi“. Jde o asymptotické
+      chování v nejhorším případě; malé vstupy zvládne i exponenciální algoritmus.
+    related: [rem-tabulka-rustu, rem-zrychleni-vypoctu, rem-polynomy-vysokeho-stupne, def-trida-p-intuitivne]
+    source: "skripta str. 3–4"
+
+  - id: rem-tabulka-rustu
+    kind: remark
+    section: "1.1"
+    title: Doba výpočtu polynomiálních a exponenciálních algoritmů
+    terms:
+      - tabulka růstu funkcí
+      - doba výpočtu
+      - růst složitosti
+      - 2 na n
+      - n faktoriál
+    statement: |
+      Předpokládejme, že jedna operace trvá $1\,\mu s$ a algoritmus potřebuje $f(n)$
+      operací. Potřebný čas pro vstup velikosti $n$:
+
+      | $n$ | $n^2$ | $n^3$ | $n^4$ | $2^n$ | $n!$ |
+      |---:|---:|---:|---:|---:|---:|
+      | 20 | 0,4 ms | 8 ms | 0,2 s | 1 s | 77 000 let |
+      | 40 | 1,6 ms | 64 ms | 2,6 s | 12 dní | — |
+      | 60 | 3,6 ms | 0,2 s | 13 s | 36 600 let | — |
+      | 80 | 6,4 ms | 0,5 s | 41 s | $3{,}6 \cdot 10^9$ let | — |
+      | 100 | 10 ms | 1 s | 100 s | — | — |
+      | 200 | 40 ms | 8 s | 27 min | — | — |
+      | 500 | 0,25 s | 125 s | 17 hod | — | — |
+      | 1000 | 1 s | 17 min | 12 dní | — | — |
+
+      (Pomlčka znamená čas astronomicky dlouhý.)
+    intuition: |
+      U polynomiálních algoritmů se při zdvojnásobení vstupu čas násobí konstantou
+      ($2^2 = 4$, $2^3 = 8$, …). U $2^n$ se čas při **přičtení** jedné položky
+      zdvojnásobí, při přičtení 20 položek vzroste zhruba milionkrát – proto tabulka
+      pro $2^n$ a $n!$ rychle „vybuchne“.
+    examples:
+      - title: Ověření jednoho údaje z tabulky
+        body: |
+          Pro $n = 40$ a $f(n) = 2^n$: $2^{40} \approx 1{,}1 \cdot 10^{12}$ operací, tj.
+          $1{,}1 \cdot 10^{12}\,\mu s = 1{,}1 \cdot 10^{6}\,s \approx 12{,}7$ dne.
+          Pro $f(n) = n^3$: $40^3 = 64\,000\,\mu s = 64$ ms.
+    related: [def-efektivni-algoritmus, rem-zrychleni-vypoctu]
+    source: "skripta str. 3 (1. tabulka)"
+
+  - id: rem-zrychleni-vypoctu
+    kind: remark
+    section: "1.1"
+    title: Rychlejší počítač exponenciálnímu algoritmu nepomůže
+    terms:
+      - zrychlení výpočtu
+      - bariéra exponenciálních algoritmů
+      - rychlejší počítač
+      - velikost zpracovatelné úlohy
+    statement: |
+      Předpokládejme, že algoritmem s náročností $f(n)$ zvládneme v daném časovém limitu
+      vstup velikosti $n = 100$. Jak velký vstup zvládneme ve stejném limitu, zrychlí-li se
+      výpočet $10\times$, $100\times$, $1000\times$?
+
+      | zrychlení | $n^2$ | $n^3$ | $n^4$ | $2^n$ | $n!$ |
+      |---:|---:|---:|---:|---:|---:|
+      | $1\times$ | 100 | 100 | 100 | 100 | 100 |
+      | $10\times$ | 316 | 215 | 177 | 103 | 100 |
+      | $100\times$ | 1000 | 464 | 316 | 106 | 100 |
+      | $1000\times$ | 3162 | 1000 | 562 | 109 | 101 |
+
+      U exponenciálních algoritmů tak existuje jakási **bariéra**: nad jistou velikostí vstupu
+      nepomůže ani zrychlení výpočtu o několik řádů.
+    intuition: |
+      U polynomu $n^k$ zrychlení $c\times$ **vynásobí** zvládnutelnou velikost faktorem
+      $\sqrt[k]{c}$ (např. $\sqrt{1000} \approx 31{,}6$, proto $100 \to 3162$ pro $n^2$).
+      U $2^n$ zrychlení $c\times$ jen **přičte** $\log_2 c$ (pro $c = 1000$ je to asi $10$,
+      proto $100 \to 109$). Investice do hardwaru tedy u exponenciálních algoritmů
+      prakticky nic nepřinese – je třeba lepší algoritmus.
+    examples:
+      - title: Odvození hodnot pro 2^n
+        body: |
+          Původně zvládneme $2^{100}$ operací. Po zrychlení $1000\times$ zvládneme
+          $1000 \cdot 2^{100} \approx 2^{10} \cdot 2^{100} = 2^{110}$ operací, tj. vstup
+          velikosti zhruba $109$–$110$ (tabulka uvádí $109$, protože $1000 < 2^{10}$).
+    related: [rem-tabulka-rustu, def-efektivni-algoritmus]
+    source: "skripta str. 3–4 (2. tabulka)"
+
+  - id: rem-polynomy-vysokeho-stupne
+    kind: remark
+    section: "1.1"
+    title: Polynomy vysokého stupně a simplexová metoda
+    terms:
+      - n na 100
+      - polynom vysokého stupně
+      - simplexová metoda
+      - Chačijanův algoritmus
+      - lineární programování
+      - elipsoidová metoda
+    statement: |
+      Algoritmy s náročností např. $n^{100}$ nebo $2^{100} n$ jsou formálně polynomiální,
+      a přitom v praxi nepoužitelné. Zkušenost ale ukazuje, že jakmile se pro nějakou úlohu
+      najde polynomiální algoritmus, další vývoj obvykle sníží stupeň i koeficienty polynomu
+      na rozumné hodnoty.
+
+      Známou výjimkou je úloha (reálného) lineárního programování: v praxi používaná
+      simplexová metoda má v nejhorším případě exponenciální náročnost, a přesto je
+      v běžných situacích výhodnější než polynomiální Chačijanův algoritmus.
+    intuition: |
+      Klasifikace „polynomiální = efektivní“ je model, ne dogma. Měří nejhorší případ;
+      simplexová metoda se v nejhorším případě chová špatně jen na uměle zkonstruovaných
+      vstupech, na „typických“ datech je velmi rychlá.
+    related: [def-efektivni-algoritmus]
+    source: "skripta str. 4"
+
+  - id: def-trida-p-intuitivne
+    kind: definition
+    section: "1.2"
+    title: Třída P (intuitivně)
+    terms:
+      - třída P
+      - P
+      - polynomiální úloha
+      - deterministický algoritmus
+      - polynomial time
+    statement: |
+      Úlohy, které lze řešit polynomiálním (efektivním) algoritmem, nazýváme
+      **problémy třídy P**.
+
+      Algoritmy řešící tyto úlohy jsou **deterministické** – v každém kroku je
+      jednoznačně určen krok následující.
+
+      Do třídy P patří většina dosud probraných úloh, např. minimální kostra, minimální
+      a kritická cesta, test acykličnosti grafu, výpočet distanční matice, maximální tok.
+    intuition: |
+      Třída P = to, co umíme „rozumně rychle spočítat“. Pozor: nestačí, že úloha je
+      konečná (vždy lze vše probrat hrubou silou) – rozhoduje, zda existuje algoritmus
+      s polynomiálním počtem kroků.
+
+      Přesnou definici (pomocí modelu výpočtu RAM a jazyků) viz [třída P](#def-trida-p).
+    related: [def-efektivni-algoritmus, def-trida-np-intuitivne, rem-ulohy-s-exponencialnim-vystupem, def-trida-p]
+    source: "skripta str. 4"
+
+  - id: rem-ulohy-s-exponencialnim-vystupem
+    kind: remark
+    section: "1.2"
+    title: Úlohy, které z principu nemohou být polynomiální
+    terms:
+      - generování všech koster
+      - Cayleyho vzorec
+      - exponenciální výstup
+      - n na n-2
+    statement: |
+      U některých úloh polynomiální algoritmus z principiálních důvodů existovat nemůže,
+      protože už samotný **výstup** má exponenciální velikost. Příklad: vygenerovat všechny
+      kostry daného grafu – úplný graf na $n$ uzlech má $n^{n-2}$ různých koster, takže
+      jen jejich vypsání vyžaduje nejméně $n^{n-2}$ kroků.
+    intuition: |
+      Tyto úlohy nejsou zajímavé z hlediska otázky P vs. NP – jejich obtížnost je zřejmá.
+      Zajímavé jsou úlohy s krátkou odpovědí (ANO/NE), u nichž nevíme, zda jdou řešit rychle.
+    related: [def-trida-p-intuitivne, def-trida-np-intuitivne]
+    source: "skripta str. 4"
+
+  - id: def-trida-np-intuitivne
+    kind: definition
+    section: "1.2"
+    title: Třída NP (intuitivně)
+    terms:
+      - třída NP
+      - NP
+      - nedeterministický algoritmus
+      - nedeterministicky polynomiální
+      - ověření řešení
+      - certifikát
+      - uhádnutí řešení
+      - hamiltonovská kružnice
+    statement: |
+      **Třída NP** (nedeterministicky polynomiální) je třída rozhodovacích úloh, které lze
+      řešit **nedeterministicky v polynomiálním čase**: pokud řešení (např. „náhodou“)
+      uhádneme, umíme v polynomiálním čase ověřit jeho správnost.
+
+      Nedeterministický algoritmus si lze představit tak, že náhodně „uhádne“ kandidáta
+      na řešení a poté ho deterministicky polynomiálně zkontroluje. Deterministická
+      simulace (probrání všech možných kandidátů) má ovšem obecně exponenciální počet
+      kroků. Stejně náročné je zodpovězení otázky v případě, že odpověď je záporná
+      (je třeba vyloučit všechny kandidáty).
+
+      Typický zástupce: rozhodnout, zda daný graf obsahuje hamiltonovskou kružnici.
+      Navrženou kružnici ověříme snadno, ale nalezení kružnice nebo důkaz její neexistence
+      umíme jen postupy typu hrubá síla.
+    intuition: |
+      „NP“ **neznamená** „nepolynomiální“! Znamená to, že *ověřit* navržené řešení je
+      snadné. Hledat je může být těžké. Analogie: zkontrolovat vyplněné sudoku je
+      triviální, vyřešit ho může dát práci.
+
+      Přesnou definici viz [nedeterministický algoritmus](#def-nedeterministicky-algoritmus)
+      a [třída NP](#def-trida-np).
+    related: [def-trida-p-intuitivne, prop-p-podmnozina-np, def-np-uplnost-intuitivne, rem-rozhodovaci-ulohy, def-trida-np, def-nedeterministicky-algoritmus]
+    illustrations:
+      - title: Ověřit ANO je snadné, dokázat NE ne
+        property: hamiltonian
+        graph:
+          directed: false
+          nodes:
+            - { id: x1, x: 2, y: 2 }
+            - { id: x2, x: 5, y: 2 }
+            - { id: x3, x: 8, y: 2 }
+            - { id: y1, x: 0.5, y: 8 }
+            - { id: y2, x: 3.5, y: 8 }
+            - { id: y3, x: 6.5, y: 8 }
+            - { id: y4, x: 9.5, y: 8 }
+          edges:
+            - { from: y1, to: y2 }
+            - { from: x1, to: y2 }
+            - { from: x1, to: y3 }
+            - { from: x2, to: y3 }
+            - { from: x2, to: y4 }
+            - { from: x3, to: y4 }
+            - { from: x3, to: y1 }
+            - { from: x1, to: y4 }
+            - { from: x3, to: y2 }
+        steps:
+          - caption: |
+              Má graf hamiltonovskou kružnici? Odpověď ANO doloží **certifikát** – vyznačená kružnice. Ověřit ho je snadné:
+              projdeme 7 hran a zkontrolujeme, že každý uzel navštívíme právě jednou. To je polynomiální práce.
+          - caption: |
+              Odebereme hranu $y_1 y_2$ a odpověď se změní na NE. Krátký certifikát pro NE obecně nemáme – aplikace musela
+              **probrat všechny kandidáty** (hrubá síla), což pro velké grafy trvá exponenciálně dlouho.
+            remove: [[y1, y2]]
+          - caption: |
+              Tady bychom NE uměli zdůvodnit i chytřeji: zbylé hrany vedou jen mezi $\{x_1, x_2, x_3\}$ a
+              $\{y_1, \dots, y_4\}$, kružnice tedy musí třídy střídat a nemůže obsáhnout 3 + 4 uzly. Pro obecný graf ale
+              takový trik neznáme.
+            nodes: { x1: done, x2: done, x3: done }
+    source: "skripta str. 4"
+
+  - id: prop-p-podmnozina-np
+    kind: proposition
+    section: "1.2"
+    title: P je podmnožinou NP
+    terms:
+      - P podmnožina NP
+      - vztah P a NP
+    statement: |
+      Platí $\mathrm{P} \subseteq \mathrm{NP}$.
+    intuition: |
+      Deterministický algoritmus je speciálním případem nedeterministického, který
+      „nic nehádá“. Co umíme rychle vyřešit, umíme tím spíš rychle ověřit.
+    proof: |
+      *Důkaz ve skriptech není, doplněno.* (Na intuitivní úrovni této kapitoly.)
+
+      Nechť úloha patří do P, tj. existuje deterministický algoritmus $\mathcal{A}$, který
+      ji řeší v čase omezeném polynomem $p(n)$. Uvažujme nedeterministický postup, který
+      nic nehádá (resp. hádaného kandidáta ignoruje) a jen spustí $\mathcal{A}$.
+      Ten v polynomiálním čase $p(n)$ správně odpoví ANO či NE. Úloha je tedy řešitelná
+      nedeterministicky v polynomiálním čase, tj. patří do NP.
+    proof_steps:
+      - Úloha z P má deterministický algoritmus s polynomiálním časem $p(n)$.
+      - Deterministický algoritmus je speciálním případem nedeterministického (žádné hádání nepotřebuje).
+      - Spustíme jej jako „ověřovací“ fázi – v čase $p(n)$ dá správnou odpověď.
+      - Úloha je tedy řešitelná nedeterministicky polynomiálně, tj. leží v NP.
+    related: [def-trida-p-intuitivne, def-trida-np-intuitivne, rem-problem-p-np, def-trida-p, def-trida-np]
+    source: "skripta str. 4 (konstatováno bez důkazu)"
+    supplemented: false
+
+  - id: def-np-uplnost-intuitivne
+    kind: definition
+    section: "1.2"
+    title: NP-úplné úlohy (intuitivně)
+    terms:
+      - NP-úplnost
+      - NP-úplná úloha
+      - NP-complete
+      - NPC
+      - ekvivalentní úlohy
+    statement: |
+      Ve třídě NP existuje skupina úloh s touto vlastností: kdyby se podařilo nalézt
+      polynomiální algoritmus pro **kteroukoli** z nich, bylo by možné z něj odvodit
+      polynomiální algoritmy pro **všechny** úlohy třídy NP. Tyto úlohy se nazývají
+      **NP-úplné**.
+
+      NP-úplné úlohy jsou tedy z hlediska efektivity řešení navzájem ekvivalentní: buď jsou
+      všechny řešitelné v polynomiálním čase, nebo není žádná z nich. Patří mezi ně
+      např. existence hamiltonovské kružnice a mnoho dalších úloh z diskrétní matematiky,
+      teoretické informatiky, operační analýzy, teorie kódování či teorie čísel.
+    intuition: |
+      NP-úplné úlohy jsou „nejtěžší“ v NP. Pokud o úloze víme, že je NP-úplná, nemá smysl
+      hledat přesný polynomiální algoritmus (nikdo ho zatím nenašel) – volíme raději
+      heuristiky, aproximace, speciální případy nebo FPT-algoritmy.
+
+      Přesná definice (pomocí polynomiální redukce) viz [NP-úplný problém](#def-np-uplny).
+    related: [def-trida-np-intuitivne, rem-problem-p-np, def-np-uplny, thm-p-np-npc]
+    source: "skripta str. 4"
+
+  - id: rem-problem-p-np
+    kind: remark
+    section: "1.2"
+    title: Problém P = NP
+    terms:
+      - P = NP
+      - P vs NP
+      - NP-problém
+      - otevřený problém
+    statement: |
+      Platí $\mathrm{P} \subseteq \mathrm{NP}$, ale není známo, zda $\mathrm{P} = \mathrm{NP}$,
+      nebo $\mathrm{P} \ne \mathrm{NP}$. Tato otázka (tzv. **NP-problém**) patří k nejdůležitějším
+      otevřeným problémům současné matematiky. Všeobecně se předpokládá, že
+      $\mathrm{P} \ne \mathrm{NP}$.
+
+      Rovnost $\mathrm{P} = \mathrm{NP}$ by nastala právě tehdy, když by některá (a pak každá)
+      NP-úplná úloha měla polynomiální algoritmus.
+    intuition: |
+      Kdyby platilo P = NP, „najít“ by bylo stejně snadné jako „zkontrolovat“ – to odporuje
+      veškeré praktické zkušenosti, proto se věří, že P ≠ NP. Důkaz ale nikdo nemá.
+    related: [prop-p-podmnozina-np, def-np-uplnost-intuitivne, thm-p-np-npc]
+    source: "skripta str. 4"
+
+  - id: rem-rozhodovaci-ulohy
+    kind: remark
+    section: "1.2"
+    title: Rozhodovací a optimalizační úlohy
+    terms:
+      - rozhodovací úloha
+      - optimalizační úloha
+      - decision problem
+      - převod optimalizační úlohy na rozhodovací
+    statement: |
+      Vše výše uvedené se týká **rozhodovacích úloh**, tj. úloh, jejichž výstupem je odpověď
+      ANO či NE. **Optimalizační úlohy** (najděte největší, nejmenší, nejlepší objekt)
+      je nutné nejprve převést na rozhodovací úlohu, která je z hlediska existence
+      efektivního algoritmu s danou úlohou ekvivalentní.
+    intuition: |
+      Typický převod: místo „najdi největší nezávislou množinu“ se ptáme „existuje nezávislá
+      množina velikosti alespoň $k$?“. Umíme-li rozhodovací verzi, optimum najdeme
+      např. postupným (nebo binárním) zkoušením hodnot $k$, tedy jen s polynomiálním
+      zpomalením.
+    examples:
+      - title: Maximální tok jako rozhodovací úloha
+        body: |
+          Optimalizační verze: najdi maximální tok v síti. Rozhodovací verze: existuje
+          v síti tok velikosti alespoň $k$? Obě verze jsou v P (Edmonds–Karpův algoritmus).
+    related: [def-trida-np-intuitivne, def-trida-p-intuitivne]
+    source: "skripta str. 4"
+
+quiz:
+  - id: q-slozitost-01
+    question: |
+      Co znamená zkratka NP?
+    options:
+      - Nepolynomiální úlohy
+      - Nedeterministicky polynomiální úlohy
+      - Neřešitelné problémy
+      - Normálně polynomiální úlohy
+    correct: 1
+    explanation: |
+      NP = nedeterministicky polynomiální: uhádnuté řešení umíme ověřit v polynomiálním čase.
+      Častá chyba je číst NP jako „nepolynomiální“ – víme přitom, že P ⊆ NP.
+    related: [def-trida-np-intuitivne]
+
+  - id: q-slozitost-02
+    question: |
+      Algoritmus s náročností $2^n$ zvládne v časovém limitu vstup velikosti $100$. Jak velký vstup
+      zvládne zhruba ve stejném limitu na počítači $1000\times$ rychlejším?
+    options:
+      - "Asi 100 000"
+      - "Asi 3 162"
+      - "Asi 562"
+      - "Asi 109"
+    correct: 3
+    explanation: |
+      $1000 \approx 2^{10}$, takže zrychlení jen přičte asi 10 (přesněji $\log_2 1000 \approx 9{,}97$,
+      tabulka uvádí 109). Hodnota 3 162 platí pro $n^2$, 562 pro $n^4$.
+    related: [rem-zrychleni-vypoctu]
+
+  - id: q-slozitost-03
+    question: |
+      Který algoritmus považujeme podle definice ve skriptech za **efektivní**?
+    options:
+      - "Algoritmus s náročností $n^{100}$"
+      - "Algoritmus s náročností $n!$"
+      - "Algoritmus s náročností $1{,}01^n$"
+      - "Algoritmus s náročností $n^{\\log n}$"
+    correct: 0
+    explanation: |
+      Efektivní = náročnost shora omezená polynomem. $n^{100}$ je polynom (byť prakticky nepoužitelný).
+      $1{,}01^n$ i $n!$ rostou rychleji než každý polynom; $n^{\log n}$ je také superpolynomiální.
+    related: [def-efektivni-algoritmus, rem-polynomy-vysokeho-stupne]
+
+  - id: q-slozitost-04
+    question: |
+      Proč úloha „vypiš všechny kostry daného grafu“ nemůže mít polynomiální algoritmus?
+    options:
+      - Protože je NP-úplná
+      - Protože výstup může mít až $n^{n-2}$ položek, a už jeho vypsání trvá exponenciálně dlouho
+      - Protože kostru nelze najít v polynomiálním čase
+      - Protože jde o optimalizační úlohu
+    correct: 1
+    explanation: |
+      Jednu kostru najdeme snadno (dokonce minimální kostru polynomiálně). Problém je ve
+      velikosti výstupu: úplný graf $K_n$ má $n^{n-2}$ koster. NP-úplnost se týká rozhodovacích úloh.
+    related: [rem-ulohy-s-exponencialnim-vystupem]
+
+  - id: q-slozitost-05
+    question: |
+      Co by plynulo z nalezení polynomiálního algoritmu pro problém existence hamiltonovské kružnice?
+    options:
+      - Nic zvláštního, šlo by jen o jednu další úlohu ve třídě P
+      - "Platilo by $\\mathrm{P} = \\mathrm{NP}$"
+      - "Platilo by $\\mathrm{P} \\ne \\mathrm{NP}$"
+      - Všechny úlohy by byly řešitelné v lineárním čase
+    correct: 1
+    explanation: |
+      Hamiltonovská kružnice je NP-úplná úloha. Polynomiální algoritmus pro jednu NP-úplnou úlohu
+      dává polynomiální algoritmy pro všechny úlohy z NP, tedy NP ⊆ P, a spolu s P ⊆ NP platí P = NP.
+    related: [def-np-uplnost-intuitivne, rem-problem-p-np]
+
+  - id: q-slozitost-06
+    question: |
+      Které tvrzení o vztahu tříd P a NP je **dokázané**?
+    options:
+      - "$\\mathrm{P} = \\mathrm{NP}$"
+      - "$\\mathrm{P} \\ne \\mathrm{NP}$"
+      - "$\\mathrm{P} \\subseteq \\mathrm{NP}$"
+      - "$\\mathrm{NP} \\subseteq \\mathrm{P}$"
+    correct: 2
+    explanation: |
+      Každá úloha řešitelná deterministicky polynomiálně je řešitelná i nedeterministicky polynomiálně.
+      Zda je inkluze ostrá, je otevřený problém (věří se, že ano).
+    related: [prop-p-podmnozina-np, rem-problem-p-np]
+
+  - id: q-slozitost-07
+    question: |
+      U polynomiálního algoritmu s náročností $n^3$ zrychlíme výpočet $1000\times$. Kolikrát větší vstup
+      zvládneme ve stejném čase?
+    options:
+      - "$1000\\times$"
+      - "$100\\times$"
+      - "$10\\times$"
+      - "Jen o 10 prvků více"
+    correct: 2
+    explanation: |
+      $(cn)^3 = 1000 n^3$ dává $c = \sqrt[3]{1000} = 10$. Proto tabulka ukazuje $100 \to 1000$.
+      „O 10 prvků více“ je chování exponenciálního algoritmu $2^n$.
+    related: [rem-zrychleni-vypoctu]
+
+  - id: q-slozitost-08
+    question: |
+      Proč se v teorii složitosti pracuje hlavně s **rozhodovacími** úlohami?
+    options:
+      - Protože optimalizační úlohy jsou vždy neřešitelné
+      - Protože optimalizační úlohu lze převést na rozhodovací úlohu, která je z hlediska existence efektivního algoritmu ekvivalentní
+      - Protože rozhodovací úlohy jsou vždy v P
+      - Protože nedeterministické algoritmy umí vracet jen čísla
+    correct: 1
+    explanation: |
+      Např. „najdi maximum“ ↔ „existuje řešení s hodnotou alespoň $k$?“. Umíme-li jedno efektivně,
+      umíme efektivně i druhé – stačí tedy studovat jednodušší rozhodovací verzi s odpovědí ANO/NE.
+    related: [rem-rozhodovaci-ulohy]

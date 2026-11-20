@@ -1,0 +1,1988 @@
+id: grafy-matice
+number: 4
+title: Grafy a matice
+source: "TGD1 skripta kap. 3 (str. 12–22); přednáška 3 (ohodnocené grafy, Floydův algoritmus) a přednáška 5"
+exam_questions: [2, 4, 5]
+summary: |
+  Kapitola propojuje grafové pojmy s lineární algebrou. Nejprve počítáme w-distanční matici
+  orientovaného grafu (min-plus mocniny v $O(n^4)$, Floydův algoritmus v $O(n^3)$). Pak ukazujeme,
+  že rozložitelnost matice je totéž co nesouvislost (ve smyslu silné souvislosti) jejího diagramu
+  a slabá rozložitelnost totéž co existence stabilní množiny v bigrafu matice. Nakonec spojujeme
+  regularitu matice s perfektním párováním v bigrafu: strukturální matice je genericky regulární,
+  právě když její bigraf má perfektní párování, a generická hodnost je rovna párovacímu číslu –
+  které spočítáme polynomiálně převodem na maximální tok.
+sections:
+  - number: "3.1"
+    title: Distanční matice ohodnoceného orientovaného grafu a Floydův algoritmus
+  - number: "3.2"
+    title: Rozložitelnost matic a struktura orientovaných grafů
+  - number: "3.3"
+    title: Slabě rozložitelné matice
+  - number: "3.4"
+    title: Regulární matice a perfektní párování v bigrafu
+  - number: "3.5"
+    title: Strukturální matice a generická hodnost
+items:
+  # ------------------------------------------------------------------ 3.1
+  - id: def-w-distancni-matice
+    kind: definition
+    label: "Definice 3.1"
+    section: "3.1"
+    title: w-distanční matice, distanční matice
+    terms: [distanční matice, w-distanční matice, matice vzdáleností, matice vážených vzdáleností, matice w-vzdáleností, distance matrix, all-pairs shortest paths]
+    statement: |
+      Nechť $\vec{G}$ je orientovaný ohodnocený graf s množinou uzlů $U(\vec{G}) = \{v_1, \dots, v_n\}$
+      a ohodnocením $w : H(\vec{G}) \to (0,\infty)$. Matice
+      $\mathbf{D}^w(\vec{G}) = [d^w_{ij}]_{i,j=1}^n$, kde
+      $$
+      d^w_{ij} = d^w(v_i, v_j), \qquad i,j = 1, \dots, n,
+      $$
+      se nazývá **w-distanční matice** grafu $\vec{G}$ (v jiných textech „matice vážených vzdáleností“);
+      $d^w(v_i, v_j)$ je [w-vzdálenost](#def-w-vzdalenost-orientovana) uzlů $v_i$, $v_j$.
+      Analogicky $\mathbf{D}(\vec{G}) = [d_{ij}]$ s $d_{ij} = d_{\vec{G}}(v_i, v_j)$ je **distanční matice**.
+    intuition: |
+      Distanční matice odpovídá na otázku „jak daleko je to z každého uzlu do každého“
+      (*all-pairs shortest paths*). Na diagonále jsou nuly, kde cesta neexistuje, je $\infty$.
+      V orientovaném grafu není obecně symetrická (v příkladu u [Floydova algoritmu](#alg-floyd) je
+      $d^w(u_1,u_4) = 14$, ale $d^w(u_4,u_1) = 6$).
+
+      Algoritmy a jejich složitost:
+      * [mocniny matice sousednosti](#cor-distancni-matice-mocniny) (jen $\mathbf{D}(\vec{G})$) a
+        [min-plus mocniny cenové matice](#thm-minplus-mocniny-cenove-matice) – $O(n^4)$,
+      * $n$-krát [Dijkstrův algoritmus](#alg-dijkstra) – $O(n^3)$,
+      * [Floydův algoritmus](#alg-floyd) – $O(n^3)$, nejjednodušší na implementaci.
+    related: [def-w-vzdalenost-orientovana, alg-floyd, thm-floyd, thm-minplus-mocniny-cenove-matice, cor-distancni-matice-mocniny, alg-dijkstra, rem-distancni-matice]
+    source: "skripta str. 12; přednáška 3, fólie 2"
+
+  - id: alg-floyd
+    kind: algorithm
+    label: "Algoritmus 3.1"
+    section: "3.1"
+    title: Floydův algoritmus
+    terms: [Floydův algoritmus, Floyd-Warshall, Floydův–Warshallův algoritmus, výpočet distanční matice, all-pairs shortest paths, nejkratší cesty mezi všemi dvojicemi]
+    statement: |
+      Vstup: orientovaný graf $\vec{G}$ s uzly $v_1, \dots, v_n$ a ohodnocením $w : H(\vec{G}) \to (0,\infty)$.
+      Výstup: w-distanční matice $\mathbf{D}^w(\vec{G})$.
+
+      Algoritmus postupně připouští uzly $v_1, v_2, \dots, v_n$ jako možné vnitřní uzly cest a
+      po každém kroku aktualizuje matici vzdáleností.
+    pseudocode: |
+      1. Polož $\mathbf{D}_0 = [d^0_{ij}]_{i,j=1}^n$ (tj. cenovou matici $\mathbf{C}(\vec{G})$), kde
+         $$
+         d^0_{ij} = \begin{cases}
+           0 & \text{pro } i = j,\\
+           w_{ij} & \text{pro } i \ne j,\ (i,j) \in H(\vec{G}),\\
+           \infty & \text{pro } i \ne j,\ (i,j) \notin H(\vec{G}).
+         \end{cases}
+         $$
+      2. Pro $k = 1, \dots, n$ postupně vypočti $\mathbf{D}_k = [d^k_{ij}]_{i,j=1}^n$, kde
+         $$
+         d^k_{ij} = \min\{ d^{k-1}_{ij},\ d^{k-1}_{ik} + d^{k-1}_{kj} \}. \qquad (*)
+         $$
+      3. $\mathbf{D}_n = \mathbf{D}^w(\vec{G})$.
+    complexity: |
+      $O(n^3)$: počítáme $n$ matic $\mathbf{D}_1, \dots, \mathbf{D}_n$ řádu $n$, každý prvek podle $(*)$
+      v konstantním čase (nezávisle na $n$). Celkem $n \cdot n^2$ elementárních kroků.
+      Paměť stačí $O(n^2)$ – matici lze přepisovat na místě, protože řádek a sloupec $k$ se
+      v $k$-tém kroku nemění ($d^k_{ik} = d^{k-1}_{ik}$, neboť $d_{kk} = 0$).
+    intuition: |
+      Invariant: $d^k_{ij}$ je délka nejkratší cesty z $v_i$ do $v_j$, jejíž **vnitřní** uzly leží
+      v $\{v_1, \dots, v_k\}$. Při přidání uzlu $v_k$ se buď nejkratší cesta nezmění (neprochází $v_k$),
+      nebo prochází $v_k$ – a pak je složena z nejkratší cesty $v_i \to v_k$ a nejkratší cesty
+      $v_k \to v_j$, obou jen přes $v_1, \dots, v_{k-1}$. To je princip dynamického programování.
+
+      **Typická chyba:** zaměnit pořadí cyklů – vnější cyklus musí být přes $k$ (povolený mezilehlý uzel),
+      vnitřní přes $i, j$.
+    examples:
+      - title: Floydův algoritmus na grafu s pěti uzly (příklad ze skript)
+        body: |
+          Hrany a váhy: $(u_1,u_2)$: 4, $(u_2,u_3)$: 3, $(u_2,u_5)$: 8, $(u_3,u_5)$: 4, $(u_4,u_1)$: 7,
+          $(u_4,u_5)$: 3, $(u_5,u_1)$: 3, $(u_5,u_2)$: 8, $(u_5,u_4)$: 3.
+          $$
+          \mathbf{D}_0 = \begin{bmatrix}
+          0 & 4 & \infty & \infty & \infty\\
+          \infty & 0 & 3 & \infty & 8\\
+          \infty & \infty & 0 & \infty & 4\\
+          7 & \infty & \infty & 0 & 3\\
+          3 & 8 & \infty & 3 & 0
+          \end{bmatrix},\qquad
+          \mathbf{D}_1 = \begin{bmatrix}
+          0 & 4 & \infty & \infty & \infty\\
+          \infty & 0 & 3 & \infty & 8\\
+          \infty & \infty & 0 & \infty & 4\\
+          7 & 11 & \infty & 0 & 3\\
+          3 & 7 & \infty & 3 & 0
+          \end{bmatrix}
+          $$
+          ($k = 1$: přes $u_1$ se zkrátí $u_4 \to u_2$ na $7 + 4 = 11$ a $u_5 \to u_2$ na $3 + 4 = 7$.)
+          $$
+          \mathbf{D}_2 = \begin{bmatrix}
+          0 & 4 & 7 & \infty & 12\\
+          \infty & 0 & 3 & \infty & 8\\
+          \infty & \infty & 0 & \infty & 4\\
+          7 & 11 & 14 & 0 & 3\\
+          3 & 7 & 10 & 3 & 0
+          \end{bmatrix},\qquad
+          \mathbf{D}_3 = \begin{bmatrix}
+          0 & 4 & 7 & \infty & 11\\
+          \infty & 0 & 3 & \infty & 7\\
+          \infty & \infty & 0 & \infty & 4\\
+          7 & 11 & 14 & 0 & 3\\
+          3 & 7 & 10 & 3 & 0
+          \end{bmatrix}
+          $$
+          ($k = 3$: např. $d_{15}$: $\min\{12,\ 7 + 4\} = 11$, $d_{25}$: $\min\{8,\ 3 + 4\} = 7$.)
+          Krok $k = 4$ nic nezmění, protože do $u_4$ vede konečná vzdálenost jen z $u_5$ a obchvat přes
+          $u_4$ nic nezkrátí: $\mathbf{D}_4 = \mathbf{D}_3$. Konečně
+          $$
+          \mathbf{D}_5 = \mathbf{D}^w(\vec{G}) = \begin{bmatrix}
+          0 & 4 & 7 & 14 & 11\\
+          10 & 0 & 3 & 10 & 7\\
+          7 & 11 & 0 & 7 & 4\\
+          6 & 10 & 13 & 0 & 3\\
+          3 & 7 & 10 & 3 & 0
+          \end{bmatrix}.
+          $$
+          ($k = 5$: např. $d_{41} = \min\{7,\ 3 + 3\} = 6$, $d_{14} = \min\{\infty,\ 11 + 3\} = 14$.)
+        graph:
+          directed: true
+          nodes:
+            - { id: u1, x: 5, y: 1 }
+            - { id: u2, x: 1, y: 4 }
+            - { id: u3, x: 3, y: 8 }
+            - { id: u4, x: 7, y: 8 }
+            - { id: u5, x: 9, y: 4 }
+          edges:
+            - { from: u1, to: u2, w: 4 }
+            - { from: u2, to: u3, w: 3 }
+            - { from: u2, to: u5, w: 8 }
+            - { from: u3, to: u5, w: 4 }
+            - { from: u4, to: u1, w: 7 }
+            - { from: u4, to: u5, w: 3 }
+            - { from: u5, to: u1, w: 3 }
+            - { from: u5, to: u2, w: 8 }
+            - { from: u5, to: u4, w: 3 }
+    visualization: floyd
+    related: [thm-floyd, def-w-distancni-matice, thm-minplus-mocniny-cenove-matice, rem-floyd-dijkstra, rem-floyd-rekonstrukce-cest, rem-floyd-odkaz]
+    illustrations:
+      - title: Řádek u₄ distanční matice krok za krokem
+        graph:
+          directed: true
+          nodes:
+            - { id: u1, x: 5, y: 1 }
+            - { id: u2, x: 1, y: 4 }
+            - { id: u3, x: 3, y: 8.5 }
+            - { id: u4, x: 7, y: 8.5 }
+            - { id: u5, x: 9, y: 4 }
+          edges:
+            - { from: u1, to: u2, w: 4 }
+            - { from: u2, to: u3, w: 3 }
+            - { from: u2, to: u5, w: 8 }
+            - { from: u3, to: u5, w: 4 }
+            - { from: u4, to: u1, w: 7 }
+            - { from: u4, to: u5, w: 3 }
+            - { from: u5, to: u1, w: 3 }
+            - { from: u5, to: u2, w: 8 }
+            - { from: u5, to: u4, w: 3 }
+        steps:
+          - caption: |
+              Sledujeme řádek $d_{4j}$ (vzdálenosti z $u_4$, pod uzly). V $\mathbf{D}_0$ jsou jen přímé hrany:
+              do $u_1$ je to $7$, do $u_5$ je to $3$, jinam $\infty$ – žádný vnitřní uzel zatím není povolen.
+            nodes: { u4: source }
+            edges: { u4-u1: active, u4-u5: active }
+            labels: { u1: "d=7", u2: "d=∞", u3: "d=∞", u4: "d=0", u5: "d=3" }
+          - caption: |
+              $k = 1$: povolíme $u_1$ jako vnitřní uzel. $d^1_{42} = \min\{\infty,\ d^0_{41} + d^0_{12}\} = 7 + 4 = 11$ –
+              cesta $u_4 \to u_1 \to u_2$.
+            nodes: { u4: source, u1: active }
+            edges: { u4-u1: path, u1-u2: path }
+            labels: { u1: "d=7", u2: "d=11", u3: "d=∞", u4: "d=0", u5: "d=3" }
+          - caption: |
+              $k = 2$: přes $u_2$ se zkrátí $d^2_{43} = d^1_{42} + d^1_{23} = 11 + 3 = 14$. Do $u_5$ přes $u_2$ by to bylo
+              $11 + 8 = 19 > 3$, tam se nic nemění.
+            nodes: { u4: source, u2: active }
+            edges: { u4-u1: path, u1-u2: path, u2-u3: path }
+            labels: { u1: "d=7", u2: "d=11", u3: "d=14", u4: "d=0", u5: "d=3" }
+          - caption: |
+              $k = 3$ a $k = 4$: řádek $u_4$ se nezmění (např. $d_{43} + d_{35} = 14 + 4 = 18 > 3$). Hodnota $d^k_{ij}$
+              je délka nejkratší cesty **jen přes** $u_1, \dots, u_k$ – nejkratší cesty přes $u_5$ zatím nevidíme.
+            nodes: { u4: source, u3: active }
+            labels: { u1: "d=7", u2: "d=11", u3: "d=14", u4: "d=0", u5: "d=3" }
+          - caption: |
+              $k = 5$: přes $u_5$ se zkrátí všechno ostatní: $d_{41} = \min\{7,\ 3 + 3\} = 6$, $d_{42} = \min\{11,\ 3 + 7\} = 10$,
+              $d_{43} = \min\{14,\ 3 + 10\} = 13$. Úsek $u_5 \to u_3$ délky $10$ už je hotový z dřívějších kroků.
+            nodes: { u4: source, u5: active }
+            edges: { u4-u5: path, u5-u1: path, u1-u2: path, u2-u3: path }
+            labels: { u1: "d=6", u2: "d=10", u3: "d=13", u4: "d=0", u5: "d=3" }
+    source: "skripta str. 12–13; přednáška 3, fólie 4"
+
+  - id: thm-floyd
+    kind: theorem
+    label: "Věta 3.1"
+    section: "3.1"
+    title: Správnost a složitost Floydova algoritmu
+    terms: [věta 3.1, správnost Floydova algoritmu, složitost Floydova algoritmu, O(n^3)]
+    statement: |
+      Algoritmus 3.1 nalezne w-distanční matici $\mathbf{D}^w(\vec{G})$ grafu $\vec{G}$ v čase $O(n^3)$.
+    intuition: |
+      Celý důkaz stojí na invariantu „$d^k_{ij}$ = nejkratší cesta s vnitřními uzly jen z
+      $\{v_1,\dots,v_k\}$“. Pro $k = n$ už nejsou žádná omezení, takže dostaneme skutečné vzdálenosti.
+    proof: |
+      Indukcí podle $k$ dokážeme: **$d^k_{ij}$ je rovno minimální w-délce orientované cesty $\vec{P}$
+      z $v_i$ do $v_j$ s $U(\vec{P}) \subset \{v_i, v_j\} \cup \{v_1, \dots, v_k\}$** (tj. nejkratší cesty
+      „množinou uzlů $\{1,\dots,k\}$“), případně $\infty$, pokud taková cesta neexistuje.
+
+      *$k = 0$:* povolené jsou jen cesty bez vnitřních uzlů, tj. triviální cesta ($i = j$, délka $0$)
+      nebo hrana $(v_i, v_j)$ (délka $w_{ij}$). To je přesně $\mathbf{D}_0$.
+
+      *Indukční krok:* nechť tvrzení platí pro $k - 1$ a $\vec{P}$ je nejkratší cesta z $v_i$ do $v_j$
+      množinou uzlů $\{v_1, \dots, v_k\}$.
+      * Pokud $v_k \notin U(\vec{P})$, je $\vec{P}$ cestou množinou $\{v_1,\dots,v_{k-1}\}$ a její délka je podle
+        indukčního předpokladu $d^{k-1}_{ij}$.
+      * Pokud $v_k \in U(\vec{P})$, rozdělí jej $v_k$ na úseky $v_i \to v_k$ a $v_k \to v_j$, oba jsou
+        cestami množinou $\{v_1,\dots,v_{k-1}\}$ a (jako části nejkratší cesty) nejkratšími takovými; délka
+        $\vec{P}$ je tedy $d^{k-1}_{ik} + d^{k-1}_{kj}$.
+
+      Obě čísla ve vzorci $(*)$ jsou naopak w-délky sledů z $v_i$ do $v_j$ množinou $\{v_1,\dots,v_k\}$
+      (spojení dvou cest přes $v_k$ může být sled; vypuštěním cyklů vznikne cesta, která není delší).
+      Minimum ve $(*)$ je proto rovno délce nejkratší cesty a tvrzení platí pro $k$.
+
+      Pro $k = n$ nejsou vnitřní uzly nijak omezeny, takže $\mathbf{D}_n = \mathbf{D}^w(\vec{G})$.
+
+      *Složitost:* algoritmus počítá $n$ matic $\mathbf{D}_1, \dots, \mathbf{D}_n$ řádu $n$; výpočet každého
+      prvku podle $(*)$ trvá konstantní dobu nezávislou na $n$. Celkem $n \cdot n^2$ prvků, tj. $O(n^3)$.
+    proof_steps:
+      - Formulujeme invariant – $d^k_{ij}$ je délka nejkratší cesty z $v_i$ do $v_j$, jejíž vnitřní uzly leží v $\{v_1, \dots, v_k\}$ – a dokazujeme ho indukcí podle $k$.
+      - Pro $k = 0$ jsou povoleny jen triviální cesty a jednotlivé hrany, což přesně popisuje $\mathbf{D}_0$.
+      - Neprochází-li nejkratší cesta uzlem $v_k$, má podle indukčního předpokladu délku $d^{k-1}_{ij}$.
+      - Prochází-li uzlem $v_k$, rozpadne se na nejkratší cesty $v_i \to v_k$ a $v_k \to v_j$ přes $\{v_1,\dots,v_{k-1}\}$, s délkou $d^{k-1}_{ik} + d^{k-1}_{kj}$.
+      - Obě hodnoty ve vzorci jsou délky přípustných sledů, takže jejich minimum je přesně nejkratší cesta; pro $k = n$ dostaneme $\mathbf{D}^w(\vec{G})$.
+      - Algoritmus počítá $n$ matic po $n^2$ prvcích, každý v konstantním čase, celkem $O(n^3)$.
+    related: [alg-floyd, def-w-distancni-matice, alg-dijkstra]
+    source: "skripta str. 12–13; přednáška 3, fólie 4"
+
+  - id: rem-floyd-dijkstra
+    kind: remark
+    section: "3.1"
+    title: Distanční matice pomocí Dijkstrova algoritmu
+    terms: [Dijkstrův algoritmus, Dijkstra n-krát, srovnání Floyd Dijkstra]
+    statement: |
+      Matici $\mathbf{D}^w(\vec{G})$ lze také nalézt v čase $O(n^3)$ pomocí Dijkstrova algoritmu.
+      Ten najde vzdálenosti z pevného uzlu do všech ostatních (tj. jeden řádek distanční matice)
+      v čase $O(n^2)$; zopakujeme-li jej $n$-krát pro různé výchozí uzly, dostaneme celou matici
+      v $O(n^3)$ krocích.
+    intuition: |
+      Asymptoticky jsou obě cesty stejné. Floydův algoritmus je jednodušší na implementaci i ruční
+      výpočet; Dijkstra s haldou je výhodnější pro řídké grafy (*doplněno mimo skripta*:
+      $n$-krát Dijkstra s binární haldou trvá $O(nm \log n)$).
+    related: [alg-floyd, def-w-distancni-matice, alg-dijkstra]
+    source: "skripta str. 13"
+
+  - id: rem-floyd-rekonstrukce-cest
+    kind: remark
+    section: "3.1"
+    title: Rekonstrukce nejkratších cest ve Floydově algoritmu
+    terms: [matice předchůdců, rekonstrukce cesty, záporné váhy, záporný cyklus]
+    statement: |
+      Floydův algoritmus dává jen délky. Chceme-li i samotné cesty, vedeme spolu s $\mathbf{D}_k$ matici
+      $\mathbf{N} = [n_{ij}]$, kde $n_{ij}$ je uzel, přes který naposledy došlo ke zlepšení: kdykoli
+      ve $(*)$ platí $d^{k-1}_{ik} + d^{k-1}_{kj} < d^{k-1}_{ij}$, položíme $n_{ij} := k$. Cestu z $v_i$
+      do $v_j$ pak rekurzivně složíme z cest $v_i \to v_{n_{ij}}$ a $v_{n_{ij}} \to v_j$
+      (není-li $n_{ij}$ definováno, jde o přímou hranu). Složitost zůstává $O(n^3)$, paměť $O(n^2)$.
+
+      Algoritmus funguje i se zápornými vahami, pokud graf neobsahuje cyklus záporné délky;
+      takový cyklus se projeví zápornou hodnotou na diagonále $\mathbf{D}_n$.
+    intuition: |
+      Tato poznámka jde nad rámec skript (v TGD1 pracujeme s kladnými vahami), ale u ústní zkoušky
+      se často objeví doplňující otázka „a jak najdeš samotnou cestu?“.
+    related: [alg-floyd, thm-floyd]
+    source: "doplněno (standardní rozšíření Floydova algoritmu)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 3.2
+  - id: def-rozlozitelna-matice
+    kind: definition
+    label: "Definice 3.2"
+    section: "3.2"
+    title: Rozložitelná a nerozložitelná matice
+    terms: [rozložitelná matice, nerozložitelná matice, reducible matrix, irreducible matrix, blokově trojúhelníkový tvar, reducibilita]
+    statement: |
+      Čtvercová matice $\mathbf{A}$ se nazývá **rozložitelná**, lze-li ji napsat ve tvaru
+      $$
+      \mathbf{A} = \begin{bmatrix} \mathbf{A}_{11} & \mathbf{A}_{12} \\ \mathbf{0} & \mathbf{A}_{22} \end{bmatrix},
+      $$
+      kde $\mathbf{A}_{11}$ a $\mathbf{A}_{22}$ jsou čtvercové matice řádu alespoň 1 a $\mathbf{0}$ je
+      nulová matice, anebo lze-li ji do tohoto tvaru převést permutací řádků a **stejnou** permutací sloupců.
+
+      Čtvercová matice, která není rozložitelná, se nazývá **nerozložitelná**.
+    intuition: |
+      Rozložitelnost je užitečná např. při řešení soustavy $\mathbf{A}\mathbf{x} = \mathbf{b}$: z druhého
+      blokového řádku spočteme nejprve „spodní“ neznámé jen pomocí $\mathbf{A}_{22}$ a pak zbytek –
+      velká úloha se rozpadne na menší. Rozhoduje jen rozmístění nul, ne konkrétní hodnoty.
+
+      Hrubou silou bychom museli zkusit až $n!$ permutací. [Věta 3.2](#thm-rozlozitelnost-silna-souvislost)
+      převádí test na hledání kvazikomponent grafu – polynomiálně.
+    examples:
+      - title: Rozložitelná matice
+        body: |
+          $$
+          \begin{bmatrix} 3 & 10 & 4 & 8\\ 0 & 1 & 0 & 6\\ 2 & 5 & 2 & 1\\ 0 & 3 & 0 & 1 \end{bmatrix}
+          \;\longrightarrow\;
+          \begin{bmatrix} 3 & 4 & 10 & 8\\ 2 & 2 & 5 & 1\\ 0 & 0 & 1 & 6\\ 0 & 0 & 3 & 1 \end{bmatrix}
+          $$
+          Prohozením 2. a 3. řádku a zároveň 2. a 3. sloupce vznikne nulový blok $2 \times 2$ vlevo dole.
+      - title: Nerozložitelná matice
+        body: |
+          $$
+          \begin{bmatrix} 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 3\\ 0 & 2 & 0 & 0\\ 4 & 0 & 0 & 0 \end{bmatrix}
+          $$
+          je nerozložitelná. Bez další teorie bychom to museli ověřit probráním všech permutací; pomocí
+          [důsledku 3.1](#cor-nerozlozitelnost-diagram) stačí vidět, že její diagram je cyklus
+          $1 \to 3 \to 2 \to 4 \to 1$, tedy silně souvislý graf.
+    related: [rem-simultanni-permutace, thm-rozlozitelnost-silna-souvislost, cor-nerozlozitelnost-diagram, def-slabe-rozlozitelna]
+    source: "skripta str. 13–14; přednáška 5, fólie 1"
+
+  - id: rem-simultanni-permutace
+    kind: remark
+    section: "3.2"
+    title: Simultánní permutace a permutační matice
+    terms: [simultánní permutace, permutační matice, PAP^T, přečíslování uzlů]
+    statement: |
+      1. Ekvivalentně: $\mathbf{A}$ je rozložitelná, jestliže existuje permutační matice $\mathbf{P}$ taková, že
+         $$
+         \mathbf{P}\mathbf{A}\mathbf{P}^T = \begin{bmatrix} \mathbf{A}_{11} & \mathbf{A}_{12} \\ \mathbf{0} & \mathbf{A}_{22} \end{bmatrix}.
+         $$
+      2. Provádíme-li v matici permutaci řádků a stejnou permutaci sloupců, hovoříme o
+         **simultánních permutacích**.
+    intuition: |
+      Násobení $\mathbf{P}$ zleva permutuje řádky, $\mathbf{P}^T$ zprava permutuje sloupce stejně.
+      Je-li $\mathbf{A}$ matice (vážená matice sousednosti) grafu, simultánní permutace odpovídá jen
+      **přečíslování uzlů** – graf zůstává stejný. Proto rozložitelnost je vlastnost grafu.
+    related: [def-rozlozitelna-matice, def-slabe-rozlozitelna]
+    source: "skripta str. 14; přednáška 5, fólie 1"
+
+  - id: def-diagram-matice
+    kind: definition
+    section: "3.2"
+    title: Diagram matice
+    terms: [diagram matice, graf matice, "G(A)", orientovaný graf matice]
+    statement: |
+      Buď $\mathbf{A} = [a_{ij}]$ čtvercová matice řádu $n$. **Diagram** matice $\mathbf{A}$ je orientovaný
+      graf $\vec{G}(\mathbf{A})$ s množinou uzlů $\{1, \dots, n\}$, v němž $(i,j)$ je hranou, právě když
+      $a_{ij} \ne 0$ (nenulové diagonální prvky dávají smyčky; ty pro souvislostní vlastnosti nehrají roli).
+    intuition: |
+      Diagram je opak [vážené matice sousednosti](#def-matice-sousednosti-orientovaneho): z matice uděláme graf.
+      Pro graf $\vec{G}$ bez smyček má $\mathbf{W}(\vec{G})$ diagram právě $\vec{G}$. Pojem známe z KMA/DMA;
+      skripta jej v důsledku 3.1 používají bez nové definice.
+    related: [def-matice-sousednosti-orientovaneho, cor-nerozlozitelnost-diagram, def-bigraf-matice]
+    illustrations:
+      - title: Nenulové prvky matice jako hrany
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 2 }
+            - { id: "3", x: 8, y: 2 }
+            - { id: "2", x: 8, y: 8 }
+            - { id: "4", x: 2, y: 8 }
+          edges:
+            - { from: "1", to: "3", w: 1 }
+            - { from: "3", to: "2", w: 2 }
+            - { from: "2", to: "4", w: 3 }
+            - { from: "4", to: "1", w: 4 }
+        steps:
+          - caption: |
+              Matice $\begin{bmatrix} 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 3\\ 0 & 2 & 0 & 0\\ 4 & 0 & 0 & 0 \end{bmatrix}$ má nenulové
+              prvky $a_{13}, a_{24}, a_{32}, a_{41}$ – každý dává hranu $i \to j$ (u hrany je hodnota prvku). Diagram je cyklus,
+              tedy silně souvislý, a matice je **nerozložitelná**.
+          - caption: |
+              Položíme $a_{41} = 0$ – hrana $4 \to 1$ zmizí. Z uzlu $4$ teď nevede žádná hrana, řádek 4 je mimo diagonálu
+              nulový a graf přestane být silně souvislý: matice je **rozložitelná** (uzel 4 dáme na konec).
+            remove: [["4", "1"]]
+          - caption: |
+              Přidáme nenulový prvek $a_{21} = 5$. Vznikne cyklus $1 \to 3 \to 2 \to 1$, ale z uzlu $4$ se pořád nikam
+              nedostaneme – dvě kvazikomponenty, matice zůstává rozložitelná.
+            add: [["2", "1", 5]]
+          - caption: |
+              Teprve prvek $a_{42} = 6$ (hrana $4 \to 2$) uzel $4$ „napojí“ zpět. Diagram je silně souvislý a matice je
+              opět nerozložitelná. Rozhodují jen polohy nul, ne konkrétní hodnoty.
+            add: [["4", "2", 6]]
+    source: "skripta str. 15 (pojem z KMA/DMA, zde zopakován)"
+    supplemented: true
+
+  - id: thm-rozlozitelnost-silna-souvislost
+    kind: theorem
+    label: "Věta 3.2"
+    section: "3.2"
+    title: Rozložitelnost matice a kvazikomponenty grafu
+    terms: [věta 3.2, rozložitelnost a silná souvislost, horní blokově trojúhelníkový tvar, Frobeniův normální tvar, kvazikomponenty a matice]
+    statement: |
+      Buď $\vec{G}$ ohodnocený orientovaný graf. Platí:
+
+      a) Je-li $\vec{G}$ silně souvislý, pak je matice $\mathbf{W}(\vec{G})$ nerozložitelná.
+
+      b) Jsou-li $\vec{G}_1, \dots, \vec{G}_k$ kvazikomponenty grafu $\vec{G}$ očíslované tak, že v kondenzaci
+      $\vec{G}_C$ jsou pouze hrany $(\vec{G}_k, \vec{G}_\ell)$ pro $k < \ell$, a očíslujeme-li uzly grafu
+      $\vec{G}$ souhlasně s očíslováním kvazikomponent (tj. je-li $i \in \vec{G}_k$, $j \in \vec{G}_\ell$
+      a $k < \ell$, pak $i < j$), pak má matice $\mathbf{W}(\vec{G})$ tvar
+      $$
+      \mathbf{W}(\vec{G}) = \begin{bmatrix}
+      \mathbf{W}_{11} & \mathbf{W}_{12} & \mathbf{W}_{13} & \dots & \mathbf{W}_{1k}\\
+      \mathbf{0} & \mathbf{W}_{22} & \mathbf{W}_{23} & \dots & \mathbf{W}_{2k}\\
+      \mathbf{0} & \mathbf{0} & \mathbf{W}_{33} & \dots & \mathbf{W}_{3k}\\
+      \vdots & & & \ddots & \vdots\\
+      \mathbf{0} & \mathbf{0} & \mathbf{0} & \dots & \mathbf{W}_{kk}
+      \end{bmatrix},
+      $$
+      kde $\mathbf{W}_{ii} = \mathbf{W}(\vec{G}_i)$, $i = 1, \dots, k$, a tyto matice jsou již nerozložitelné.
+    intuition: |
+      Nulový blok vlevo dole znamená: z uzlů „dole“ nevede žádná hrana do uzlů „nahoře“. To je přesně
+      situace, kdy graf není silně souvislý – z některé části se nedá vrátit. Kvazikomponenty jsou
+      maximální silně souvislé části, kondenzace je acyklická, a proto ji lze topologicky uspořádat
+      (hrany jen „dopředu“). Toto uspořádání určí permutaci, která matici převede na horní blokově
+      trojúhelníkový tvar s nerozložitelnými diagonálními bloky.
+    proof: |
+      **a)** Dokážeme obměnu: je-li $\mathbf{W}(\vec{G})$ rozložitelná, pak $\vec{G}$ není silně souvislý.
+      Nechť má $\mathbf{W}(\vec{G})$ (po simultánní permutaci) tvar
+      $\begin{bmatrix} \mathbf{A}_{11} & \mathbf{A}_{12} \\ \mathbf{0} & \mathbf{A}_{22} \end{bmatrix}$.
+      Simultánní permutace řádků a sloupců odpovídá jen přečíslování uzlů grafu. Označme $U_1$, resp. $U_2$
+      (obě neprázdné) množinu uzlů odpovídajících blokům $\mathbf{A}_{11}$, resp. $\mathbf{A}_{22}$. Nulový blok
+      vlevo dole znamená $w_{ij} = 0$ pro $i \in U_2$, $j \in U_1$, tedy z žádného uzlu $U_2$ nevede hrana
+      do $U_1$. Pak z $U_2$ nevede do $U_1$ ani žádná orientovaná cesta (cesta by musela někde poprvé
+      přejít z $U_2$ do $U_1$, a to po hraně). Graf $\vec{G}$ tedy není silně souvislý.
+
+      **b)** Kondenzace je acyklická, takže kvazikomponenty lze očíslovat požadovaným způsobem a uzly
+      přečíslovat souhlasně. Mezi kvazikomponentami $\vec{G}_i$ a $\vec{G}_j$ s $i > j$ pak neexistuje
+      hrana z $\vec{G}_i$ do $\vec{G}_j$ (dala by hranu $(\vec{G}_i, \vec{G}_j)$ kondenzace s $i > j$).
+      Všechny bloky pod diagonálou jsou tedy nulové:
+      $$
+      \begin{array}{c|cccc}
+       & \text{uzly } \vec{G}_1 & \text{uzly } \vec{G}_2 & \dots & \text{uzly } \vec{G}_k\\ \hline
+      \text{uzly } \vec{G}_1 & \mathbf{W}(\vec{G}_1) & \mathbf{W}_{12} & \dots & \mathbf{W}_{1k}\\
+      \text{uzly } \vec{G}_2 & \mathbf{0} & \mathbf{W}(\vec{G}_2) & \dots & \mathbf{W}_{2k}\\
+      \vdots & \vdots & & \ddots & \vdots\\
+      \text{uzly } \vec{G}_k & \mathbf{0} & \mathbf{0} & \dots & \mathbf{W}(\vec{G}_k)
+      \end{array}
+      $$
+      Diagonální blok příslušný $\vec{G}_i$ obsahuje váhy hran mezi uzly $\vec{G}_i$, tj. je to
+      $\mathbf{W}(\vec{G}_i)$. Každá kvazikomponenta je silně souvislý graf, a proto jsou podle již
+      dokázané části a) všechny matice $\mathbf{W}(\vec{G}_i)$ nerozložitelné.
+    proof_steps:
+      - Část a) dokazujeme obměnou – z rozložitelného tvaru matice odvodíme, že graf není silně souvislý.
+      - Simultánní permutace řádků a sloupců je jen přečíslování uzlů; bloky určují dvě neprázdné množiny uzlů $U_1$, $U_2$.
+      - Nulový blok vlevo dole znamená, že z $U_2$ nevede hrana do $U_1$, a tedy ani orientovaná cesta – graf není silně souvislý.
+      - Pro část b) očíslujeme kvazikomponenty podle topologického uspořádání acyklické kondenzace a uzly souhlasně s nimi.
+      - Hrana z $\vec{G}_i$ do $\vec{G}_j$ s $i > j$ by dala „zpětnou“ hranu kondenzace, proto jsou všechny bloky pod diagonálou nulové.
+      - Diagonální bloky jsou matice $\mathbf{W}(\vec{G}_i)$ silně souvislých kvazikomponent, podle a) tedy nerozložitelné.
+    related: [def-rozlozitelna-matice, cor-nerozlozitelnost-diagram, alg-test-rozlozitelnosti, def-kvazikomponenta, def-kondenzace, def-silna-souvislost, def-matice-sousednosti-orientovaneho]
+    illustrations:
+      - title: Kvazikomponenty určují diagonální bloky
+        property: strongly-connected
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 1, y: 2 }
+            - { id: "4", x: 1, y: 8 }
+            - { id: "5", x: 4, y: 5 }
+            - { id: "3", x: 6, y: 1 }
+            - { id: "2", x: 8.5, y: 4 }
+            - { id: "6", x: 8.5, y: 8.5 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "1", to: "4" }
+            - { from: "1", to: "5" }
+            - { from: "2", to: "6" }
+            - { from: "3", to: "2" }
+            - { from: "4", to: "1" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "1" }
+            - { from: "5", to: "2" }
+            - { from: "5", to: "6" }
+            - { from: "6", to: "2" }
+        steps:
+          - caption: |
+              Diagram matice $6 \times 6$ z příkladu u testu rozložitelnosti. Má tři kvazikomponenty (barevně):
+              $\{1,4,5\}$, $\{2,6\}$ a $\{3\}$. Graf není silně souvislý, matice je tedy rozložitelná.
+          - caption: |
+              Hrany **mezi** kvazikomponentami (zvýrazněné) vedou jen do $\{2,6\}$, nikdy zpět. V pořadí uzlů
+              $4, 1, 5 \mid 3 \mid 2, 6$ proto všechny tyto hrany leží nad diagonálou a bloky pod diagonálou jsou nulové.
+            witness: true
+            edges: { 1-2: active, 5-2: active, 5-6: active, 3-2: active }
+          - caption: |
+              Přidáme nenulový prvek $a_{61}$ (hranu $6 \to 1$), který by v tomto pořadí ležel pod diagonálou. Kvazikomponenty
+              $\{1,4,5\}$ a $\{2,6\}$ splynou. Do uzlu $3$ ale nic nevede, matice je pořád rozložitelná (dva bloky).
+            add: [["6", "1"]]
+          - caption: |
+              Ještě hrana $2 \to 3$: teď se z každého uzlu dostaneme do každého, diagram je silně souvislý a matice je
+              **nerozložitelná** – žádná simultánní permutace nulový blok nevytvoří.
+            add: [["2", "3"]]
+    source: "skripta str. 14–15; přednáška 5, fólie 2"
+
+  - id: cor-nerozlozitelnost-diagram
+    kind: corollary
+    label: "Důsledek 3.1"
+    section: "3.2"
+    title: Nerozložitelnost a silná souvislost diagramu
+    terms: [důsledek 3.1, nerozložitelnost a diagram, silně souvislý diagram, test nerozložitelnosti]
+    statement: |
+      Čtvercová matice $\mathbf{A}$ je nerozložitelná, právě když její diagram $\vec{G}(\mathbf{A})$ je silně souvislý.
+    intuition: |
+      Toto je pracovní podoba věty 3.2: místo hledání permutace (až $n!$ možností) stačí sestrojit
+      diagram a ověřit silnou souvislost, např. dvojím prohledáním grafu – v čase $O(n^2)$.
+    proof: |
+      *Důkaz ve skriptech není (je uveden jen jako důsledek), doplněno.*
+
+      Rozložitelnost závisí jen na tom, které prvky jsou nulové (permutace přesouvají prvky, ale nemění
+      jejich hodnoty). Matice $\mathbf{A}$ má tedy stejné rozmístění nul jako vážená matice sousednosti
+      $\mathbf{W}(\vec{G}(\mathbf{A}))$ diagramu (s váhami např. $|a_{ij}|$), a je rozložitelná, právě když je
+      rozložitelná $\mathbf{W}(\vec{G}(\mathbf{A}))$. Smyčky (diagonální prvky) silnou souvislost neovlivňují
+      a nulový blok mimo diagonálu nikdy neobsahují.
+
+      * Je-li $\vec{G}(\mathbf{A})$ silně souvislý, je matice nerozložitelná podle věty 3.2 a).
+      * Není-li $\vec{G}(\mathbf{A})$ silně souvislý, má alespoň dvě kvazikomponenty ($k \ge 2$) a podle
+        věty 3.2 b) lze matici simultánní permutací převést na horní blokově trojúhelníkový tvar
+        s $k \ge 2$ diagonálními bloky; sloučením bloků $\mathbf{W}_{22}, \dots, \mathbf{W}_{kk}$ do jednoho
+        dostaneme tvar z definice rozložitelnosti, matice je tedy rozložitelná.
+    proof_steps:
+      - Rozložitelnost závisí jen na rozmístění nenulových prvků, takže $\mathbf{A}$ se chová stejně jako vážená matice sousednosti svého diagramu.
+      - Je-li diagram silně souvislý, je matice nerozložitelná podle věty 3.2 a).
+      - Není-li diagram silně souvislý, má alespoň dvě kvazikomponenty.
+      - Podle věty 3.2 b) vznikne blokově trojúhelníkový tvar s alespoň dvěma diagonálními bloky; sloučením bloků dostaneme tvar z definice rozložitelnosti.
+    examples:
+      - title: Matice s diagramem tvaru cyklu
+        body: |
+          Diagram matice
+          $\begin{bmatrix} 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 3\\ 0 & 2 & 0 & 0\\ 4 & 0 & 0 & 0 \end{bmatrix}$
+          má hrany $1 \to 3$, $2 \to 4$, $3 \to 2$, $4 \to 1$ – je to cyklus délky 4, silně souvislý graf.
+          Matice je tedy nerozložitelná.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 2 }
+            - { id: "3", x: 8, y: 2 }
+            - { id: "2", x: 8, y: 8 }
+            - { id: "4", x: 2, y: 8 }
+          edges:
+            - { from: "1", to: "3" }
+            - { from: "3", to: "2" }
+            - { from: "2", to: "4" }
+            - { from: "4", to: "1" }
+    related: [thm-rozlozitelnost-silna-souvislost, def-diagram-matice, def-rozlozitelna-matice, alg-test-rozlozitelnosti, def-silna-souvislost]
+    source: "skripta str. 15; přednáška 5, fólie 2"
+
+  - id: alg-test-rozlozitelnosti
+    kind: algorithm
+    section: "3.2"
+    title: Test rozložitelnosti a převod na blokově trojúhelníkový tvar
+    terms: [test rozložitelnosti matice, algoritmus rozložitelnosti, převod na horní blokově trojúhelníkový tvar, simultánní permutace, kvazikomponenty diagramu]
+    statement: |
+      Vstup: čtvercová matice $\mathbf{A}$ řádu $n$. Výstup: rozhodnutí, zda je $\mathbf{A}$ rozložitelná,
+      a v kladném případě simultánní permutace převádějící $\mathbf{A}$ na horní blokově trojúhelníkový tvar
+      s nerozložitelnými diagonálními bloky (podle [věty 3.2](#thm-rozlozitelnost-silna-souvislost)).
+    pseudocode: |
+      1. Sestroj diagram $\vec{G}(\mathbf{A})$: uzly $1, \dots, n$, hrana $(i,j)$ pro každé $a_{ij} \ne 0$, $i \ne j$.
+      2. Najdi kvazikomponenty $\vec{G}_1, \dots, \vec{G}_k$ diagramu (např. prohledáváním do hloubky).
+      3. Je-li $k = 1$, je diagram silně souvislý a $\mathbf{A}$ je **nerozložitelná** – konec.
+      4. Jinak sestroj kondenzaci (acyklickou) a očísluj kvazikomponenty tak, aby všechny hrany kondenzace
+         vedly z menšího čísla do většího (topologické uspořádání).
+      5. Přečísluj uzly: nejprve uzly $\vec{G}_1$, pak uzly $\vec{G}_2$, …, nakonec uzly $\vec{G}_k$.
+      6. Tutéž permutaci proveď na řádcích i sloupcích $\mathbf{A}$; vznikne horní blokově trojúhelníkový tvar
+         a $\mathbf{A}$ je **rozložitelná**.
+    complexity: |
+      $O(n^2)$: sestrojení diagramu projde všech $n^2$ prvků; kvazikomponenty i topologické uspořádání
+      kondenzace lze najít v čase $O(n + m) \subseteq O(n^2)$, kde $m \le n^2$ je počet nenulových prvků
+      mimo diagonálu. Hrubá síla (zkoušení permutací) by potřebovala až $n!$ kroků.
+    intuition: |
+      Matice se „rozloží“ přesně podél kvazikomponent jejího diagramu. Počet diagonálních bloků ve
+      výsledném tvaru je roven počtu kvazikomponent.
+    examples:
+      - title: Převod matice 6 × 6 na horní blokově trojúhelníkový tvar
+        body: |
+          $$
+          \mathbf{A} = \begin{bmatrix}
+          0 & 1 & 0 & 2 & 3 & 0\\
+          0 & 0 & 0 & 0 & 0 & 4\\
+          0 & 5 & 6 & 0 & 0 & 0\\
+          7 & 0 & 0 & 0 & 8 & 0\\
+          9 & 10 & 0 & 0 & 11 & 12\\
+          0 & 13 & 0 & 0 & 0 & 14
+          \end{bmatrix}
+          $$
+          Diagram (bez smyček) má hrany $1\to2$, $1\to4$, $1\to5$, $2\to6$, $3\to2$, $4\to1$, $4\to5$,
+          $5\to1$, $5\to2$, $5\to6$, $6\to2$. Kvazikomponenty jsou $\{1,4,5\}$ (cykly $1\to4\to1$, $1\to5\to1$),
+          $\{2,6\}$ a $\{3\}$. V kondenzaci vedou hrany $\{1,4,5\} \to \{2,6\}$ a $\{3\} \to \{2,6\}$,
+          vyhovuje tedy pořadí $\{1,4,5\}, \{3\}, \{2,6\}$. Zvolíme nové pořadí uzlů $4, 1, 5, 3, 2, 6$
+          a provedeme simultánní permutaci:
+          $$
+          \begin{bmatrix}
+          0 & 7 & 8 & 0 & 0 & 0\\
+          2 & 0 & 3 & 0 & 1 & 0\\
+          0 & 9 & 11 & 0 & 10 & 12\\
+          0 & 0 & 0 & 6 & 5 & 0\\
+          0 & 0 & 0 & 0 & 0 & 4\\
+          0 & 0 & 0 & 0 & 13 & 14
+          \end{bmatrix}
+          $$
+          Diagonální bloky $3 \times 3$, $1 \times 1$ a $2 \times 2$ odpovídají kvazikomponentám a jsou nerozložitelné.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 1, y: 2 }
+            - { id: "4", x: 1, y: 8 }
+            - { id: "5", x: 4, y: 5 }
+            - { id: "3", x: 6, y: 1 }
+            - { id: "2", x: 8, y: 4 }
+            - { id: "6", x: 8, y: 8 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "1", to: "4" }
+            - { from: "1", to: "5" }
+            - { from: "2", to: "6" }
+            - { from: "3", to: "2" }
+            - { from: "4", to: "1" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "1" }
+            - { from: "5", to: "2" }
+            - { from: "5", to: "6" }
+            - { from: "6", to: "2" }
+    visualization: matrix-reducibility
+    related: [thm-rozlozitelnost-silna-souvislost, cor-nerozlozitelnost-diagram, def-kvazikomponenta, def-kondenzace]
+    source: "skripta str. 14–15 (algoritmus sestaven podle věty 3.2, příklad ze str. 15)"
+
+  # ------------------------------------------------------------------ 3.3
+  - id: def-slabe-rozlozitelna
+    kind: definition
+    label: "Definice 3.3"
+    section: "3.3"
+    title: Slabě rozložitelná a úplně nerozložitelná matice
+    terms: [slabě rozložitelná matice, úplně nerozložitelná matice, partly decomposable, fully indecomposable, PAQ]
+    statement: |
+      Čtvercová matice $\mathbf{A}$ je **slabě rozložitelná**, jestliže existují permutační matice
+      $\mathbf{P}$ a $\mathbf{Q}$ takové, že
+      $$
+      \mathbf{P}\mathbf{A}\mathbf{Q} = \begin{bmatrix} \mathbf{A}_{11} & \mathbf{A}_{12} \\ \mathbf{0} & \mathbf{A}_{22} \end{bmatrix},
+      $$
+      kde $\mathbf{A}_{11}$ a $\mathbf{A}_{22}$ jsou čtvercové matice řádu alespoň 1 a $\mathbf{0}$ je nulová matice.
+
+      Čtvercová matice, která není slabě rozložitelná, se nazývá **úplně nerozložitelná**.
+    intuition: |
+      Rozdíl oproti [rozložitelnosti](#def-rozlozitelna-matice): řádky a sloupce smíme permutovat
+      **nezávisle**. To dává smysl, když řádky a sloupce mají jiný význam (např. rovnice a neznámé
+      soustavy) a nemusí být očíslovány „souhlasně“. Graf, který to zachytí, je proto
+      [bigraf](#def-bigraf-matice) (řádky a sloupce jsou různé uzly), ne diagram.
+    examples:
+      - title: Nerozložitelná, ale slabě rozložitelná matice
+        body: |
+          $$
+          \mathbf{A} = \begin{bmatrix} 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 3\\ 0 & 2 & 0 & 0\\ 4 & 0 & 0 & 0 \end{bmatrix}
+          \;\xrightarrow{\ \text{sloupce } 1 \leftrightarrow 3,\ 2 \leftrightarrow 4\ }\;
+          \begin{bmatrix} 1 & 0 & 0 & 0\\ 0 & 3 & 0 & 0\\ 0 & 0 & 0 & 2\\ 0 & 0 & 4 & 0 \end{bmatrix}
+          $$
+          Prohozením samotných sloupců vznikne nulový blok vlevo dole, matice je tedy slabě rozložitelná,
+          přestože je (podle [důsledku 3.1](#cor-nerozlozitelnost-diagram)) nerozložitelná.
+      - title: Úplně nerozložitelná matice
+        body: |
+          $$
+          \begin{bmatrix} 1 & 0 & 1 & 0 & 0\\ 0 & 1 & 0 & 0 & 1\\ 1 & 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 1 & 1\\ 0 & 1 & 1 & 0 & 0 \end{bmatrix}
+          $$
+          je úplně nerozložitelná – důkaz bez hrubé síly viz [věta 3.3](#thm-slaba-rozlozitelnost-stabilni-mnozina).
+    related: [def-rozlozitelna-matice, rem-slaba-rozlozitelnost, thm-slaba-rozlozitelnost-stabilni-mnozina]
+    source: "skripta str. 16; přednáška 5, fólie 3"
+
+  - id: rem-slaba-rozlozitelnost
+    kind: remark
+    section: "3.3"
+    title: Vztah rozložitelnosti a slabé rozložitelnosti
+    terms: [rozložitelná je slabě rozložitelná, ekvivalentní definice slabé rozložitelnosti, PA rozložitelná]
+    statement: |
+      1. Každá rozložitelná matice je slabě rozložitelná, ale nikoliv naopak.
+      2. Ekvivalentní definice: $\mathbf{A}$ je slabě rozložitelná, jestliže existuje permutační matice
+         $\mathbf{P}$ taková, že $\mathbf{P}\mathbf{A}$ je rozložitelná.
+    intuition: |
+      Ad 1: stačí v definici slabé rozložitelnosti zvolit $\mathbf{Q} = \mathbf{P}^T$. Protipříkladem
+      opačné implikace je matice s diagramem tvaru cyklu (viz příklad u
+      [definice 3.3](#def-slabe-rozlozitelna)).
+
+      Ad 2: je-li $\mathbf{M} = \mathbf{P}\mathbf{A}\mathbf{Q}$ blokově trojúhelníková, uvažujme matici
+      $(\mathbf{Q}\mathbf{P})\mathbf{A}$. Simultánní permutací s maticí $\mathbf{Q}^T$ dostaneme
+      $\mathbf{Q}^T(\mathbf{Q}\mathbf{P}\mathbf{A})\mathbf{Q} = \mathbf{P}\mathbf{A}\mathbf{Q} = \mathbf{M}$,
+      takže $(\mathbf{Q}\mathbf{P})\mathbf{A}$ je rozložitelná. Naopak je-li $\mathbf{P}\mathbf{A}$ rozložitelná,
+      tj. $\mathbf{R}(\mathbf{P}\mathbf{A})\mathbf{R}^T$ je blokově trojúhelníková pro nějakou permutační
+      matici $\mathbf{R}$, stačí v definici slabé rozložitelnosti vzít permutační matice $\mathbf{R}\mathbf{P}$
+      a $\mathbf{R}^T$.
+    related: [def-rozlozitelna-matice, def-slabe-rozlozitelna]
+    source: "skripta str. 16"
+
+  - id: def-bigraf
+    kind: definition
+    label: "Definice 3.4"
+    section: "3.3"
+    title: Bigraf
+    terms: [bigraf, bipartitní orientovaný graf, bipartite digraph, partity U1 U2]
+    statement: |
+      **Bigraf** je orientovaný graf $\vec{G}$, jehož množinu uzlů lze rozložit na disjunktní neprázdné
+      podmnožiny $U_1$, $U_2$ (tj. $U_1 \cap U_2 = \emptyset$, $U_1 \cup U_2 = U(\vec{G})$,
+      $U_1 \ne \emptyset \ne U_2$) tak, že pro každou hranu $(u,v) \in H(\vec{G})$ je $u \in U_1$ a $v \in U_2$.
+    intuition: |
+      Všechny hrany vedou „zleva doprava“ – z $U_1$ do $U_2$. Typicky $U_1$ = řádky, $U_2$ = sloupce matice,
+      nebo $U_1$ = pracovníci, $U_2$ = úkoly.
+    related: [rem-bigraf-vlastnosti, def-bigraf-matice, def-stabilni-mnozina, def-parovani]
+    source: "skripta str. 16; přednáška 5, fólie 3"
+
+  - id: rem-bigraf-vlastnosti
+    kind: remark
+    section: "3.3"
+    title: Vlastnosti bigrafů
+    terms: [bigraf acyklický, symetrizace bigrafu, bipartitní graf, chromatické číslo 2]
+    statement: |
+      1. Graf $\vec{G}$ je bigrafem, právě když je acyklický a každý jeho uzel je vstupní nebo výstupní
+         (do uzlu žádná hrana nevede, nebo z něj žádná hrana nevychází).
+      2. Symetrizace bigrafu je bipartitní neorientovaný graf (tj. neorientovaný graf s chromatickým číslem 2).
+    intuition: |
+      Ad 1: v bigrafu nemá žádný uzel zároveň vstupní i výstupní hranu, takže neexistuje ani orientovaná
+      cesta délky 2, natož cyklus. Naopak uzly bez vstupních hran dáme do $U_1$, zbylé (bez výstupních)
+      do $U_2$. (Drobnost: izolovaný uzel lze dát do kterékoli části; je třeba, aby obě části byly neprázdné.)
+    related: [def-bigraf]
+    illustrations:
+      - title: Acykličnost na bigraf nestačí
+        property: acyclic
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1.5 }
+            - { id: r2, x: 2, y: 5 }
+            - { id: r3, x: 2, y: 8.5 }
+            - { id: s1, x: 8, y: 1.5 }
+            - { id: s2, x: 8, y: 5 }
+            - { id: s3, x: 8, y: 8.5 }
+          edges:
+            - { from: r1, to: s1 }
+            - { from: r1, to: s2 }
+            - { from: r2, to: s2 }
+            - { from: r2, to: s3 }
+            - { from: r3, to: s3 }
+        steps:
+          - caption: |
+              Bigraf s $U_1 = \{r_1, r_2, r_3\}$ a $U_2 = \{s_1, s_2, s_3\}$: všechny hrany vedou zleva doprava. Do uzlů
+              $r_i$ nic nevede, z uzlů $s_j$ nic nevychází – neexistuje ani orientovaná cesta délky 2, natož cyklus.
+          - caption: |
+              Přidáme hranu $s_2 \to r_3$. Graf je **stále acyklický**, ale bigrafem už není: uzel $s_2$ má vstupní
+              i výstupní hranu (cesta $r_1 \to s_2 \to r_3 \to s_3$), nepatří tedy ani do $U_1$, ani do $U_2$.
+            add: [[s2, r3]]
+          - caption: |
+              Další hrana $s_3 \to r_1$ „zpět doleva“ uzavře cyklus. Bigraf cyklus mít nemůže – každá hrana vede
+              z $U_1$ do $U_2$, takže se do $U_1$ nikdy nevrátíme.
+            add: [[s3, r1]]
+    source: "skripta str. 16"
+
+  - id: def-bigraf-matice
+    kind: definition
+    label: "Definice 3.5"
+    section: "3.3"
+    title: Bigraf matice
+    terms: [bigraf matice, "B(A)", bipartitní graf matice, řádkové a sloupcové indexy]
+    statement: |
+      Buď $\mathbf{A} = [a_{ij}]$ čtvercová matice řádu $n$; označme $U_1$ množinu řádkových indexů a $U_2$
+      množinu sloupcových indexů matice $\mathbf{A}$. **Bigraf matice** $\mathbf{A}$ je orientovaný graf
+      $\vec{B}(\mathbf{A})$ s množinou uzlů $U = U_1 \cup U_2$ a množinou hran
+      $$
+      H = \{ (i,j) \mid i \in U_1,\ j \in U_2,\ a_{ij} \ne 0 \}.
+      $$
+      *Poznámka.* Naopak každému bigrafu lze zřejmým způsobem přiřadit matici.
+    intuition: |
+      Řádek $i$ a sloupec $j$ jsou **různé** uzly (sloupce značíme s čárkou: $1', 2', \dots$). Proto se
+      bigraf nezmění, permutujeme-li řádky a sloupce nezávisle – jen se uzly přejmenují. To je přesně
+      symetrie [slabé rozložitelnosti](#def-slabe-rozlozitelna). Srovnej s [diagramem](#def-diagram-matice),
+      kde řádek $i$ i sloupec $i$ jsou tentýž uzel.
+    examples:
+      - title: Bigraf matice 5 × 5
+        body: |
+          $$
+          \mathbf{A} = \begin{bmatrix} 1 & 0 & 1 & 0 & 0\\ 0 & 1 & 0 & 0 & 1\\ 1 & 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 1 & 1\\ 0 & 1 & 1 & 0 & 0 \end{bmatrix}
+          $$
+          Bigraf $\vec{B}(\mathbf{A})$ má hrany $1 \to 1'$, $1 \to 3'$, $2 \to 2'$, $2 \to 5'$, $3 \to 1'$,
+          $3 \to 4'$, $4 \to 4'$, $4 \to 5'$, $5 \to 2'$, $5 \to 3'$.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 1 }
+            - { id: "2", x: 2, y: 3 }
+            - { id: "3", x: 2, y: 5 }
+            - { id: "4", x: 2, y: 7 }
+            - { id: "5", x: 2, y: 9 }
+            - { id: "1'", x: 8, y: 1 }
+            - { id: "2'", x: 8, y: 3 }
+            - { id: "3'", x: 8, y: 5 }
+            - { id: "4'", x: 8, y: 7 }
+            - { id: "5'", x: 8, y: 9 }
+          edges:
+            - { from: "1", to: "1'" }
+            - { from: "1", to: "3'" }
+            - { from: "2", to: "2'" }
+            - { from: "2", to: "5'" }
+            - { from: "3", to: "1'" }
+            - { from: "3", to: "4'" }
+            - { from: "4", to: "4'" }
+            - { from: "4", to: "5'" }
+            - { from: "5", to: "2'" }
+            - { from: "5", to: "3'" }
+    related: [def-bigraf, def-stabilni-mnozina, thm-slaba-rozlozitelnost-stabilni-mnozina, thm-regularni-matice-parovani]
+    source: "skripta str. 16–17; přednáška 5, fólie 3"
+
+  - id: def-stabilni-mnozina
+    kind: definition
+    label: "Definice 3.6"
+    section: "3.3"
+    title: Stabilní množina v bigrafu
+    terms: [stabilní množina, okolí množiny v bigrafu, Hallova podmínka, množina sousedů W]
+    statement: |
+      Buď $\vec{G}$ bigraf s množinou uzlů $U(\vec{G}) = U_1 \cup U_2$. Množina $V \subset U_1$,
+      $\emptyset \ne V \ne U_1$, se nazývá **stabilní množina** v $\vec{G}$, jestliže pro množinu uzlů
+      $$
+      W = \{ j \in U_2 \mid \exists\, i \in V \text{ tak, že } (i,j) \in H(\vec{G}) \}
+      $$
+      platí $|W| \le |V|$.
+    intuition: |
+      $W$ je množina všech „sousedů“ uzlů z $V$. Stabilní množina je tedy neprázdná vlastní skupina řádků,
+      jejichž nenulové prvky se „vejdou“ do nejvýše stejného počtu sloupců. Takové řádky spolu se sloupci $W$
+      lze odsunout do pravého dolního rohu a vlevo od nich vznikne nulový blok.
+
+      **Pozor:** podmínky $V \ne \emptyset$ a $V \ne U_1$ jsou podstatné – pro $V = U_1$ by vždy platilo
+      $|W| \le n = |V|$ a pojem by byl bezcenný.
+    related: [def-bigraf, thm-slaba-rozlozitelnost-stabilni-mnozina, thm-genericka-regularita-parovani]
+    illustrations:
+      - title: Které množiny řádků jsou stabilní?
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1.5 }
+            - { id: r2, x: 2, y: 5 }
+            - { id: r3, x: 2, y: 8.5 }
+            - { id: s1, x: 8, y: 1.5 }
+            - { id: s2, x: 8, y: 5 }
+            - { id: s3, x: 8, y: 8.5 }
+          edges:
+            - { from: r1, to: s1 }
+            - { from: r2, to: s1 }
+            - { from: r3, to: s1 }
+            - { from: r3, to: s2 }
+            - { from: r3, to: s3 }
+        steps:
+          - caption: |
+              Bigraf matice $\begin{bmatrix} \times & 0 & 0\\ \times & 0 & 0\\ \times & \times & \times \end{bmatrix}$ (řádky $r_i$,
+              sloupce $s_j$). $V = \{r_1, r_2\}$ (modře) má sousedy $W = \{s_1\}$ (červeně): $|W| = 1 \le 2 = |V|$, $V$ je **stabilní**.
+            set: [r1, r2]
+            nodes: { s1: path }
+            edges: { r1-s1: active, r2-s1: active }
+          - caption: |
+              $V = \{r_3\}$ má sousedy $W = \{s_1, s_2, s_3\}$ a $|W| = 3 > 1$ – stabilní **není**.
+            set: [r3]
+            nodes: { s1: path, s2: path, s3: path }
+            edges: { r3-s1: active, r3-s2: active, r3-s3: active }
+          - caption: |
+              $V = \{r_1\}$: $W = \{s_1\}$, $|W| = 1 \le 1$. Stačí i rovnost – i jediný řádek s jedinou nenulou je stabilní
+              množina (řádek dáme dolů, sloupec doprava a vlevo od něj jsou nuly).
+            set: [r1]
+            nodes: { s1: path }
+            edges: { r1-s1: active }
+          - caption: |
+              $V = U_1$ definice vylučuje: vždy by platilo $|W| \le n = |V|$ a stabilní množinu by měla každá matice.
+            set: [r1, r2, r3]
+            nodes: { s1: path, s2: path, s3: path }
+    source: "skripta str. 17; přednáška 5, fólie 4"
+
+  - id: thm-slaba-rozlozitelnost-stabilni-mnozina
+    kind: theorem
+    label: "Věta 3.3"
+    section: "3.3"
+    title: Slabá rozložitelnost a stabilní množina
+    terms: [věta 3.3, slabá rozložitelnost a stabilní množina, test slabé rozložitelnosti, úplná nerozložitelnost]
+    statement: |
+      Čtvercová matice $\mathbf{A}$ je slabě rozložitelná, právě když v jejím bigrafu $\vec{B}(\mathbf{A})$
+      existuje stabilní množina.
+    intuition: |
+      Nulový blok $\mathbf{0}$ v $\mathbf{P}\mathbf{A}\mathbf{Q}$ říká: řádky druhého bloku ($V$) mají nenuly jen ve
+      sloupcích druhého bloku – a těch je stejně jako řádků. To je přesně „$|W| \le |V|$“.
+
+      Hledat stabilní množinu probráním všech podmnožin je exponenciální. *Doplněno mimo skripta:*
+      úplnou nerozložitelnost lze testovat polynomiálně pomocí párování – matice řádu $n \ge 2$ je úplně
+      nerozložitelná, právě když po vynechání libovolného řádku $i$ a sloupce $j$ má zbylý bigraf
+      perfektní párování ($n^2$ úloh na párování, viz [převod na tok](#alg-parovani-max-tok)).
+    proof: |
+      **1. (⇒)** Nechť $\mathbf{A}$ je slabě rozložitelná, tj.
+      $\mathbf{P}\mathbf{A}\mathbf{Q} = \begin{bmatrix} \mathbf{A}_{11} & \mathbf{A}_{12} \\ \mathbf{0} & \mathbf{A}_{22} \end{bmatrix}$.
+      Označme $V$ množinu (původních) indexů řádků tvořících druhý blokový řádek a $W'$ množinu indexů
+      sloupců druhého blokového sloupce. Protože $\mathbf{A}_{22}$ je čtvercová, je $|V| = |W'|$; protože
+      $\mathbf{A}_{11}$ i $\mathbf{A}_{22}$ mají řád alespoň 1, je $\emptyset \ne V \ne U_1$. Nulový blok vlevo
+      dole znamená, že každý nenulový prvek v řádcích z $V$ leží ve sloupci z $W'$, tj. všechny hrany
+      bigrafu vycházející z $V$ vedou do $W'$. Pro množinu sousedů $W$ tedy $W \subseteq W'$ a
+      $|W| \le |W'| = |V|$ – $V$ je stabilní. (Bigraf $\vec{B}(\mathbf{P}\mathbf{A}\mathbf{Q})$ se od
+      $\vec{B}(\mathbf{A})$ liší jen očíslováním uzlů v $U_1$ a $U_2$.)
+
+      **2. (⇐)** Nechť $V$ je stabilní množina v $\vec{B}(\mathbf{A})$ a $W$ množina jejích sousedů,
+      $|W| \le |V|$. Přečíslujme řádky tak, že nejprve jsou řádky mimo $V$ a potom řádky z $V$. Sloupce
+      přečíslujme tak, že nejprve jsou sloupce mimo $W$ a potom sloupce z $W$. Rozdělme matici na bloky
+      tak, aby druhý blokový řádek tvořily řádky $V$ a druhý blokový sloupec posledních $|V|$ sloupců
+      (díky $|W| \le |V|$ mezi nimi jsou všechny sloupce z $W$). Pak $\mathbf{A}_{22}$ je čtvercová řádu
+      $|V| \ge 1$, $\mathbf{A}_{11}$ je řádu $n - |V| \ge 1$ a blok vlevo dole leží v řádcích $V$ a sloupcích
+      mimo $W$, takže je nulový. Matice je slabě rozložitelná.
+    proof_steps:
+      - "(⇒) Z blokového tvaru $\\mathbf{PAQ}$ vezmeme $V$ = řádky druhého bloku a $W'$ = sloupce druhého bloku; $|V| = |W'|$, protože $\\mathbf{A}_{22}$ je čtvercová."
+      - "Oba diagonální bloky jsou neprázdné, proto $\\emptyset \\ne V \\ne U_1$."
+      - "Nulový blok vlevo dole znamená, že hrany bigrafu z $V$ vedou jen do $W'$, takže $|W| \\le |W'| = |V|$ a $V$ je stabilní."
+      - "(⇐) Pro stabilní $V$ se sousedy $W$ dáme řádky z $V$ na konec a sloupce z $W$ na konec."
+      - "Druhý blokový sloupec tvoří posledních $|V|$ sloupců, které díky $|W| \\le |V|$ obsahují celé $W$."
+      - "Blok vlevo dole leží v řádcích $V$ a sloupcích mimo $W$, je tedy nulový, a matice je slabě rozložitelná."
+    examples:
+      - title: Rozložitelná, slabě rozložitelná, nebo úplně nerozložitelná?
+        body: |
+          $$
+          \mathbf{A} = \begin{bmatrix} 0 & 5 & -1 & 0 & 0\\ 0 & 2 & -3 & 3 & 0\\ 2 & 0 & 1 & 0 & 1\\ 0 & 0 & 2 & -1 & 0\\ 3 & 0 & 0 & -2 & 2 \end{bmatrix}
+          $$
+          1. **Diagram** (bez smyček na uzlech 2–5) má hrany $1\to2$, $1\to3$, $2\to3$, $2\to4$, $3\to1$,
+             $3\to5$, $4\to3$, $5\to1$, $5\to4$. Obsahuje cyklus $1\to2\to4\to3\to5\to1$ přes všechny uzly,
+             je tedy silně souvislý a $\mathbf{A}$ je **nerozložitelná**.
+          2. **Bigraf**: řádek 1 → $\{2',3'\}$, řádek 2 → $\{2',3',4'\}$, řádek 3 → $\{1',3',5'\}$,
+             řádek 4 → $\{3',4'\}$, řádek 5 → $\{1',4',5'\}$. Množina $V = \{1,2,4\}$ má sousedy
+             $W = \{2',3',4'\}$, $|W| = |V| = 3$, takže je stabilní. Pořadí řádků $3,5,1,2,4$ a sloupců
+             $1,5,2,3,4$ dává
+             $$
+             \mathbf{P}\mathbf{A}\mathbf{Q} = \begin{bmatrix} 2 & 1 & 0 & 1 & 0\\ 3 & 2 & 0 & 0 & -2\\ 0 & 0 & 5 & -1 & 0\\ 0 & 0 & 2 & -3 & 3\\ 0 & 0 & 0 & 2 & -1 \end{bmatrix}.
+             $$
+             Matice $\mathbf{A}$ je tedy **slabě rozložitelná**.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 1 }
+            - { id: "2", x: 2, y: 3 }
+            - { id: "3", x: 2, y: 5 }
+            - { id: "4", x: 2, y: 7 }
+            - { id: "5", x: 2, y: 9 }
+            - { id: "1'", x: 8, y: 1 }
+            - { id: "2'", x: 8, y: 3 }
+            - { id: "3'", x: 8, y: 5 }
+            - { id: "4'", x: 8, y: 7 }
+            - { id: "5'", x: 8, y: 9 }
+          edges:
+            - { from: "1", to: "2'" }
+            - { from: "1", to: "3'" }
+            - { from: "2", to: "2'" }
+            - { from: "2", to: "3'" }
+            - { from: "2", to: "4'" }
+            - { from: "3", to: "1'" }
+            - { from: "3", to: "3'" }
+            - { from: "3", to: "5'" }
+            - { from: "4", to: "3'" }
+            - { from: "4", to: "4'" }
+            - { from: "5", to: "1'" }
+            - { from: "5", to: "4'" }
+            - { from: "5", to: "5'" }
+      - title: Úplně nerozložitelná matice
+        body: |
+          Matice
+          $\begin{bmatrix} 1 & 0 & 1 & 0 & 0\\ 0 & 1 & 0 & 0 & 1\\ 1 & 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 1 & 1\\ 0 & 1 & 1 & 0 & 0 \end{bmatrix}$
+          je úplně nerozložitelná, protože její bigraf nemá stabilní množinu. Je to vidět, nakreslíme-li bigraf
+          v pořadí řádků $1, 3, 5, 4, 2$ a sloupců $1', 3', 2', 5', 4'$: vznikne jediná „cik-cak“ kružnice
+          $1 - 1' - 3 - 4' - 4 - 5' - 2 - 2' - 5 - 3' - 1$ délky 10. Každý řádek má dva sousedy a sousední řádky
+          na kružnici sdílejí jednoho souseda, takže $k$ řádků tvořících neprázdnou vlastní podmnožinu má vždy
+          alespoň $k + 1$ sousedů: $|W| > |V|$.
+    visualization: bipartite-matching
+    related: [def-slabe-rozlozitelna, def-stabilni-mnozina, def-bigraf-matice, thm-regularni-matice-parovani]
+    illustrations:
+      - title: Od slabě rozložitelné k úplně nerozložitelné
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1 }
+            - { id: r2, x: 2, y: 3.7 }
+            - { id: r3, x: 2, y: 6.3 }
+            - { id: r4, x: 2, y: 9 }
+            - { id: s1, x: 8, y: 1 }
+            - { id: s2, x: 8, y: 3.7 }
+            - { id: s3, x: 8, y: 6.3 }
+            - { id: s4, x: 8, y: 9 }
+          edges:
+            - { from: r1, to: s3 }
+            - { from: r2, to: s4 }
+            - { from: r3, to: s2 }
+            - { from: r4, to: s1 }
+        steps:
+          - caption: |
+              Bigraf matice $\begin{bmatrix} 0 & 0 & 1 & 0\\ 0 & 0 & 0 & 3\\ 0 & 2 & 0 & 0\\ 4 & 0 & 0 & 0 \end{bmatrix}$, která je
+              nerozložitelná (diagram je cyklus). $V = \{r_1\}$ má jediného souseda $s_3$: $|W| = 1 \le 1$, $V$ je stabilní,
+              takže matice je **slabě rozložitelná** – řádek 1 dáme dolů, sloupec 3 doprava a vlevo dole je nula.
+            set: [r1]
+            nodes: { s3: path }
+            edges: { r1-s3: active }
+          - caption: |
+              Doplníme nenulovou diagonálu ($a_{11}, a_{22}, a_{33}, a_{44}$). Teď má každý řádek dva sousedy, takže
+              $V = \{r_1\}$ stabilní není: $W = \{s_1, s_3\}$, $|W| = 2 > 1$.
+            add: [[r1, s1], [r2, s2], [r3, s3], [r4, s4]]
+            set: [r1]
+            nodes: { s1: path, s3: path }
+            edges: { r1-s1: active, r1-s3: active }
+          - caption: |
+              Ani dvojice nepomůže: $V = \{r_1, r_3\}$ má sousedy $\{s_1, s_2, s_3\}$, tedy $3 > 2$. Sousední řádky
+              sdílejí nejvýš jeden sloupec, každý další řádek přidá aspoň jednoho nového souseda.
+            set: [r1, r3]
+            nodes: { s1: path, s2: path, s3: path }
+            edges: { r1-s1: active, r1-s3: active, r3-s2: active, r3-s3: active }
+          - caption: |
+              Bigraf je jediná kružnice $r_1\, s_1\, r_4\, s_4\, r_2\, s_2\, r_3\, s_3\, r_1$ délky 8. Každá neprázdná vlastní
+              množina $k$ řádků má aspoň $k + 1$ sousedů, stabilní množina neexistuje a matice je **úplně nerozložitelná**.
+            edges: { r1-s1: path, r4-s1: path, r4-s4: path, r2-s4: path, r2-s2: path, r3-s2: path, r3-s3: path, r1-s3: path }
+    source: "skripta str. 17–19; přednáška 5, fólie 4"
+
+  # ------------------------------------------------------------------ 3.4
+  - id: def-linearni-bigraf
+    kind: definition
+    label: "Definice 3.7"
+    section: "3.4"
+    title: Lineární bigraf
+    terms: [lineární bigraf, výstupní stupeň 1, vstupní stupeň 1, bijekce U1 na U2]
+    statement: |
+      Bigraf $\vec{G}$ je **lineární**, jestliže pro každý uzel $u \in U_1$ je $d^-_{\vec{G}}(u) = 1$ a pro každý
+      uzel $v \in U_2$ je $d^+_{\vec{G}}(v) = 1$.
+
+      *Poznámka.* Je-li $\vec{G}$ lineární bigraf, pak nutně $|U_1| = |U_2|$ a hrany $\vec{G}$ definují
+      vzájemně jednoznačné zobrazení $U_1$ na $U_2$.
+    intuition: |
+      Ve skriptech značí $d^-$ výstupní a $d^+$ vstupní stupeň (podle KMA/DMA): z každého uzlu vlevo vychází
+      právě jedna hrana a do každého uzlu vpravo vchází právě jedna hrana. Hrany tedy tvoří „dvojice“ –
+      bijekci (permutaci). Pro matici to znamená výběr $n$ prvků, z každého řádku a každého sloupce právě
+      jednoho – přesně jako u jednoho členu v definici determinantu.
+    related: [def-parovani, thm-regularni-matice-parovani]
+    illustrations:
+      - title: Lineární bigraf je permutace
+        property: matching
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1.5 }
+            - { id: r2, x: 2, y: 5 }
+            - { id: r3, x: 2, y: 8.5 }
+            - { id: s1, x: 8, y: 1.5 }
+            - { id: s2, x: 8, y: 5 }
+            - { id: s3, x: 8, y: 8.5 }
+          edges:
+            - { from: r1, to: s2 }
+            - { from: r2, to: s3 }
+            - { from: r3, to: s1 }
+        steps:
+          - caption: |
+              Z každého řádku $r_i$ vychází právě jedna hrana a do každého sloupce $s_j$ právě jedna vchází – bigraf je
+              **lineární**. Hrany jsou bijekce $1 \mapsto 2$, $2 \mapsto 3$, $3 \mapsto 1$, tj. prvky $a_{12}, a_{23}, a_{31}$
+              jednoho členu determinantu.
+            edge_set: [r1-s2, r2-s3, r3-s1]
+          - caption: |
+              Přidáme hranu $r_1 \to s_1$. Z $r_1$ teď vycházejí dvě hrany (a do $s_1$ dvě vcházejí), bigraf
+              lineární **není** – hrany už neurčují zobrazení.
+            add: [[r1, s1]]
+            edge_set: [r1-s1, r1-s2, r2-s3, r3-s1]
+          - caption: |
+              Odebereme $r_1 \to s_2$. Z každého řádku zase vychází jedna hrana, ale do $s_1$ vcházejí dvě a do $s_2$
+              žádná – zobrazení není prosté, bigraf stále lineární není.
+            remove: [[r1, s2]]
+            edge_set: [r1-s1, r2-s3, r3-s1]
+    source: "skripta str. 19; přednáška 5, fólie 5"
+
+  - id: def-parovani
+    kind: definition
+    label: "Definice 3.8"
+    section: "3.4"
+    title: Párování a perfektní párování v bigrafu
+    terms: [párování, perfektní párování, matching, perfect matching, faktor bigrafu, úplné párování]
+    statement: |
+      Je-li $\vec{G}$ bigraf a $\vec{G}_1 \subset \vec{G}$ jeho lineární podbigraf, pak říkáme, že
+      $\vec{G}_1$ je **párování** v $\vec{G}$.
+
+      Je-li $\vec{G}_1 \subset \vec{G}$ párování v $\vec{G}$ takové, že $U(\vec{G}_1) = U(\vec{G})$
+      (tj. $\vec{G}_1$ je faktorem bigrafu $\vec{G}$), pak říkáme, že $\vec{G}_1$ je **perfektní párování** v $\vec{G}$.
+    intuition: |
+      Párování = množina hran, z nichž žádné dvě nemají společný uzel (uzly podbigrafu jsou jen konce
+      vybraných hran). Perfektní párování pokrývá všechny uzly – každému řádku přiřadí jiný sloupec.
+      Příklad: přiřazení pracovníků na úkoly tak, aby každý dělal jeden úkol, na který je kvalifikovaný.
+    related: [def-linearni-bigraf, thm-regularni-matice-parovani, def-parovaci-cislo, alg-parovani-max-tok]
+    illustrations:
+      - title: Párování krok za krokem k perfektnímu
+        property: matching
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1 }
+            - { id: r2, x: 2, y: 3.7 }
+            - { id: r3, x: 2, y: 6.3 }
+            - { id: r4, x: 2, y: 9 }
+            - { id: s1, x: 8, y: 1 }
+            - { id: s2, x: 8, y: 3.7 }
+            - { id: s3, x: 8, y: 6.3 }
+            - { id: s4, x: 8, y: 9 }
+          edges:
+            - { from: r1, to: s1 }
+            - { from: r1, to: s2 }
+            - { from: r2, to: s1 }
+            - { from: r3, to: s2 }
+            - { from: r3, to: s3 }
+            - { from: r3, to: s4 }
+            - { from: r4, to: s3 }
+        steps:
+          - caption: |
+              Pracovníci $r_i$ a úkoly $s_j$, hrana = „umí“. Hrany $r_1 s_1$ a $r_3 s_3$ nemají společný uzel – tvoří
+              **párování** (lineární podbigraf se 4 uzly).
+            edge_set: [r1-s1, r3-s3]
+          - caption: |
+              Přidáme $r_2 s_1$: úkol $s_1$ by dostali dva pracovníci, to už párování **není**.
+            edge_set: [r1-s1, r3-s3, r2-s1]
+          - caption: |
+              Lépe: $r_2$ dostane $s_1$ (jinou možnost nemá) a $r_1$ se přesune na $s_2$. Párování má 3 hrany, ale $r_4$
+              zbyl – jeho jediný úkol $s_3$ je obsazený.
+            edge_set: [r2-s1, r1-s2, r3-s3]
+          - caption: |
+              Ještě přesuneme $r_3$ na $s_4$ a $s_3$ uvolníme pro $r_4$. Teď párování pokrývá všechny uzly – je
+              **perfektní**: každý pracovník má jiný úkol.
+            edge_set: [r2-s1, r1-s2, r4-s3, r3-s4]
+    source: "skripta str. 19; přednáška 5, fólie 5"
+
+  - id: thm-regularni-matice-parovani
+    kind: theorem
+    label: "Věta 3.4"
+    section: "3.4"
+    title: Regulární matice a perfektní párování
+    terms: [věta 3.4, regulární matice a párování, determinant a perfektní párování, singulární matice]
+    statement: |
+      1. Je-li $\mathbf{A}$ regulární matice, pak její bigraf $\vec{B}(\mathbf{A})$ má perfektní párování.
+      2. Jestliže bigraf $\vec{G}$ má perfektní párování, pak existuje regulární matice $\mathbf{A}$
+         taková, že $\vec{B}(\mathbf{A}) = \vec{G}$.
+    intuition: |
+      Determinant je součet přes všechny permutace $\pi$ součinů $a_{1\pi(1)} \cdots a_{n\pi(n)}$ a každá
+      permutace s nenulovým součinem je perfektní párování v bigrafu. Bez perfektního párování jsou
+      všechny členy nulové a matice je singulární. Opačná implikace pro **konkrétní** matici neplatí –
+      členy se mohou vzájemně vyrušit (viz příklad $\mathbf{A}_2$). Platí jen „pro vhodné hodnoty“, což
+      vede ke strukturálním maticím a [větě 3.5](#thm-genericka-regularita-parovani).
+    proof: |
+      **1.** Je-li $\mathbf{A}$ regulární, je $\det(\mathbf{A}) \ne 0$, takže v rozvoji
+      $$
+      \det(\mathbf{A}) = \sum_{\pi} \operatorname{zn}(\pi)\, a_{1,\pi(1)} \cdots a_{n,\pi(n)}
+      $$
+      je pro alespoň jednu permutaci $\pi_0$ součin $a_{1,\pi_0(1)} \cdots a_{n,\pi_0(n)}$ nenulový. Všechny
+      jeho činitele jsou nenulové, takže $(i, \pi_0(i))$ jsou hrany $\vec{B}(\mathbf{A})$. Protože $\pi_0$
+      je bijekce, vychází z každého řádku právě jedna z těchto hran a do každého sloupce právě jedna vchází:
+      tvoří perfektní párování.
+
+      **2.** Nechť $\vec{G}_1$ je perfektní párování v $\vec{G}$; odpovídá mu permutace $\pi_0$ (řádek $i$ je
+      spárován se sloupcem $\pi_0(i)$). Sestrojme matici $\mathbf{A}$ takto:
+      * prvky odpovídající hranám $\vec{G}_1$ jsou rovny $1$,
+      * prvky odpovídající ostatním hranám $\vec{G}$ jsou rovny $\varepsilon > 0$,
+      * ostatní prvky jsou rovny $0$.
+
+      Zřejmě $\vec{B}(\mathbf{A}) = \vec{G}$. Člen determinantu pro $\pi_0$ je roven $1$. Pro každou jinou
+      permutaci $\pi' \ne \pi_0$ existuje řádek $i$ s $\pi'(i) \ne \pi_0(i)$; prvek $a_{i,\pi'(i)}$ pak
+      neodpovídá hraně párování, je tedy $\varepsilon$ nebo $0$, a ostatní činitele jsou nejvýše $1$.
+      Tedy $|a_{1,\pi'(1)} \cdots a_{n,\pi'(n)}| \le \varepsilon$ (pro $\varepsilon \le 1$) a
+      $$
+      |\det(\mathbf{A})| \ge 1 - \Big| \sum_{\pi' \ne \pi_0} \operatorname{zn}(\pi')\, a_{1,\pi'(1)} \cdots a_{n,\pi'(n)} \Big|
+      \ge 1 - \varepsilon \cdot n!.
+      $$
+      Pro pevné $n$ je $\lim_{\varepsilon \to 0} \varepsilon \cdot n! = 0$, takže pro dostatečně malé
+      $\varepsilon$ (stačí $\varepsilon < 1/n!$) je $\det(\mathbf{A}) \ne 0$ a $\mathbf{A}$ je regulární.
+    proof_steps:
+      - Regulární matice má nenulový determinant, takže v Leibnizově rozvoji je nenulový člen pro nějakou permutaci $\pi_0$.
+      - Nenulové činitele $a_{i,\pi_0(i)}$ jsou hrany bigrafu a díky bijektivitě $\pi_0$ tvoří perfektní párování.
+      - Pro opačný směr dáme prvkům perfektního párování hodnotu $1$, ostatním hranám hodnotu $\varepsilon > 0$ a zbytku $0$; bigraf matice je pak právě $\vec{G}$.
+      - Člen determinantu odpovídající párování je $1$; každý jiný člen obsahuje aspoň jeden činitel $\varepsilon$ nebo $0$, je tedy v absolutní hodnotě nejvýše $\varepsilon$.
+      - Proto $|\det \mathbf{A}| \ge 1 - \varepsilon \cdot n!$, což je pro $\varepsilon < 1/n!$ kladné, a matice je regulární.
+    examples:
+      - title: Singulární matice bez perfektního párování
+        body: |
+          $$
+          \mathbf{A}_1 = \begin{bmatrix} 1 & 0 & 0\\ 2 & 0 & 0\\ -1 & 1 & 2 \end{bmatrix}
+          $$
+          Řádky 1 a 2 mají nenulový prvek jen ve sloupci $1'$ – v bigrafu je $\{1,2\}$ stabilní množina se
+          sousedy $\{1'\}$ a perfektní párování neexistuje. Matice je proto singulární.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 2 }
+            - { id: "2", x: 2, y: 5 }
+            - { id: "3", x: 2, y: 8 }
+            - { id: "1'", x: 8, y: 2 }
+            - { id: "2'", x: 8, y: 5 }
+            - { id: "3'", x: 8, y: 8 }
+          edges:
+            - { from: "1", to: "1'" }
+            - { from: "2", to: "1'" }
+            - { from: "3", to: "1'" }
+            - { from: "3", to: "2'" }
+            - { from: "3", to: "3'" }
+      - title: Singulární matice s perfektním párováním (opak věty 3.4.1 neplatí)
+        body: |
+          $$
+          \mathbf{A}_2 = \begin{bmatrix} 1 & -1 & 2\\ 2 & 1 & 1\\ 1 & 0 & 1 \end{bmatrix},\qquad
+          \det(\mathbf{A}_2) = 1 \cdot 1 - (-1) \cdot 1 + 2 \cdot (-1) = 0.
+          $$
+          Bigraf má perfektní párování (např. $1 \to 1'$, $2 \to 2'$, $3 \to 3'$), a přesto je $\mathbf{A}_2$
+          singulární – členy determinantu se vyrušily. V první části věty 3.4 tedy neplatí ekvivalence.
+    related: [def-parovani, def-bigraf-matice, rem-skoro-vsechny-hodnoty, thm-genericka-regularita-parovani]
+    illustrations:
+      - title: Členy determinantu jsou perfektní párování
+        property: matching
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1.5 }
+            - { id: r2, x: 2, y: 5 }
+            - { id: r3, x: 2, y: 8.5 }
+            - { id: s1, x: 8, y: 1.5 }
+            - { id: s2, x: 8, y: 5 }
+            - { id: s3, x: 8, y: 8.5 }
+          edges:
+            - { from: r1, to: s1, w: 1 }
+            - { from: r1, to: s2, w: -1 }
+            - { from: r1, to: s3, w: 2 }
+            - { from: r2, to: s1, w: 2 }
+            - { from: r2, to: s2, w: 1 }
+            - { from: r2, to: s3, w: 1 }
+            - { from: r3, to: s1, w: 1 }
+            - { from: r3, to: s3, w: 1 }
+        steps:
+          - caption: |
+              Bigraf matice $\mathbf{A}_2 = \begin{bmatrix} 1 & -1 & 2\\ 2 & 1 & 1\\ 1 & 0 & 1 \end{bmatrix}$ (u hran hodnoty prvků).
+              Identická permutace je perfektní párování a dává člen $+a_{11}a_{22}a_{33} = +1$.
+            edge_set: [r1-s1, r2-s2, r3-s3]
+          - caption: |
+              Transpozice $1 \leftrightarrow 2$: párování $r_1 s_2$, $r_2 s_1$, $r_3 s_3$ a člen
+              $-a_{12}a_{21}a_{33} = -(-1)\cdot 2 \cdot 1 = +2$.
+            edge_set: [r1-s2, r2-s1, r3-s3]
+          - caption: |
+              Cyklus $1 \mapsto 2 \mapsto 3 \mapsto 1$: člen $+a_{12}a_{23}a_{31} = (-1)\cdot 1 \cdot 1 = -1$.
+            edge_set: [r1-s2, r2-s3, r3-s1]
+          - caption: |
+              Transpozice $1 \leftrightarrow 3$: člen $-a_{13}a_{22}a_{31} = -2$. Zbylé dvě permutace by potřebovaly hranu
+              $r_3 s_2$, ta chybí ($a_{32} = 0$), jejich členy jsou nulové. Součet $1 + 2 - 1 - 2 = 0$: matice je **singulární**,
+              ačkoli perfektní párování má – členy se vyrušily.
+            edge_set: [r1-s3, r2-s2, r3-s1]
+          - caption: |
+              Část 2 věty: hranám jednoho perfektního párování dáme hodnotu $1$, ostatním hranám malé $\varepsilon$. Člen
+              párování je $1$, každý jiný nejvýš $\varepsilon$, takže $|\det| \ge 1 - 3!\,\varepsilon > 0$ – regulární
+              matice se **stejným** bigrafem.
+            edge_set: [r1-s1, r2-s2, r3-s3]
+            edge_labels: { r1-s1: "1", r2-s2: "1", r3-s3: "1", r1-s2: "ε", r1-s3: "ε", r2-s1: "ε", r2-s3: "ε", r3-s1: "ε" }
+          - caption: |
+              Vynulujeme prvky $a_{12}, a_{13}, a_{22}, a_{23}$: řádky $r_1, r_2$ mají jediného souseda $s_1$. Největší párování
+              má jen 2 hrany, perfektní neexistuje – **každý** člen determinantu obsahuje nulu a matice je singulární
+              pro jakékoli hodnoty (část 1 věty).
+            remove: [[r1, s2], [r1, s3], [r2, s2], [r2, s3]]
+            edge_set: [r1-s1, r3-s3]
+    source: "skripta str. 19–20; přednáška 5, fólie 5"
+
+  - id: rem-skoro-vsechny-hodnoty
+    kind: remark
+    section: "3.4"
+    title: Regularita „pro skoro všechny hodnoty“
+    terms: [parametrická matice, skoro všechny hodnoty, motivace generické regularity]
+    statement: |
+      Nahradíme-li v matici $\mathbf{A}_2$ z příkladu u věty 3.4 prvek $a_{33}$ parametrem $a$,
+      $$
+      \mathbf{A}_2(a) = \begin{bmatrix} 1 & -1 & 2\\ 2 & 1 & 1\\ 1 & 0 & a \end{bmatrix},
+      $$
+      dostaneme $\det(\mathbf{A}_2(a)) = 3a - 3$. Matice je singulární právě pro $a = 1$, tedy regulární pro
+      „skoro všechny“ hodnoty parametru. To motivuje pojem generické regularity v oddílu 3.5.
+    intuition: |
+      Singularita $\mathbf{A}_2$ byla „náhoda“ konkrétních čísel. Malá změna jediného prvku ji odstraní.
+      Bigraf takové náhody nevidí – vidí jen, kde jsou nuly – proto ekvivalence platí až pro „typické“
+      (generické) hodnoty.
+    related: [thm-regularni-matice-parovani, def-genericky-regularni]
+    source: "skripta str. 20"
+
+  # ------------------------------------------------------------------ 3.5
+  - id: def-strukturalni-matice
+    kind: definition
+    section: "3.5"
+    title: Strukturální matice
+    terms: [strukturální matice, structural matrix, vzor nul, křížková notace, sparsity pattern]
+    statement: |
+      **Strukturální matice** řádu $n \ge 1$ je čtvercová matice řádu $n$, u níž je dána pouze struktura
+      nulových a nenulových prvků, ale nejsou určeny jejich konkrétní hodnoty. (Přesněji: na strukturální
+      matici lze pohlížet jako na funkci hodnot jejích nenulových prvků.) Nenulové prvky značíme křížkem $\times$.
+
+      Příklady:
+      $$
+      \mathbf{A}_1 = \begin{bmatrix} 0 & 0 & \times\\ 0 & 0 & \times\\ \times & \times & \times \end{bmatrix},\qquad
+      \mathbf{A}_2 = \begin{bmatrix} \times & \times & 0\\ \times & \times & 0\\ 0 & 0 & \times \end{bmatrix}.
+      $$
+    intuition: |
+      Strukturální matice modeluje situaci, kdy víme, **které** veličiny spolu souvisí (kde jsou nuly),
+      ale přesné hodnoty neznáme nebo se mění (např. parametry v teorii řízení). U $\mathbf{A}_2$ existují
+      hodnoty, pro něž je regulární; $\mathbf{A}_1$ je singulární pro každou volbu (první dva řádky jsou
+      vždy lineárně závislé). Bigraf strukturální matice je dobře definován – závisí jen na struktuře.
+    related: [def-genericky-regularni, prop-dichotomie-strukturalni-matice, thm-genericka-regularita-parovani]
+    source: "skripta str. 20–21; přednáška 5, fólie 6"
+
+  - id: prop-dichotomie-strukturalni-matice
+    kind: proposition
+    section: "3.5"
+    title: Determinant strukturální matice – jen dvě možnosti
+    terms: [determinant jako polynom, nulový polynom, pravděpodobnost 1, algebraická varieta, míra nula, dichotomie]
+    statement: |
+      Nechť $\mathbf{A}$ je strukturální matice řádu $n$ s $\ell$ nenulovými prvky
+      $\alpha_1, \dots, \alpha_\ell$ ($\ell \le n^2$). Pak $\det(\mathbf{A})$ je polynom v $\ell$ proměnných
+      $\alpha_1, \dots, \alpha_\ell$ a nastává právě jedna z možností:
+      1. polynom $\det(\mathbf{A})$ je nenulový a při náhodné volbě nenulových prvků (při libovolném rozumném
+         spojitém rozdělení náhodného vektoru $[\alpha_1, \dots, \alpha_\ell]$) je matice $\mathbf{A}$ regulární
+         s pravděpodobností $1$,
+      2. polynom $\det(\mathbf{A})$ je nulový a matice $\mathbf{A}$ je singulární při každé volbě svých nenulových prvků.
+    intuition: |
+      Neexistuje „střední“ případ, kdy by matice byla regulární třeba s pravděpodobností $1/2$. Nenulový
+      polynom má nulové body jen na „tenké“ množině (křivka v rovině, plocha v prostoru, …), na kterou
+      náhodně zvolený bod s pravděpodobností $1$ nepadne. Např. pro $\mathbf{A}_2$ výše je
+      $\det(\mathbf{A}_2) = \alpha_{11}\alpha_{22}\alpha_{33} - \alpha_{12}\alpha_{21}\alpha_{33}$ (nenulový polynom),
+      kdežto $\det(\mathbf{A}_1)$ je nulový polynom.
+    proof: |
+      Z definice determinantu
+      $\det(\mathbf{A}) = \sum_\pi \operatorname{zn}(\pi)\, a_{1\pi(1)} \cdots a_{n\pi(n)}$ je zřejmé, že jde
+      o polynom v proměnných $\alpha_1, \dots, \alpha_\ell$ (nulové prvky jsou konstanty $0$).
+
+      *Je-li polynom nulový*, je $\det(\mathbf{A}) = 0$ pro jakékoli dosazení, matice je vždy singulární.
+
+      *Je-li polynom nenulový*, je množina jeho nulových bodů – řešení algebraické rovnice
+      $\det(\mathbf{A}) = 0$ v $\mathbb{R}^\ell$ – algebraickou varietou dimenze $r \le \ell - 1$. Z teorie míry
+      je známo, že každá $r$-rozměrná varieta v $\mathbb{R}^\ell$ s $r < \ell$ má nulovou $\ell$-rozměrnou míru.
+      Při náhodné volbě parametrů se spojitým rozdělením (s hustotou) je tedy pravděpodobnost jevu
+      $\det(\mathbf{A}) = 0$ rovna nule a pravděpodobnost $\det(\mathbf{A}) \ne 0$ rovna $1$.
+
+      (Skripta tento argument uvádějí jen intuitivně – přesné zavedení variet a míry přesahuje rámec předmětu.
+      Elementárně lze nulovou míru množiny kořenů nenulového polynomu dokázat indukcí podle počtu proměnných:
+      polynom jedné proměnné má konečně mnoho kořenů a pro více proměnných se použije Fubiniova věta.)
+    proof_steps:
+      - Z Leibnizova vzorce je $\det(\mathbf{A})$ polynomem v hodnotách nenulových prvků.
+      - Je-li tento polynom nulový, je matice singulární pro každou volbu hodnot.
+      - Je-li nenulový, tvoří jeho kořeny algebraickou varietu dimenze nejvýše $\ell - 1$ v $\mathbb{R}^\ell$.
+      - Taková množina má nulovou míru, takže při spojité náhodné volbě parametrů je $\det \ne 0$ s pravděpodobností 1.
+    related: [def-strukturalni-matice, def-genericky-regularni]
+    source: "skripta str. 21"
+
+  - id: def-genericky-regularni
+    kind: definition
+    section: "3.5"
+    title: Genericky regulární a genericky singulární matice
+    terms: [genericky regulární, genericky singulární, generická regularita, generic rank, generic nonsingularity]
+    statement: |
+      Strukturální matice $\mathbf{A}$ je **genericky regulární**, je-li polynom $\det(\mathbf{A})$ nenulový
+      (pak je při náhodné volbě nenulových prvků regulární s pravděpodobností $1$), a **genericky singulární**,
+      je-li polynom $\det(\mathbf{A})$ nulový (pak je singulární při každé volbě nenulových prvků).
+    intuition: |
+      „Genericky“ = pro typické, náhodně zvolené hodnoty. Genericky regulární matice se může pro speciální
+      hodnoty stát singulární (jako $\mathbf{A}_2(1)$), ale jen výjimečně. Rozhodnout to lze čistě
+      kombinatoricky – [perfektním párováním](#thm-genericka-regularita-parovani).
+    related: [prop-dichotomie-strukturalni-matice, thm-genericka-regularita-parovani, def-genericka-hodnost]
+    source: "skripta str. 21; přednáška 5, fólie 6"
+
+  - id: thm-genericka-regularita-parovani
+    kind: theorem
+    label: "Věta 3.5"
+    section: "3.5"
+    title: Generická regularita a perfektní párování
+    terms: [věta 3.5, generická regularita a perfektní párování, test generické regularity]
+    statement: |
+      Nechť $\mathbf{A}$ je čtvercová strukturální matice. Pak
+      $$
+      \mathbf{A} \text{ je genericky regulární} \iff \vec{B}(\mathbf{A}) \text{ má perfektní párování.}
+      $$
+    intuition: |
+      Toto je ekvivalence, kterou [věta 3.4](#thm-regularni-matice-parovani) pro konkrétní matice nedává.
+      Bigraf zná jen strukturu, a proto přesně odpovídá na otázku, která závisí jen na struktuře.
+      Prakticky: generickou regularitu otestujeme polynomiálně hledáním největšího párování
+      ([převodem na tok](#alg-parovani-max-tok)) – nemusíme symbolicky počítat determinant.
+    proof: |
+      Věta plyne z věty 3.4 (skripta: „plyne ihned“); rozepíšeme obě implikace. Bigraf strukturální matice
+      nezávisí na konkrétních hodnotách nenulových prvků.
+
+      (⇒) Je-li $\mathbf{A}$ genericky regulární, existuje volba nenulových prvků, pro niž je výsledná reálná
+      matice regulární. Podle věty 3.4.1 má její bigraf – a to je $\vec{B}(\mathbf{A})$ – perfektní párování.
+
+      (⇐) Má-li $\vec{B}(\mathbf{A})$ perfektní párování, sestrojí důkaz věty 3.4.2 regulární matici s hodnotami
+      $1$ a $\varepsilon > 0$ na pozicích hran bigrafu a nulami jinde – to je jedna konkrétní volba nenulových
+      prvků strukturální matice $\mathbf{A}$. Polynom $\det(\mathbf{A})$ v ní nabývá nenulové hodnoty, není tedy
+      nulovým polynomem a $\mathbf{A}$ je genericky regulární.
+
+      (Alternativně: perfektnímu párování odpovídá permutace $\pi_0$ a člen
+      $\operatorname{zn}(\pi_0)\, \alpha_{1\pi_0(1)} \cdots \alpha_{n\pi_0(n)}$ determinantu. Různé permutace dávají
+      různé monomy v nezávislých proměnných, takže se tento člen nemůže s ničím vyrušit a polynom je nenulový.)
+    proof_steps:
+      - Bigraf strukturální matice závisí jen na rozmístění nenul, ne na jejich hodnotách.
+      - (⇒) Genericky regulární matice je pro nějakou volbu hodnot regulární, takže podle věty 3.4.1 má její bigraf perfektní párování.
+      - (⇐) Z perfektního párování sestrojí věta 3.4.2 regulární realizaci s hodnotami $1$ a $\varepsilon$ na pozicích hran.
+      - Determinant jako polynom má v tomto bodě nenulovou hodnotu, není tedy nulový a matice je genericky regulární.
+    examples:
+      - title: Genericky singulární matice 6 × 6
+        body: |
+          $$
+          \mathbf{A} = \begin{bmatrix}
+          0 & \times & 0 & \times & 0 & \times\\
+          \times & 0 & \times & \times & 0 & \times\\
+          0 & \times & 0 & \times & 0 & 0\\
+          0 & 0 & \times & 0 & \times & 0\\
+          0 & \times & 0 & 0 & 0 & \times\\
+          0 & 0 & 0 & \times & 0 & \times
+          \end{bmatrix}
+          $$
+          Z množiny řádků $V = \{1, 3, 5, 6\}$ vedou hrany bigrafu jen do sloupců $W = \{2', 4', 6'\}$.
+          V perfektním párování by z každého uzlu $V$ musela vycházet jedna hrana do různých uzlů $W$, což
+          kvůli $|W| = 3 < 4 = |V|$ nejde. Bigraf nemá perfektní párování, $\mathbf{A}$ je **genericky singulární**.
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 2, y: 0 }
+            - { id: "2", x: 2, y: 2 }
+            - { id: "3", x: 2, y: 4 }
+            - { id: "4", x: 2, y: 6 }
+            - { id: "5", x: 2, y: 8 }
+            - { id: "6", x: 2, y: 10 }
+            - { id: "1'", x: 8, y: 0 }
+            - { id: "2'", x: 8, y: 2 }
+            - { id: "3'", x: 8, y: 4 }
+            - { id: "4'", x: 8, y: 6 }
+            - { id: "5'", x: 8, y: 8 }
+            - { id: "6'", x: 8, y: 10 }
+          edges:
+            - { from: "1", to: "2'" }
+            - { from: "1", to: "4'" }
+            - { from: "1", to: "6'" }
+            - { from: "2", to: "1'" }
+            - { from: "2", to: "3'" }
+            - { from: "2", to: "4'" }
+            - { from: "2", to: "6'" }
+            - { from: "3", to: "2'" }
+            - { from: "3", to: "4'" }
+            - { from: "4", to: "3'" }
+            - { from: "4", to: "5'" }
+            - { from: "5", to: "2'" }
+            - { from: "5", to: "6'" }
+            - { from: "6", to: "4'" }
+            - { from: "6", to: "6'" }
+    visualization: bipartite-matching
+    related: [thm-regularni-matice-parovani, def-genericky-regularni, def-parovani, thm-genericka-hodnost-parovaci-cislo, alg-parovani-max-tok]
+    illustrations:
+      - title: Jeden nový nenulový prvek a matice je genericky regulární
+        property: matching
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1 }
+            - { id: r2, x: 2, y: 3.7 }
+            - { id: r3, x: 2, y: 6.3 }
+            - { id: r4, x: 2, y: 9 }
+            - { id: s1, x: 8, y: 1 }
+            - { id: s2, x: 8, y: 3.7 }
+            - { id: s3, x: 8, y: 6.3 }
+            - { id: s4, x: 8, y: 9 }
+          edges:
+            - { from: r1, to: s1 }
+            - { from: r1, to: s2 }
+            - { from: r2, to: s1 }
+            - { from: r3, to: s1 }
+            - { from: r3, to: s2 }
+            - { from: r4, to: s2 }
+            - { from: r4, to: s3 }
+            - { from: r4, to: s4 }
+        steps:
+          - caption: |
+              Bigraf strukturální matice
+              $\begin{bmatrix} \times & \times & 0 & 0\\ \times & 0 & 0 & 0\\ \times & \times & 0 & 0\\ 0 & \times & \times & \times \end{bmatrix}$.
+              Největší párování, které najdeme, má 3 hrany – perfektní není.
+            edge_set: [r1-s1, r3-s2, r4-s3]
+          - caption: |
+              Proč větší nebude: řádky $r_1, r_2, r_3$ (modře) mají nenulové prvky jen ve sloupcích $s_1, s_2$ (červeně).
+              Tři řádky nelze spárovat se dvěma sloupci, perfektní párování neexistuje a determinant je nulový polynom –
+              matice je **genericky singulární** (singulární pro jakékoli hodnoty křížků).
+            edge_set: [r1-s1, r3-s2, r4-s3]
+            nodes: { r1: done, r2: done, r3: done, s1: path, s2: path }
+          - caption: |
+              Přidáme jediný křížek $a_{24}$ (hranu $r_2 \to s_4$). Teď perfektní párování existuje, člen
+              $\pm\,\alpha_{11}\alpha_{24}\alpha_{32}\alpha_{43}$ se s ničím nevyruší a matice je **genericky regulární** –
+              pro náhodné hodnoty regulární s pravděpodobností 1.
+            add: [[r2, s4]]
+            edge_set: [r1-s1, r2-s4, r3-s2, r4-s3]
+    source: "skripta str. 21–22; přednáška 5, fólie 6"
+
+  - id: def-genericka-hodnost
+    kind: definition
+    section: "3.5"
+    title: Generická hodnost
+    terms: [generická hodnost, generic rank, "gh(A)", strukturální hodnost, term rank]
+    statement: |
+      Nechť $\mathbf{A}$ je strukturální matice. Největší přirozené číslo $k$, pro které v matici $\mathbf{A}$
+      existuje genericky regulární podmatice řádu $k$, se nazývá **generická hodnost** matice $\mathbf{A}$
+      a značí se $\operatorname{gh}(\mathbf{A})$.
+    intuition: |
+      Z lineární algebry víme, že hodnost reálné matice je rovna řádu její největší regulární (čtvercové)
+      podmatice. Generická hodnost přenáší tuto charakterizaci na strukturální matice: je to hodnost,
+      kterou matice má s pravděpodobností 1 při náhodném dosazení nenulových prvků.
+    related: [def-genericky-regularni, def-parovaci-cislo, thm-genericka-hodnost-parovaci-cislo]
+    source: "skripta str. 22; přednáška 5, fólie 7"
+
+  - id: def-parovaci-cislo
+    kind: definition
+    section: "3.5"
+    title: Párovací číslo
+    terms: [párovací číslo, matching number, největší párování, maximum matching, "ν(B)", nu]
+    statement: |
+      Počet hran největšího párování v bigrafu $\vec{B}$ se nazývá **párovací číslo** bigrafu $\vec{B}$
+      a značí se $\nu(\vec{B})$.
+    intuition: |
+      Bigraf má perfektní párování, právě když $\nu(\vec{B}) = |U_1| = |U_2|$. Párovací číslo umíme spočítat
+      polynomiálně ([převodem na maximální tok](#alg-parovani-max-tok)).
+    related: [def-parovani, thm-genericka-hodnost-parovaci-cislo, alg-parovani-max-tok]
+    source: "skripta str. 22; přednáška 5, fólie 7"
+
+  - id: thm-genericka-hodnost-parovaci-cislo
+    kind: theorem
+    label: "Věta 3.6"
+    section: "3.5"
+    title: Generická hodnost je rovna párovacímu číslu
+    terms: [věta 3.6, generická hodnost a párovací číslo, gh(A) = ν(B(A)), výpočet generické hodnosti]
+    statement: |
+      Nechť $\mathbf{A}$ je strukturální matice. Pak $\operatorname{gh}(\mathbf{A}) = \nu(\vec{B}(\mathbf{A}))$.
+    intuition: |
+      Generická hodnost (algebraický pojem) se dá spočítat čistě kombinatoricky – jako velikost největšího
+      párování v bigrafu. To je polynomiální úloha, takže generickou hodnost spočteme v polynomiálním čase
+      bez symbolického počítání determinantů všech podmatic.
+    proof: |
+      *Ve skriptech je důkaz jen naznačen („aplikací věty 3.5 na největší genericky regulární podmatici“), doplněno.*
+
+      Podmatice $\mathbf{A}[I,J]$ s řádky $I$ a sloupci $J$ ($|I| = |J| = k$) je opět strukturální matice a její
+      bigraf je podbigraf $\vec{B}(\mathbf{A})$ indukovaný množinou uzlů $I \cup J$.
+
+      ($\le$) Nechť $k = \operatorname{gh}(\mathbf{A})$ a $\mathbf{A}[I,J]$ je genericky regulární podmatice
+      řádu $k$. Podle [věty 3.5](#thm-genericka-regularita-parovani) má její bigraf perfektní párování, tj. $k$
+      hran bez společných uzlů. To je párování v $\vec{B}(\mathbf{A})$ velikosti $k$, tedy
+      $\nu(\vec{B}(\mathbf{A})) \ge k$.
+
+      ($\ge$) Nechť $M$ je největší párování v $\vec{B}(\mathbf{A})$ s $\nu$ hranami, $I$ množina jejich
+      počátků (řádků) a $J$ množina konců (sloupců), $|I| = |J| = \nu$. Bigraf podmatice $\mathbf{A}[I,J]$
+      obsahuje všechny hrany $M$, které v něm tvoří perfektní párování. Podle věty 3.5 je $\mathbf{A}[I,J]$
+      genericky regulární, takže $\operatorname{gh}(\mathbf{A}) \ge \nu$.
+    proof_steps:
+      - Bigraf podmatice $\mathbf{A}[I,J]$ je podbigraf $\vec{B}(\mathbf{A})$ indukovaný řádky $I$ a sloupci $J$.
+      - Genericky regulární podmatice řádu $\operatorname{gh}(\mathbf{A})$ má podle věty 3.5 perfektní párování, a to je párování v $\vec{B}(\mathbf{A})$; tedy $\nu \ge \operatorname{gh}$.
+      - Z největšího párování vezmeme jeho řádky $I$ a sloupce $J$; podmatice $\mathbf{A}[I,J]$ má v bigrafu perfektní párování.
+      - Podle věty 3.5 je tato podmatice genericky regulární, tedy $\operatorname{gh} \ge \nu$, a obě čísla jsou si rovna.
+    examples:
+      - title: Generická hodnost matice 6 × 6
+        body: |
+          Pro genericky singulární matici z [příkladu u věty 3.5](#thm-genericka-regularita-parovani) najdeme
+          párování velikosti 5, např. $2 \to 1'$, $3 \to 2'$, $4 \to 3'$, $6 \to 4'$, $5 \to 6'$. Větší párování
+          neexistuje (perfektní by mělo 6 hran). Tedy $\operatorname{gh}(\mathbf{A}) = \nu(\vec{B}(\mathbf{A})) = 5$:
+          při „náhodném“ dosazení nenulových prvků má výsledná reálná matice s pravděpodobností 1 hodnost 5.
+    related: [def-genericka-hodnost, def-parovaci-cislo, thm-genericka-regularita-parovani, alg-parovani-max-tok]
+    illustrations:
+      - title: Největší párování vybere největší regulární podmatici
+        for: proof
+        property: matching
+        graph:
+          directed: true
+          nodes:
+            - { id: r1, x: 2, y: 1 }
+            - { id: r2, x: 2, y: 3.7 }
+            - { id: r3, x: 2, y: 6.3 }
+            - { id: r4, x: 2, y: 9 }
+            - { id: s1, x: 8, y: 1 }
+            - { id: s2, x: 8, y: 3.7 }
+            - { id: s3, x: 8, y: 6.3 }
+            - { id: s4, x: 8, y: 9 }
+          edges:
+            - { from: r1, to: s1 }
+            - { from: r1, to: s2 }
+            - { from: r2, to: s1 }
+            - { from: r3, to: s1 }
+            - { from: r3, to: s2 }
+            - { from: r4, to: s2 }
+            - { from: r4, to: s3 }
+            - { from: r4, to: s4 }
+        steps:
+          - caption: |
+              Strukturální matice
+              $\begin{bmatrix} \times & \times & 0 & 0\\ \times & 0 & 0 & 0\\ \times & \times & 0 & 0\\ 0 & \times & \times & \times \end{bmatrix}$
+              a její největší párování se 3 hranami: $\nu(\vec{B}(\mathbf{A})) = 3$.
+            edge_set: [r1-s1, r3-s2, r4-s3]
+          - caption: |
+              ($\ge$) Řádky $I = \{1, 3, 4\}$ a sloupce $J = \{1, 2, 3\}$ párování (modře) určují podmatici
+              $\mathbf{A}[I,J]$ řádu 3. Párování je v jejím bigrafu perfektní, takže je podle věty 3.5 genericky
+              regulární: $\operatorname{gh}(\mathbf{A}) \ge 3$.
+            edge_set: [r1-s1, r3-s2, r4-s3]
+            witness: true
+            nodes: { r1: done, r3: done, r4: done, s1: done, s2: done, s3: done }
+          - caption: |
+              ($\le$) Genericky regulární podmatice řádu 4 by byla celá matice a dala by perfektní párování se 4 hranami.
+              Každý pokus selže – $r_1, r_2, r_3$ mají jen dva sloupce. Tedy $\operatorname{gh}(\mathbf{A}) = \nu = 3$.
+            edge_set: [r1-s1, r2-s1, r3-s2, r4-s3]
+    source: "skripta str. 22; přednáška 5, fólie 7"
+
+  - id: alg-parovani-max-tok
+    kind: algorithm
+    section: "3.5"
+    title: Největší párování v bigrafu převodem na maximální tok
+    terms: [největší párování, maximum bipartite matching, párování pomocí toku, převod párování na tok, výpočet párovacího čísla, výpočet generické hodnosti]
+    statement: |
+      Vstup: bigraf $\vec{B}$ s $U(\vec{B}) = U_1 \cup U_2$. Výstup: největší párování v $\vec{B}$
+      (a tedy $\nu(\vec{B})$, resp. generická hodnost strukturální matice).
+
+      K bigrafu sestrojíme síť s jedním zdrojem a jedním stokem a najdeme v ní celočíselný maximální tok;
+      hrany bigrafu s nenulovým tokem tvoří největší párování (viz [tvrzení](#prop-parovani-a-tok)).
+    pseudocode: |
+      1. K $\vec{B}$ přidej nový uzel $z$ (zdroj) a nový uzel $s$ (stok).
+      2. Přidej hrany $(z,u)$ pro všechny $u \in U_1$ a hrany $(v,s)$ pro všechny $v \in U_2$.
+      3. Propustnosti všech hran (nových i hran bigrafu) polož rovny $1$.
+      4. Najdi celočíselný maximální tok $x$ ze $z$ do $s$ (Ford–Fulkersonovým nebo Edmonds–Karpovým
+         algoritmem – začínají nulovým tokem a s celočíselnými propustnostmi dávají celočíselný tok).
+      5. Hrany bigrafu $\vec{B}$ s $x_{uv} = 1$ tvoří největší párování; $\nu(\vec{B}) = |x|$.
+    complexity: |
+      Polynomiální. Velikost toku je nejvýše $|U_1| \le n$, takže F–F algoritmus provede nejvýše $n$ iterací,
+      každou (hledání rezervní polocesty prohledáváním) v čase $O(n + m)$ – celkem $O(n(n+m))$, kde $n$ je
+      počet uzlů a $m$ počet hran bigrafu. (*Doplněno mimo skripta:* Hopcroftův–Karpův algoritmus dosahuje
+      $O(\sqrt{n}\, m)$.)
+    intuition: |
+      Jednotkové propustnosti hran $(z,u)$ zaručí, že každým řádkem proteče nejvýš jedna jednotka, takže
+      z něj vede tok nejvýš jednou hranou; jednotkové propustnosti hran $(v,s)$ totéž pro sloupce.
+      Celočíselný tok tedy „vybere“ hrany bez společných uzlů. Rezervní polocesty ve F–F algoritmu odpovídají
+      tzv. alternujícím cestám – nesouhlasná hrana znamená „přesuň dosavadní dvojici jinam“.
+      Konstrukce je stejná jako [přidání fiktivního zdroje a stoku](#rem-fiktivni-zdroj-stok) v důkazu věty 2.1.
+    examples:
+      - title: Párování v bigrafu matice A₁
+        body: |
+          Pro bigraf matice $\mathbf{A}_1$ z [příkladu u věty 3.4](#thm-regularni-matice-parovani)
+          (hrany $1\to1'$, $2\to1'$, $3\to1'$, $3\to2'$, $3\to3'$) najde algoritmus tok velikosti 2, např. po
+          cestách $z\,1\,1'\,s$ a $z\,3\,2'\,s$. Řez $(\{z, 1, 2, 1'\}, \text{zbytek})$ obsahuje hrany $(z,3)$ a
+          $(1',s)$ s propustností 2, takže tok je maximální: $\nu = 2 < 3$ a perfektní párování neexistuje.
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: "1", x: 3, y: 2 }
+            - { id: "2", x: 3, y: 5 }
+            - { id: "3", x: 3, y: 8 }
+            - { id: "1'", x: 7, y: 2 }
+            - { id: "2'", x: 7, y: 5 }
+            - { id: "3'", x: 7, y: 8 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: "1", w: 1, x: 1 }
+            - { from: z, to: "2", w: 1, x: 0 }
+            - { from: z, to: "3", w: 1, x: 1 }
+            - { from: "1", to: "1'", w: 1, x: 1 }
+            - { from: "2", to: "1'", w: 1, x: 0 }
+            - { from: "3", to: "1'", w: 1, x: 0 }
+            - { from: "3", to: "2'", w: 1, x: 1 }
+            - { from: "3", to: "3'", w: 1, x: 0 }
+            - { from: "1'", to: s, w: 1, x: 1 }
+            - { from: "2'", to: s, w: 1, x: 1 }
+            - { from: "3'", to: s, w: 1, x: 0 }
+    visualization: bipartite-matching
+    related: [prop-parovani-a-tok, def-parovaci-cislo, alg-ford-fulkerson, alg-edmonds-karp, prop-konecnost-ff, rem-fiktivni-zdroj-stok, thm-genericka-hodnost-parovaci-cislo]
+    illustrations:
+      - title: Rezervní polocesta přesune dvojici
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: r1, x: 3, y: 1.5 }
+            - { id: r2, x: 3, y: 5 }
+            - { id: r3, x: 3, y: 8.5 }
+            - { id: s1, x: 7, y: 1.5 }
+            - { id: s2, x: 7, y: 5 }
+            - { id: s3, x: 7, y: 8.5 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: r1, w: 1, x: 0 }
+            - { from: z, to: r2, w: 1, x: 0 }
+            - { from: z, to: r3, w: 1, x: 0 }
+            - { from: r1, to: s1, w: 1, x: 0 }
+            - { from: r2, to: s1, w: 1, x: 0 }
+            - { from: r3, to: s1, w: 1, x: 0 }
+            - { from: r3, to: s2, w: 1, x: 0 }
+            - { from: r3, to: s3, w: 1, x: 0 }
+            - { from: s1, to: s, w: 1, x: 0 }
+            - { from: s2, to: s, w: 1, x: 0 }
+            - { from: s3, to: s, w: 1, x: 0 }
+        steps:
+          - caption: |
+              Síť z bigrafu matice $\mathbf{A}_1$ (řádky $r_i$, sloupce $s_j$): zdroj $z$ napojený na řádky, sloupce na stok $s$,
+              všechny propustnosti $1$ (u hran $x/r$). Jednotková hrana ze $z$ pustí do každého řádku nejvýš jednu jednotku.
+          - caption: |
+              První polocesta $z\, r_3\, s_1\, s$: řádek $r_3$ spárujeme se sloupcem $s_1$ – nešťastně, $s_1$ je jediný
+              sloupec, který mohou dostat $r_1$ i $r_2$.
+            edges: { z-r3: path, r3-s1: path, s1-s: path }
+            edge_labels: { z-r3: "1/1", r3-s1: "1/1", s1-s: "1/1" }
+          - caption: |
+              Rezervní polocesta $z\, r_1\, s_1\, r_3\, s_2\, s$ prochází $(r_3, s_1)$ **proti směru** (modře): $r_1$ dostane $s_1$
+              a $r_3$ se „přestěhuje“ na $s_2$. V řeči párování je to alternující cesta.
+            edges: { z-r1: path, r1-s1: path, r3-s1: back, r3-s2: path, s2-s: path }
+            edge_labels: { z-r3: "1/1", r3-s1: "1/1", s1-s: "1/1" }
+          - caption: |
+              Po úpravě má tok velikost 2 a hrany bigrafu s tokem $1$ (zeleně) tvoří párování $\{r_1 s_1, r_3 s_2\}$.
+            edges: { r1-s1: tree, r3-s2: tree }
+            edge_labels: { z-r1: "1/1", z-r3: "1/1", r1-s1: "1/1", r3-s1: "0/1", r3-s2: "1/1", s1-s: "1/1", s2-s: "1/1" }
+          - caption: |
+              Další rezervní polocesta neexistuje: ze $z$ se dostaneme jen do $R = \{z, r_1, r_2, s_1\}$. Řez $(R, \bar{R})$
+              tvoří $(z, r_3)$ a $(s_1, s)$ s propustností 2, tok je maximální: $\nu = 2 < 3$, perfektní párování neexistuje.
+            nodes: { z: visited, r1: visited, r2: visited, s1: visited }
+            edges: { z-r3: cut, s1-s: cut, r1-s1: tree, r3-s2: tree }
+            edge_labels: { z-r1: "1/1", z-r3: "1/1", r1-s1: "1/1", r3-s1: "0/1", r3-s2: "1/1", s1-s: "1/1", s2-s: "1/1" }
+    source: "skripta str. 22; přednáška 5, fólie 8"
+
+  - id: prop-parovani-a-tok
+    kind: proposition
+    section: "3.5"
+    title: Celočíselný maximální tok určuje největší párování
+    terms: [korektnost převodu párování na tok, párování a celočíselný tok, velikost párování = velikost toku]
+    statement: |
+      Nechť $\vec{G}$ je síť sestrojená z bigrafu $\vec{B}$ jako v [algoritmu](#alg-parovani-max-tok)
+      (zdroj $z$, stok $s$, všechny propustnosti $1$). Pak
+      1. každému párování $M$ v $\vec{B}$ odpovídá tok velikosti $|M|$,
+      2. pro každý celočíselný tok $x$ tvoří hrany bigrafu s $x_{uv} = 1$ párování velikosti $|x|$.
+
+      Speciálně hrany bigrafu s nenulovým tokem v celočíselném maximálním toku tvoří největší párování a
+      $\nu(\vec{B})$ je rovno velikosti maximálního toku.
+    intuition: |
+      Párování a celočíselné toky jsou „totéž“ – jen jinak zapsané. Celočíselnost je nutná: neceločíselný
+      maximální tok může rozdělit jednotku mezi více hran a párování by z něj přímo nevzniklo.
+    proof: |
+      *Ve skriptech je jen konstatováno, doplněno.*
+
+      **1.** Pro každou hranu $(u,v) \in M$ pošleme jednotku po cestě $z \to u \to v \to s$. Protože hrany $M$
+      nemají společné uzly, použije každá hrana sítě nejvýše jednu jednotku a propustnosti $1$ jsou dodrženy;
+      v každém vnitřním uzlu je přítok roven odtoku. Vznikne tok velikosti $|M|$.
+
+      **2.** Celočíselný tok s propustnostmi $1$ má na každé hraně hodnotu $0$ nebo $1$. Do uzlu $u \in U_1$
+      vede jediná hrana $(z,u)$, takže přítok do $u$ je nejvýše $1$ a podle zákona zachování vychází z $u$
+      tok $1$ nejvýše po jedné hraně bigrafu. Symetricky z uzlu $v \in U_2$ vede jediná hrana $(v,s)$, takže
+      do $v$ přitéká tok $1$ nejvýše po jedné hraně. Hrany s $x_{uv} = 1$ proto nemají společné uzly – tvoří
+      párování $M_x$. Podle [tvrzení 2.2](#prop-tok-a-rez) pro řez s $A = \{z\} \cup U_1$ je
+      $|x| = x(A,\bar{A}) - x(\bar{A},A)$; hrany z $A$ do $\bar{A}$ jsou právě hrany bigrafu a z $\bar{A}$ do
+      $A$ nevede žádná hrana, takže $|x| = |M_x|$.
+
+      Podle [tvrzení 2.4](#prop-konecnost-ff) a jeho důkazu existuje celočíselný maximální tok a F–F algoritmus
+      ho najde. Z 1. a 2. pak plyne, že největší párování má právě tolik hran, kolik je velikost maximálního toku.
+    proof_steps:
+      - Z párování $M$ sestrojíme tok tak, že po každé hraně $(u,v) \in M$ pošleme jednotku cestou $z \to u \to v \to s$.
+      - Celočíselný tok s jednotkovými propustnostmi má na hranách jen hodnoty $0$ a $1$.
+      - Do každého uzlu $U_1$ přitéká nejvýše 1 a z každého uzlu $U_2$ odtéká nejvýše 1, proto hrany bigrafu s tokem 1 nemají společné uzly – tvoří párování.
+      - Tvrzení 2.2 pro řez $A = \{z\} \cup U_1$ dává, že velikost toku je rovna počtu hran tohoto párování.
+      - Celočíselný maximální tok existuje (F–F s celočíselnými propustnostmi), takže maximální tok a největší párování mají stejnou velikost.
+    related: [alg-parovani-max-tok, prop-tok-a-rez, prop-konecnost-ff, def-parovaci-cislo]
+    source: "skripta str. 22 (konstatováno bez důkazu)"
+    supplemented: false
+
+quiz:
+  - id: q-grafy-matice-01
+    question: |
+      Jaká je časová složitost Floydova algoritmu pro graf s $n$ uzly?
+    options:
+      - '$O(n^2)$'
+      - '$O(n^3)$'
+      - '$O(n^4)$'
+      - '$O(2^n)$'
+    correct: 1
+    explanation: |
+      Počítá se $n$ matic $\mathbf{D}_1, \dots, \mathbf{D}_n$, každá má $n^2$ prvků a každý prvek se spočte v konstantním čase:
+      $n \cdot n^2 = n^3$. $O(n^4)$ je metoda opakovaného min-plus násobení cenové matice.
+    related: [alg-floyd, thm-floyd]
+
+  - id: q-grafy-matice-02
+    question: |
+      Co přesně vyjadřuje prvek $d^k_{ij}$ matice $\mathbf{D}_k$ ve Floydově algoritmu?
+    options:
+      - Délku nejkratší cesty z $v_i$ do $v_j$ s nejvýše $k$ hranami
+      - Délku nejkratší cesty z $v_i$ do $v_j$, jejíž vnitřní uzly leží v $\{v_1, \dots, v_k\}$
+      - Počet cest délky $k$ z $v_i$ do $v_j$
+      - Délku nejkratší cesty z $v_i$ do $v_j$ procházející uzlem $v_k$
+    correct: 1
+    explanation: |
+      To je invariant z důkazu věty 3.1. „Nejvýše $k$ hran“ popisuje min-plus mocninu $\mathbf{D}^{(k)}$, počet sledů délky $k$
+      dává $k$-tá mocnina matice sousednosti.
+    related: [thm-floyd, thm-minplus-mocniny-cenove-matice, thm-mocniny-matice-sousednosti]
+
+  - id: q-grafy-matice-03
+    question: |
+      Ve Floydově algoritmu je $d^{k-1}_{ij} = 9$, $d^{k-1}_{ik} = 3$, $d^{k-1}_{kj} = 5$. Kolik je $d^k_{ij}$?
+    options:
+      - "9"
+      - "8"
+      - "5"
+      - "3"
+    correct: 1
+    explanation: |
+      $d^k_{ij} = \min\{d^{k-1}_{ij},\ d^{k-1}_{ik} + d^{k-1}_{kj}\} = \min\{9,\ 3 + 5\} = 8$ – obchvat přes uzel $v_k$ je kratší.
+    related: [alg-floyd]
+
+  - id: q-grafy-matice-04
+    question: |
+      Proč je ve Floydově algoritmu vnější cyklus přes $k$ (povolený mezilehlý uzel) a ne přes $i$ nebo $j$?
+    options:
+      - Kvůli úspoře paměti, na výsledku nezáleží
+      - Protože invariant „vnitřní uzly z $\{v_1, \dots, v_k\}$“ vyžaduje mít hotovou celou matici $\mathbf{D}_{k-1}$ před výpočtem $\mathbf{D}_k$
+      - Protože jinak by složitost byla $O(n^4)$
+      - Protože algoritmus pracuje jen s acyklickými grafy
+    correct: 1
+    explanation: |
+      Vzorec pro $d^k_{ij}$ používá hodnoty $d^{k-1}_{ik}$ a $d^{k-1}_{kj}$, které musí už odpovídat cestám přes $v_1, \dots, v_{k-1}$
+      pro všechny dvojice. Při jiném pořadí cyklů by algoritmus obecně dával chybné výsledky (složitost by zůstala $O(n^3)$).
+    related: [alg-floyd, thm-floyd]
+
+  - id: q-grafy-matice-05
+    question: |
+      Jak jinak lze v čase $O(n^3)$ získat w-distanční matici grafu s kladnými vahami?
+    options:
+      - Jedním během prohledávání do šířky
+      - $n$-krát spustit Dijkstrův algoritmus (pokaždé z jiného uzlu), každý běh $O(n^2)$
+      - Spočítat $n$ min-plus mocnin cenové matice
+      - Ford–Fulkersonovým algoritmem
+    correct: 1
+    explanation: |
+      Dijkstra dá jeden řádek distanční matice v $O(n^2)$, $n$ běhů tedy $O(n^3)$. Min-plus mocniny stojí $O(n^4)$;
+      BFS dá vzdálenosti jen v neohodnoceném grafu a jen z jednoho uzlu.
+    related: [rem-floyd-dijkstra, thm-minplus-mocniny-cenove-matice]
+
+  - id: q-grafy-matice-06
+    question: |
+      Kdy je čtvercová matice $\mathbf{A}$ nerozložitelná?
+    options:
+      - Když je regulární
+      - Když její diagram $\vec{G}(\mathbf{A})$ je silně souvislý
+      - Když její bigraf má perfektní párování
+      - Když nemá žádný nulový prvek mimo diagonálu
+    correct: 1
+    explanation: |
+      Důsledek 3.1. Regularita s rozložitelností nesouvisí (rozložitelná matice může být regulární a naopak).
+      Perfektní párování v bigrafu souvisí s (generickou) regularitou, ne s rozložitelností.
+    related: [cor-nerozlozitelnost-diagram, thm-rozlozitelnost-silna-souvislost]
+
+  - id: q-grafy-matice-07
+    question: |
+      Diagram matice $\mathbf{A}$ řádu 8 má 3 kvazikomponenty. Kolik diagonálních bloků bude mít horní blokově
+      trojúhelníkový tvar podle věty 3.2?
+    options:
+      - "1"
+      - "2"
+      - "3"
+      - "8"
+    correct: 2
+    explanation: |
+      Každý diagonální blok odpovídá jedné kvazikomponentě a je nerozložitelný. Bloky se uspořádají podle topologického
+      uspořádání kondenzace.
+    related: [thm-rozlozitelnost-silna-souvislost, alg-test-rozlozitelnosti]
+
+  - id: q-grafy-matice-08
+    question: |
+      Jakou složitost má test rozložitelnosti matice řádu $n$ založený na větě 3.2?
+    options:
+      - '$O(n!)$ – je třeba vyzkoušet všechny permutace'
+      - '$O(n^2)$ – sestrojení diagramu a nalezení kvazikomponent'
+      - '$O(2^n)$ – je třeba projít všechny podmnožiny uzlů'
+      - Problém je NP-úplný
+    correct: 1
+    explanation: |
+      Diagram sestrojíme průchodem všech $n^2$ prvků a kvazikomponenty najdeme prohledáváním v $O(n + m) \subseteq O(n^2)$.
+      Hrubá síla přes permutace ($n!$) je právě to, čemu věta 3.2 umožňuje se vyhnout.
+    related: [alg-test-rozlozitelnosti]
+
+  - id: q-grafy-matice-09
+    question: |
+      Které tvrzení o rozložitelnosti a slabé rozložitelnosti platí?
+    options:
+      - Každá slabě rozložitelná matice je rozložitelná
+      - Každá rozložitelná matice je slabě rozložitelná, ale ne naopak
+      - Pojmy jsou ekvivalentní
+      - Pojmy spolu nesouvisí
+    correct: 1
+    explanation: |
+      V definici slabé rozložitelnosti stačí volit $\mathbf{Q} = \mathbf{P}^T$. Protipříklad opaku: permutační matice s diagramem
+      tvaru cyklu je nerozložitelná, ale prohozením sloupců vznikne nulový blok.
+    related: [rem-slaba-rozlozitelnost, def-slabe-rozlozitelna]
+
+  - id: q-grafy-matice-10
+    question: |
+      V bigrafu matice řádu 5 má množina řádků $V = \{1, 2, 4\}$ sousedy $W = \{2', 3', 4'\}$. Co z toho plyne?
+    options:
+      - Matice je rozložitelná
+      - Matice je slabě rozložitelná
+      - Matice je úplně nerozložitelná
+      - Matice je regulární
+    correct: 1
+    explanation: |
+      $|W| = 3 \le 3 = |V|$ a $\emptyset \ne V \ne U_1$, takže $V$ je stabilní množina a podle věty 3.3 je matice slabě rozložitelná.
+      Rozložitelnost (simultánní permutace) z toho neplyne – rozhoduje o ní diagram.
+    related: [thm-slaba-rozlozitelnost-stabilni-mnozina, def-stabilni-mnozina]
+
+  - id: q-grafy-matice-11
+    question: |
+      Bigraf reálné matice $\mathbf{A}$ má perfektní párování. Co lze říci o $\mathbf{A}$?
+    options:
+      - '$\mathbf{A}$ je regulární'
+      - '$\mathbf{A}$ je singulární'
+      - 'Nic určitého o konkrétní matici – může být regulární i singulární'
+      - '$\mathbf{A}$ je nerozložitelná'
+    correct: 2
+    explanation: |
+      Věta 3.4 dává jen implikaci „regulární ⇒ perfektní párování“. Matice $\mathbf{A}_2$ ze skript má perfektní párování
+      a je singulární, protože se členy determinantu vyrušily. Platí jen, že nějaká matice se stejným bigrafem je regulární.
+    related: [thm-regularni-matice-parovani]
+
+  - id: q-grafy-matice-12
+    question: |
+      Kdy je strukturální matice genericky regulární?
+    options:
+      - Když nemá na diagonále nuly
+      - Když její bigraf má perfektní párování
+      - Když její diagram je silně souvislý
+      - Když má alespoň $n$ nenulových prvků
+    correct: 1
+    explanation: |
+      Věta 3.5. Nenulová diagonála je jen speciální případ perfektního párování (identická permutace); $n$ nenulových prvků
+      nestačí (mohou být v jednom sloupci). Silná souvislost diagramu odpovídá nerozložitelnosti.
+    related: [thm-genericka-regularita-parovani]
+
+  - id: q-grafy-matice-13
+    question: |
+      Největší párování v bigrafu strukturální matice $\mathbf{A}$ řádu 6 má 5 hran. Čemu se rovná $\operatorname{gh}(\mathbf{A})$
+      a co to znamená?
+    options:
+      - '$\operatorname{gh}(\mathbf{A}) = 6$; matice je genericky regulární'
+      - '$\operatorname{gh}(\mathbf{A}) = 5$; při náhodném dosazení má matice s pravděpodobností 1 hodnost 5'
+      - '$\operatorname{gh}(\mathbf{A}) = 5$; matice má hodnost 5 pro každou volbu hodnot'
+      - '$\operatorname{gh}(\mathbf{A}) = 1$'
+    correct: 1
+    explanation: |
+      Věta 3.6: $\operatorname{gh}(\mathbf{A}) = \nu(\vec{B}(\mathbf{A})) = 5$. Pro speciální hodnoty může být hodnost i menší,
+      proto „s pravděpodobností 1“, nikoli „vždy“.
+    related: [thm-genericka-hodnost-parovaci-cislo, def-genericka-hodnost]
+
+  - id: q-grafy-matice-14
+    question: |
+      Při hledání největšího párování převodem na maximální tok mají všechny hrany propustnost 1. Proč musí být
+      nalezený maximální tok **celočíselný**?
+    options:
+      - Jinak by algoritmus neskončil
+      - Jen z celočíselného toku (hodnoty 0/1) přímo vyčteme párování; neceločíselný tok může jednotku rozdělit mezi více hran
+      - Protože Edmonds–Karpův algoritmus neceločíselné toky nepodporuje
+      - Celočíselnost není potřeba
+    correct: 1
+    explanation: |
+      Při hodnotách 0/1 projde každým řádkem i sloupcem nejvýše jedna hrana s tokem 1 – vznikne párování. F–F algoritmus
+      s celočíselnými propustnostmi celočíselný maximální tok vždy najde (důkaz tvrzení 2.4).
+    related: [prop-parovani-a-tok, alg-parovani-max-tok, prop-konecnost-ff]
+
+  - id: q-grafy-matice-15
+    question: |
+      Jaká je složitost nalezení největšího párování v bigrafu s $n$ uzly a $m$ hranami převodem na tok
+      (Ford–Fulkersonův algoritmus)?
+    options:
+      - 'Exponenciální, problém je NP-úplný'
+      - '$O(n(n+m))$ – nejvýše $n$ iterací po $O(n+m)$'
+      - '$O(n!)$ – probrání všech přiřazení'
+      - '$O(1)$'
+    correct: 1
+    explanation: |
+      Velikost toku (= velikost párování) je nejvýše $|U_1| \le n$ a každá iterace zvětší tok o 1; nalezení rezervní polocesty
+      prohledáním stojí $O(n + m)$. Úloha je tedy polynomiální – na rozdíl např. od hledání hamiltonovské kružnice.
+    related: [alg-parovani-max-tok]

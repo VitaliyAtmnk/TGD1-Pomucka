@@ -1,0 +1,2062 @@
+id: miry-souvislosti
+number: 5
+title: Míry souvislosti grafu
+source: "TGD1 skripta kap. 4 (str. 23–28); přednáška 6 (TGD1-06-folie)"
+exam_questions: [8]
+summary: |
+  Kapitola zpřesňuje otázku „jak moc“ je graf souvislý. Začíná nejjednoduššími
+  slabými místy – mosty a artikulacemi – a rozkladem grafu na bloky, které tvoří
+  stromovou strukturu (blokový graf). Pak zobecňuje most a artikulaci na hranové
+  a uzlové řezy a zavádí hranový a uzlový stupeň souvislosti $h(G)$, $u(G)$.
+  Vrcholem jsou charakterizační věty (Ford–Fulkerson pro hranovou souvislost
+  a Mengerova věta), které převádějí výpočet souvislosti na úlohu o maximálním toku,
+  a tím dávají polynomiální algoritmy. V celé kapitole je „graf“ neorientovaný.
+sections:
+  - number: "4.1"
+    title: Mosty, artikulace, bloky grafu
+  - number: "4.2"
+    title: Hranový a uzlový stupeň souvislosti grafu
+  - number: "4.3"
+    title: Charakterizační věty k-souvislých grafů
+items:
+  # ------------------------------------------------------------------ 4.1
+  - id: def-most
+    kind: definition
+    label: "Definice 4.1"
+    section: "4.1"
+    title: Most grafu
+    terms:
+      - most
+      - most grafu
+      - bridge
+      - cut edge
+      - isthmus
+      - kritická hrana
+    statement: |
+      Hrana $\{x, y\} \in H(G)$ se nazývá **most** grafu $G$, jestliže v grafu $G$
+      neexistuje žádná kružnice, která ji obsahuje.
+    intuition: |
+      Most je hrana, kterou „nelze obejít“: neleží na žádném cyklu, takže mezi jejími
+      konci neexistuje jiná cesta než ona sama. Odstraněním mostu se graf rozpadne
+      (viz [Tvrzení 4.1](#prop-most-rozpojuje)). Představte si skutečný most přes řeku,
+      když je jediný – jeho stržení odřízne jeden břeh od druhého.
+
+      **Typické případy:** v každém stromu je mostem každá hrana (strom nemá kružnice).
+      Naopak v kružnici $C_n$ ani v úplném grafu $K_n$ ($n \ge 3$) žádný most není.
+    examples:
+      - title: Most mezi trojúhelníkem a K4
+        body: |
+          Trojúhelník $a, b, x$ je hranou $\{x, y\}$ připojen k úplnému grafu $K_4$
+          na uzlech $y, c, d, e$. Každá hrana trojúhelníku i každá hrana $K_4$ leží na
+          nějaké kružnici, hrana $\{x, y\}$ však ne – jakákoli kružnice přes ni by se
+          musela z „pravé“ části vrátit do „levé“ jinou cestou, a ta neexistuje.
+          Hrana $\{x, y\}$ je tedy jediným mostem grafu.
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: x, x: 3, y: 5 }
+            - { id: "y", x: 5.5, y: 5 }
+            - { id: c, x: 7.5, y: 8 }
+            - { id: d, x: 7.5, y: 2 }
+            - { id: e, x: 10, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: x }
+            - { from: b, to: x }
+            - { from: x, to: "y" }
+            - { from: "y", to: c }
+            - { from: "y", to: d }
+            - { from: "y", to: e }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+    visualization: blocks
+    related: [prop-most-rozpojuje, thm-most-liche-stupne, def-artikulace, def-hranovy-rez]
+    illustrations:
+      - title: Most versus hrana na kružnici
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: x, x: 2.8, y: 5 }
+            - { id: z, x: 5.5, y: 5 }
+            - { id: c, x: 7.8, y: 8 }
+            - { id: e, x: 7.8, y: 2 }
+            - { id: d, x: 10, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: x }
+            - { from: b, to: x }
+            - { from: x, to: z }
+            - { from: z, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: z }
+        steps:
+          - caption: |
+              Hrana $\{x, z\}$ neleží na žádné kružnici – je to **most**. Proto její odebrání graf rozpojí: trojúhelník vlevo a čtyřúhelník vpravo už nic jiného nespojuje.
+            edge_set: [x-z]
+          - caption: |
+              Hrana $\{a, b\}$ leží na trojúhelníku $a, b, x$, mostem tedy není: po jejím odebrání spojuje $a$ s $b$ dál zbytek kružnice, cesta $a, x, b$.
+            edge_set: [a-b]
+          - caption: |
+              Přidáme hranu $\{a, c\}$. Hrana $\{x, z\}$ teď leží na kružnici $a, x, z, c$ a mostem být přestala – po jejím odebrání drží graf pohromadě přes $\{a, c\}$.
+            add: [[a, c]]
+            edge_set: [x-z]
+          - caption: |
+              Rozpojit graf jde teď až dvojicí hran, např. $\{x, z\}$ a $\{a, c\}$. To je hranový řez, ale žádná z obou hran sama mostem není.
+            edge_set: [x-z, a-c]
+    source: "skripta str. 23; přednáška 6, fólie 1"
+
+  - id: prop-most-rozpojuje
+    kind: proposition
+    label: "Tvrzení 4.1"
+    section: "4.1"
+    title: Odstranění mostu rozpojí graf
+    terms:
+      - most rozpojuje graf
+      - odstranění mostu
+      - G minus hrana
+    statement: |
+      Je-li graf $G$ souvislý a hrana $\{x, y\}$ jeho most, pak graf $G - \{x, y\}$,
+      vzniklý odstraněním hrany $\{x, y\}$ z $G$, je nesouvislý.
+    intuition: |
+      Kdyby po odstranění hrany zůstaly $x$ a $y$ propojené jinou cestou, tato cesta
+      spolu s hranou by uzavřela kružnici – a to most podle definice nedovoluje.
+      Platí i obrácení: hrana souvislého grafu, jejímž odebráním graf přestane být
+      souvislý, je most (kdyby ležela na kružnici, zbytek kružnice by její konce dál
+      spojoval). Most je tedy přesně „jednoprvkový hranový řez“.
+    proof: |
+      Sporem. Předpokládejme, že $G - \{x, y\}$ je souvislý. Pak v něm existuje cesta
+      $P$ z uzlu $x$ do uzlu $y$; ta hranu $\{x, y\}$ neobsahuje (v grafu
+      $G - \{x, y\}$ už není). Přidáme-li k cestě $P$ hranu $\{x, y\}$, dostaneme v $G$
+      kružnici, která hranu $\{x, y\}$ obsahuje. To je ve sporu s tím, že
+      $\{x, y\}$ je most. Graf $G - \{x, y\}$ tedy souvislý není.
+    proof_steps:
+      - Předpokládáme pro spor, že graf $G - \{x, y\}$ je souvislý.
+      - Pak v $G - \{x, y\}$ existuje cesta $P$ z $x$ do $y$, která hranu $\{x, y\}$ nepoužívá.
+      - Cesta $P$ doplněná o hranu $\{x, y\}$ tvoří v $G$ kružnici obsahující $\{x, y\}$.
+      - To odporuje definici mostu, takže $G - \{x, y\}$ je nesouvislý.
+    related: [def-most, thm-most-liche-stupne]
+    source: "skripta str. 23; přednáška 6, fólie 1"
+
+  - id: thm-most-liche-stupne
+    kind: theorem
+    label: "Věta 4.1"
+    section: "4.1"
+    title: Graf s mostem má uzly lichého stupně
+    terms:
+      - most a lichý stupeň
+      - uzly lichého stupně
+      - parita stupňů
+    statement: |
+      Má-li souvislý graf $G$ most, pak má alespoň dva uzly lichého stupně.
+    intuition: |
+      Ekvivalentně: **souvislý graf, jehož všechny uzly mají sudý stupeň, nemá most.**
+      To je užitečné např. u eulerovských grafů – v nich žádná hrana není mostem.
+      Uzly lichého stupně přitom nemusí být konci mostu: mohou to být úplně jiné uzly
+      grafu (viz příklad).
+    proof: |
+      Nechť $\{x, y\}$ je most a $G' = G - \{x, y\}$. Podle
+      [Tvrzení 4.1](#prop-most-rozpojuje) je $G'$ nesouvislý; protože jsme odebrali jedinou
+      hranu ze souvislého grafu, má $G'$ právě dvě komponenty a $x$, $y$ leží v různých
+      z nich.
+
+      Předpokládejme pro spor, že všechny uzly grafu $G$ mají sudý stupeň. V $G'$ klesne
+      stupeň uzlů $x$ a $y$ o jedničku (stanou se lichými), ostatní stupně se nezmění
+      (zůstanou sudé). Každá z obou komponent grafu $G'$ by tak obsahovala **právě jeden**
+      uzel lichého stupně. V každém grafu (tedy i v komponentě chápané jako samostatný graf)
+      je ale počet uzlů lichého stupně sudý, protože součet stupňů je $2|H|$. Spor.
+
+      Graf $G$ má tedy aspoň jeden uzel lichého stupně, a protože jejich počet je sudý,
+      má jich alespoň dva.
+    proof_steps:
+      - Odebráním mostu $\{x, y\}$ vznikne graf $G'$ s právě dvěma komponentami, v nichž leží $x$ a $y$ zvlášť.
+      - Předpokládáme pro spor, že všechny stupně v $G$ jsou sudé.
+      - V $G'$ mají $x$ a $y$ lichý stupeň a ostatní uzly sudý, takže každá komponenta $G'$ má právě jeden lichý uzel.
+      - To odporuje tomu, že každý graf má sudý počet uzlů lichého stupně (součet stupňů je $2|H|$).
+      - Tedy $G$ má lichý uzel, a protože jejich počet je sudý, má jich aspoň dva.
+    examples:
+      - title: Liché uzly nemusí ležet na mostu
+        body: |
+          Dva trojúhelníky spojené mostem mají liché stupně právě v koncích mostu (stupeň 3),
+          ostatní uzly mají stupeň 2. Vezmeme-li ale místo trojúhelníků větší části, např.
+          „kosočtverec s úhlopříčkou“ připojený mostem k jinému grafu, mohou mít konce mostu
+          sudý stupeň a liché stupně se objeví jinde. Věta zaručuje jen to, že nějaké dva
+          liché uzly v grafu existují.
+    related: [def-most, prop-most-rozpojuje]
+    illustrations:
+      - title: Liché uzly nemusí ležet na mostu
+        property: eulerian
+        graph:
+          directed: false
+          nodes:
+            - { id: b, x: 0.5, y: 7.5 }
+            - { id: a, x: 4, y: 6 }
+            - { id: g, x: 3.5, y: 2.5 }
+            - { id: c, x: 0.5, y: 1 }
+            - { id: d, x: 6, y: 6 }
+            - { id: e, x: 9.5, y: 7.5 }
+            - { id: h, x: 6.5, y: 2.5 }
+            - { id: f, x: 9.5, y: 1 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: g }
+            - { from: g, to: a }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: h }
+            - { from: h, to: d }
+            - { from: d, to: f }
+        steps:
+          - caption: |
+              Hrana $\{a, d\}$ je most. Její konce mají **sudý** stupeň 4, liché stupně mají uzly $c$ a $f$. Věta slibuje jen to, že nějaké dva liché uzly v grafu existují – ne že leží na mostu.
+            labels: { a: "4", b: "2", c: "3", g: "2", d: "4", e: "2", f: "3", h: "2" }
+          - caption: |
+              Přidáme hranu $\{c, f\}$: všechny stupně jsou teď sudé a graf je eulerovský. A most zmizel – hrana $\{a, d\}$ leží na kružnici $a, c, f, d$. Souvislý graf se sudými stupni most mít nemůže.
+            add: [[c, f]]
+            labels: { a: "4", b: "2", c: "4", g: "2", d: "4", e: "2", f: "4", h: "2" }
+          - caption: |
+              Odebereme naopak hranu $\{a, d\}$. Mostem je teď $\{c, f\}$ a liché stupně se objevily u $a$ a $d$ – most a liché uzly jdou ruku v ruce.
+            remove: [[a, d]]
+            labels: { a: "3", b: "2", c: "4", g: "2", d: "3", e: "2", f: "4", h: "2" }
+      - title: Proč most vynutí liché stupně
+        for: proof
+        property: connected
+        graph:
+          directed: false
+          nodes:
+            - { id: b, x: 0.5, y: 7.5 }
+            - { id: a, x: 4, y: 6 }
+            - { id: g, x: 3.5, y: 2.5 }
+            - { id: c, x: 0.5, y: 1 }
+            - { id: d, x: 6, y: 6 }
+            - { id: e, x: 9.5, y: 7.5 }
+            - { id: h, x: 6.5, y: 2.5 }
+            - { id: f, x: 9.5, y: 1 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: g }
+            - { from: g, to: a }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: h }
+            - { from: h, to: d }
+            - { from: d, to: f }
+        steps:
+          - caption: |
+              Souvislý graf $G$ s mostem $\{a, d\}$; pod uzly jsou stupně v $G$.
+            edges: { a-d: active }
+            labels: { a: "4", b: "2", c: "3", g: "2", d: "4", e: "2", f: "3", h: "2" }
+          - caption: |
+              Odebráním mostu vzniknou **právě dvě** komponenty a stupeň $a$ i $d$ klesne o 1. Každá komponenta je samostatný graf, takže má **sudý** počet lichých uzlů (vlevo $a, c$, vpravo $d, f$).
+            remove: [[a, d]]
+            labels: { a: "3", b: "2", c: "3", g: "2", d: "3", e: "2", f: "3", h: "2" }
+          - caption: |
+              Kdyby v $G$ měly všechny uzly sudý stupeň, byl by v levé komponentě lichý jen uzel $a$ – jediný lichý uzel, což princip sudosti nedovoluje. Spor, takže $G$ má lichý uzel, a dokonce na každé straně mostu aspoň jeden (zde $c$ a $f$).
+            nodes: { a: active, d: active, c: path, f: path }
+            labels: { a: "3", b: "2", c: "3", g: "2", d: "3", e: "2", f: "3", h: "2" }
+            witness: true
+    source: "skripta str. 23; přednáška 6, fólie 1"
+
+  - id: def-artikulace
+    kind: definition
+    label: "Definice 4.2"
+    section: "4.1"
+    title: Artikulace grafu
+    terms:
+      - artikulace
+      - artikulační uzel
+      - articulation point
+      - cut vertex
+      - cut-vertex
+      - separating vertex
+    statement: |
+      Uzel $x \in U(G)$ je **artikulace** grafu $G$, jestliže existují hrany
+      $\{x, y_1\}$ a $\{x, y_2\}$, které nepatří současně téže kružnici grafu $G$.
+    intuition: |
+      Artikulace je uzlová obdoba mostu: uzel, přes který „vede jediná spojka“ mezi dvěma
+      částmi grafu. Pro souvislý graf je definice ekvivalentní s tím, že po odebrání uzlu
+      $x$ (i s jeho hranami) graf přestane být souvislý – viz
+      [doplněné tvrzení](#prop-artikulace-rozpojuje).
+
+      **Příklady:** každý nekoncový uzel stromu (stupně aspoň 2) je artikulací, listy
+      artikulacemi nejsou. Uzel, v němž se „dotýkají“ dvě kružnice (motýlek), je artikulace.
+      Kružnice $C_n$ ani úplný graf $K_n$ artikulaci nemají.
+    examples:
+      - title: Uzel společný trojúhelníku, visuté hraně a čtyřúhelníku
+        body: |
+          Uzel $x$ leží na trojúhelníku $x, a, b$, na čtyřúhelníku $x, c, d, e$ a je k němu
+          připojen list $f$. Hrany $\{x, a\}$ a $\{x, c\}$ neleží na společné kružnici
+          (každá kružnice přes $x$ zůstává buď v trojúhelníku, nebo ve čtyřúhelníku),
+          takže $x$ je artikulace. Žádný jiný uzel artikulací není.
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: f, x: 3, y: 9 }
+            - { id: x, x: 3, y: 5 }
+            - { id: c, x: 6, y: 8 }
+            - { id: e, x: 6, y: 2 }
+            - { id: d, x: 9, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: x }
+            - { from: b, to: x }
+            - { from: x, to: f }
+            - { from: x, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: x }
+    visualization: blocks
+    related: [def-most, prop-artikulace-rozpojuje, rem-artikulace-a-mosty, def-blok, def-uzlovy-rez]
+    illustrations:
+      - title: Který uzel graf rozpojí
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: f, x: 3, y: 9.5 }
+            - { id: x, x: 3, y: 5 }
+            - { id: c, x: 6, y: 8 }
+            - { id: e, x: 6, y: 2 }
+            - { id: d, x: 9, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: x }
+            - { from: b, to: x }
+            - { from: x, to: f }
+            - { from: x, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: x }
+        steps:
+          - caption: |
+              Odebráním $x$ se graf rozpadne na tři části (trojúhelník, list $f$ a zbytek čtyřúhelníku) – $x$ je **artikulace**. Hrany $\{x, a\}$ a $\{x, c\}$ opravdu neleží na společné kružnici.
+            set: [x]
+          - caption: |
+              Uzel $c$ leží na čtyřúhelníku $x, c, d, e$. Po jeho odebrání drží $d$ s ostatními dál přes $e$ a $x$, takže artikulací není.
+            set: [c]
+          - caption: |
+              List $f$ artikulací není: jeho odebrání zbytek grafu nerozpojí (u $f$ ani nejsou dvě hrany, které by mohly „neležet na společné kružnici“).
+            set: [f]
+          - caption: |
+              Přidáme hranu $\{b, e\}$: hrany $\{x, a\}$ a $\{x, e\}$ teď leží na společné kružnici $x, a, b, e$. Přesto je $x$ stále artikulace – list $f$ je k ostatku připojen jen přes $x$.
+            add: [[b, e]]
+            set: [x]
+          - caption: |
+              Připojíme i list $f$ hranou $\{f, c\}$. Teď leží každé dvě hrany u $x$ na společné kružnici a odebrání $x$ graf nerozpojí – artikulace zmizela.
+            add: [[f, c]]
+            set: [x]
+    source: "skripta str. 23; přednáška 6, fólie 1"
+
+  - id: prop-artikulace-rozpojuje
+    kind: proposition
+    section: "4.1"
+    title: Artikulace jako uzel, jehož odebráním se graf rozpadne
+    terms:
+      - artikulace rozpojuje graf
+      - odebrání uzlu
+      - G minus uzel
+    statement: |
+      Nechť $G$ je souvislý graf a $x \in U(G)$. Pak $x$ je artikulace grafu $G$, právě
+      když graf $G - x$ (vzniklý odebráním uzlu $x$ a všech hran s ním incidentních)
+      je nesouvislý.
+    intuition: |
+      Tato ekvivalence se ve skriptech používá mlčky – např. u naivního algoritmu
+      na hledání artikulací („odeber uzel a zjisti, zda vzrostl počet komponent“)
+      i u Tarjanova algoritmu. Spojuje „kružnicovou“ definici artikulace s intuitivní
+      představou uzlu, který graf rozpojuje.
+    proof: |
+      *Důkaz ve skriptech není, doplněno.*
+
+      ($\Rightarrow$) Nechť hrany $\{x, y_1\}$, $\{x, y_2\}$ neleží na společné kružnici.
+      Kdyby byl $G - x$ souvislý, existovala by v něm cesta $Q$ z $y_1$ do $y_2$ (neprochází
+      uzlem $x$). Cesta $Q$ spolu s hranami $\{y_2, x\}$, $\{x, y_1\}$ by byla kružnice
+      obsahující obě hrany – spor. Tedy $G - x$ je nesouvislý.
+
+      ($\Leftarrow$) Nechť $G - x$ je nesouvislý. Protože $G$ je souvislý, každá komponenta
+      grafu $G - x$ obsahuje nějakého souseda uzlu $x$. Zvolme sousedy $y_1$, $y_2$ ležící
+      v různých komponentách $G - x$. Kdyby hrany $\{x, y_1\}$, $\{x, y_2\}$ ležely na
+      společné kružnici, zbytek této kružnice by byla cesta z $y_1$ do $y_2$ vyhýbající se
+      uzlu $x$, tj. cesta v $G - x$ – spor s tím, že $y_1$, $y_2$ jsou v různých
+      komponentách. Uzel $x$ je tedy artikulace.
+    proof_steps:
+      - "(⇒) Hrany $\\{x,y_1\\}$, $\\{x,y_2\\}$ neleží na společné kružnici; předpokládáme pro spor, že $G-x$ je souvislý."
+      - "Cesta z $y_1$ do $y_2$ v $G-x$ by spolu s oběma hranami tvořila kružnici přes obě hrany – spor."
+      - "(⇐) Je-li $G-x$ nesouvislý, má každá jeho komponenta souseda uzlu $x$, protože $G$ je souvislý."
+      - "Zvolíme sousedy $y_1$, $y_2$ v různých komponentách $G-x$."
+      - "Společná kružnice přes $\\{x,y_1\\}$ a $\\{x,y_2\\}$ by dala cestu $y_1 \\to y_2$ v $G-x$, což nejde; $x$ je artikulace."
+    related: [def-artikulace, prop-most-rozpojuje, def-uzlovy-rez]
+    source: "doplněno (používá se ve skriptech str. 32)"
+    supplemented: true
+
+  - id: rem-artikulace-a-mosty
+    kind: remark
+    label: "Poznámka (str. 24)"
+    section: "4.1"
+    title: Artikulace, parita stupňů a vztah k mostům
+    terms:
+      - artikulace a parita
+      - konce mostu jsou artikulace
+    statement: |
+      1. Existence artikulace (na rozdíl od mostu) **nemá žádný vliv na paritu stupňů**:
+         existují grafy s artikulací, kde mají všechny uzly sudý stupeň (dva trojúhelníky
+         se společným uzlem), i grafy s artikulací, kde mají všechny uzly lichý stupeň.
+      2. Je-li hrana $\{x, y\}$ mostem, pak každý její konec, který má stupeň alespoň 2,
+         je artikulací. Speciálně **souvislý graf s alespoň třemi uzly, který nemá
+         artikulaci, nemá ani most.**
+    intuition: |
+      Ve skriptech je bod 2 formulován bez omezení („oba uzly $x$, $y$ jsou artikulacemi“,
+      „nemá-li graf artikulaci, nemůže mít ani most“). To neplatí pro konce stupně 1:
+      v grafu $K_2$ (jediná hrana) je tato hrana mostem, ale žádná artikulace neexistuje;
+      list stromu je koncem mostu, a přesto není artikulací. Proto je zde formulace
+      zpřesněna.
+
+      Proč to platí: má-li $x$ kromě mostu $\{x, y\}$ ještě hranu $\{x, z\}$, pak
+      $\{x, y\}$ a $\{x, z\}$ nemohou ležet na společné kružnici (most neleží na žádné),
+      takže $x$ je podle definice artikulace. V souvislém grafu s aspoň 3 uzly má aspoň
+      jeden konec mostu stupeň $\ge 2$.
+    related: [def-artikulace, def-most, thm-most-liche-stupne]
+    illustrations:
+      - title: Motýlek a konce mostu
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: v, x: 5, y: 5 }
+            - { id: c, x: 10, y: 8 }
+            - { id: d, x: 10, y: 2 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: v }
+            - { from: b, to: v }
+            - { from: v, to: c }
+            - { from: v, to: d }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              Motýlek: všechny stupně jsou sudé (2 a 4), a přesto je $v$ artikulace. Artikulace na paritu stupňů žádný vliv nemá – na rozdíl od mostu.
+            set: [v]
+          - caption: |
+              Odebereme hranu $\{b, v\}$: hrana $\{a, b\}$ je teď most. Její konec $a$ má stupeň 2, a proto je artikulací – jeho odebrání odřízne $b$.
+            remove: [[b, v]]
+            set: [a]
+          - caption: |
+              Druhý konec mostu, $b$, má stupeň 1 a artikulací **není**. Proto poznámka tvrdí jen to, že artikulací je každý konec mostu stupně aspoň 2.
+            set: [b]
+    source: "skripta str. 24 (bod 2 zpřesněn)"
+
+  - id: def-blok
+    kind: definition
+    label: "Definice 4.3"
+    section: "4.1"
+    title: Blok grafu
+    terms:
+      - blok
+      - blok grafu
+      - block
+      - biconnected component
+      - 2-souvislá komponenta
+      - maximální souvislý podgraf bez artikulace
+    statement: |
+      Buď $G$ graf, $G' \subset G$ jeho souvislý podgraf. Řekneme, že $G'$ je **blok**
+      grafu $G$, jestliže:
+
+      a) $G'$ nemá artikulaci,
+
+      b) jestliže $G''$ je souvislý graf bez artikulace takový, že
+         $G' \subset G'' \subset G$, pak $G'' = G'$.
+    intuition: |
+      Blok je **maximální souvislý podgraf bez artikulace** – kus grafu, který „drží
+      pohromadě“ i po odebrání libovolného jednoho uzlu. Bloky hrají pro artikulace
+      podobnou roli jako komponenty pro souvislost: graf se na ně jednoznačně rozpadá.
+      Rozdíl je v tom, že bloky se mohou dotýkat v uzlech (v artikulacích), ale nesdílejí
+      hrany ([Věta 4.2](#thm-bloky-hranove-disjunktni)).
+
+      **Pozor:** podgraf s jedinou hranou artikulaci nemá, proto je každý most samostatným
+      blokem.
+    examples:
+      - title: Bloky stromu a motýlku
+        body: |
+          * Ve stromu je blokem každá hrana (každá hrana je most).
+          * „Motýlek“ (dva trojúhelníky se společným uzlem $v$) má dva bloky – oba
+            trojúhelníky; artikulace $v$ patří do obou.
+          * Kružnice $C_n$ i úplný graf $K_n$ jsou samy jediným blokem.
+    visualization: blocks
+    related: [def-artikulace, rem-blok, prop-bez-artikulace-kruznice, thm-bloky-hranove-disjunktni, def-blokovy-graf]
+    illustrations:
+      - title: Rozklad grafu na bloky
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 8 }
+            - { id: b, x: 0, y: 2 }
+            - { id: x, x: 2.5, y: 5 }
+            - { id: z, x: 5, y: 5 }
+            - { id: c, x: 7, y: 8 }
+            - { id: e, x: 7, y: 2 }
+            - { id: d, x: 9, y: 5 }
+            - { id: f, x: 10, y: 8.8 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: x }
+            - { from: b, to: x }
+            - { from: x, to: z }
+            - { from: z, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: z }
+            - { from: d, to: f }
+        steps:
+          - caption: |
+              Graf má artikulace $x$, $z$ a $d$. Rozdělují ho na části, které samy žádnou artikulaci nemají – to jsou **bloky**.
+            nodes: { x: active, z: active, d: active }
+          - caption: |
+              Čtyři bloky: trojúhelník $B_1$, most $B_2 = \{x, z\}$, čtyřúhelník $B_3$ a visutá hrana $B_4 = \{d, f\}$. Každá hrana patří do právě jednoho bloku, artikulace leží ve dvou blocích zároveň.
+            nodes: { x: active, z: active, d: active }
+            edges: { a-b: path, a-x: path, b-x: path, x-z: cut, z-c: tree, c-d: tree, d-e: tree, e-z: tree, d-f: back }
+            labels: { a: "B1", b: "B1", x: "B1 B2", z: "B2 B3", c: "B3", e: "B3", d: "B3 B4", f: "B4" }
+          - caption: |
+              Přidáme hranu $\{b, e\}$. Most $\{x, z\}$ teď leží na kružnici $b, x, z, e$, takže trojúhelník, most i čtyřúhelník splynou v **jediný blok** – maximální podgraf bez artikulace se zvětšil. Artikulací zůstal jen $d$.
+            add: [[b, e]]
+            nodes: { d: active }
+            edges: { a-b: path, a-x: path, b-x: path, x-z: path, z-c: path, c-d: path, d-e: path, e-z: path, b-e: path, d-f: back }
+            labels: { a: "B1", b: "B1", x: "B1", z: "B1", c: "B1", e: "B1", d: "B1 B2", f: "B2" }
+    source: "skripta str. 24; přednáška 6, fólie 1"
+
+  - id: rem-blok
+    kind: remark
+    label: "Poznámka (str. 24)"
+    section: "4.1"
+    title: Blok jako maximální podgraf bez artikulace; mosty jsou bloky
+    terms:
+      - most je blok
+    statement: |
+      1. Blok je maximální (vzhledem k inkluzi) souvislý podgraf bez artikulace.
+      2. Je-li $\{x, y\}$ most, pak podgraf tvořený jedinou hranou $\{x, y\}$ (s jejími
+         konci) je blok grafu $G$ – každý most je blokem grafu.
+    intuition: |
+      Bod 2: jednohranový podgraf artikulaci nemá. Kdyby ho šlo rozšířit na větší
+      souvislý podgraf bez artikulace (s aspoň dvěma hranami), ležel by most podle
+      [Tvrzení 4.2](#prop-bez-artikulace-kruznice) na kružnici – spor s definicí mostu.
+      Naopak jednohranový blok je vždy most: hrana na kružnici leží v bloku obsahujícím
+      celou kružnici.
+    related: [def-blok, def-most]
+    source: "skripta str. 24"
+
+  - id: prop-bez-artikulace-kruznice
+    kind: proposition
+    label: "Tvrzení 4.2"
+    section: "4.1"
+    title: Graf bez artikulace – každé dvě hrany na společné kružnici
+    terms:
+      - graf bez artikulace
+      - dvě hrany na kružnici
+      - 2-souvislý graf
+      - charakterizace grafů bez artikulace
+    statement: |
+      Buď $G$ souvislý graf s alespoň dvěma hranami. Pak $G$ nemá artikulaci, právě když
+      pro každé dvě jeho hrany existuje kružnice, na níž obě leží.
+    intuition: |
+      Definice artikulace mluví jen o dvojicích hran se **společným** uzlem. Tvrzení říká,
+      že lokální podmínka (sousední hrany leží na společné kružnici) se „rozšíří“ na
+      libovolné dvě hrany grafu – i hodně vzdálené. Klíčový trik: z kružnice přes $h_1$
+      a $e$ a z kružnice přes $e$ a $h_2$ lze vždy poskládat kružnici přes $h_1$ a $h_2$.
+
+      Předpoklad „alespoň dvě hrany“ je ve fóliích (ve skriptech chybí); pro jedinou hranu
+      by pravá strana platila jen formálně. Pro $K_2$ i pro graf s mostem a třemi uzly
+      ($P_3$) tvrzení dává správný výsledek: $P_3$ má artikulaci a jeho dvě hrany neleží
+      na kružnici.
+    proof: |
+      ($\Leftarrow$) Má-li $G$ artikulaci $x$, pak podle definice existují hrany
+      $\{x, y_1\}$, $\{x, y_2\}$, které neleží na žádné společné kružnici – podmínka
+      „každé dvě hrany na společné kružnici“ tedy neplatí.
+
+      ($\Rightarrow$) Nechť $G$ nemá artikulaci a předpokládejme pro spor, že existují hrany,
+      které na společné kružnici neleží. Mezi všemi takovými dvojicemi zvolme $h_1, h_2$
+      s nejmenší vzdáleností (vzdálenost hran = nejmenší vzdálenost jejich koncových uzlů).
+
+      * Kdyby $h_1, h_2$ měly společný uzel $x$, byl by $x$ podle definice artikulací – spor.
+        Tedy vzdálenost je $d \ge 1$.
+      * Nechť $P = u_1 u_2 \dots u_k$ ($k = d + 1 \ge 2$) je nejkratší cesta mezi nimi,
+        $h_1 = \{u_1, v_1\}$, $h_2 = \{u_k, v_2\}$, a označme $e = \{u_{k-1}, u_k\}$.
+        Hrany $h_1$ a $e$ mají vzdálenost nejvýše $d - 1$, a jsou různé, takže podle volby
+        $h_1, h_2$ leží na společné kružnici $C_1$.
+      * Uzel $u_k$ není artikulace, proto sousední hrany $e$ a $h_2$ leží na společné
+        kružnici $C_2$. Kružnice $C_2$ neobsahuje $h_1$ a $C_1$ neobsahuje $h_2$
+        (jinak by $h_1, h_2$ ležely na společné kružnici).
+
+      Zbývá z $C_1$ a $C_2$ složit kružnici přes $h_1$ i $h_2$. Odebráním hrany $e$
+      z $C_2$ vznikne cesta $Q$ z $u_{k-1}$ do $u_k$ obsahující $h_2$; oba její konce leží
+      na $C_1$. Jděme po $Q$ od hrany $h_2$ oběma směry, dokud poprvé nenarazíme na uzel
+      kružnice $C_1$; dostaneme uzly $p \ne q$ a úsek $Q'$ cesty $Q$ mezi nimi, který
+      obsahuje $h_2$ a s $C_1$ má společné jen $p$, $q$. Uzly $p$, $q$ rozdělí $C_1$ na dva
+      oblouky, $h_1$ leží na jednom z nich. Tento oblouk spolu s $Q'$ tvoří kružnici
+      obsahující $h_1$ i $h_2$ – spor. (Ve skriptech je tento poslední krok shrnut slovy,
+      že $H(C_1) \cup H(C_2)$ obsahuje uzavřený tah, z něhož lze kružnici „zřejmým
+      způsobem“ vybrat.)
+    proof_steps:
+      - "(⇐) Artikulace $x$ dává dvě hrany $\\{x,y_1\\}$, $\\{x,y_2\\}$ bez společné kružnice, takže podmínka neplatí."
+      - "(⇒) Pro spor zvolíme dvojici hran $h_1, h_2$ bez společné kružnice s nejmenší vzdáleností."
+      - Hrany $h_1, h_2$ nemají společný uzel, jinak by to byla artikulace; vezmeme nejkratší cestu $u_1 \dots u_k$ mezi nimi.
+      - "Hrana $e = \\{u_{k-1}, u_k\\}$ je k $h_1$ blíž, proto $h_1$ a $e$ leží na společné kružnici $C_1$."
+      - Protože $u_k$ není artikulace, leží sousední hrany $e$ a $h_2$ na společné kružnici $C_2$.
+      - Z oblouku $C_1$ obsahujícího $h_1$ a z úseku $C_2 - e$ obsahujícího $h_2$ složíme kružnici přes $h_1$ i $h_2$ – spor.
+    related: [def-artikulace, cor-blok-kruznice, thm-bloky-hranove-disjunktni]
+    source: "skripta str. 24; přednáška 6, fólie 2"
+
+  - id: cor-blok-kruznice
+    kind: corollary
+    label: "Důsledek 4.1"
+    section: "4.1"
+    title: Dvě hrany bloku leží na společné kružnici
+    terms:
+      - hrany bloku na kružnici
+    statement: |
+      Pro každé dvě hrany bloku, který není mostem, existuje kružnice, na níž obě leží.
+    intuition: |
+      Blok je souvislý graf bez artikulace, takže na něj stačí použít
+      [Tvrzení 4.2](#prop-bez-artikulace-kruznice). Výjimkou jsou jen jednohranové bloky
+      (mosty), kde žádné „dvě hrany“ nejsou.
+    proof: |
+      Blok $B$, který není mostem, má alespoň dvě hrany (jednohranový blok je most,
+      viz [poznámku](#rem-blok)). Je to souvislý graf bez artikulace, takže podle
+      [Tvrzení 4.2](#prop-bez-artikulace-kruznice) aplikovaného na graf $B$ leží každé dvě
+      jeho hrany na společné kružnici grafu $B$. Ta je zároveň kružnicí v $G$.
+    proof_steps:
+      - Blok, který není mostem, má aspoň dvě hrany.
+      - Blok je souvislý graf bez artikulace.
+      - Podle Tvrzení 4.2 použitého na samotný blok leží každé dvě jeho hrany na společné kružnici.
+    related: [prop-bez-artikulace-kruznice, def-blok, rem-blok]
+    source: "skripta str. 24; přednáška 6, fólie 2"
+
+  - id: thm-bloky-hranove-disjunktni
+    kind: theorem
+    label: "Věta 4.2"
+    section: "4.1"
+    title: Bloky jsou hranově disjunktní
+    terms:
+      - bloky hranově disjunktní
+      - rozklad hran na bloky
+      - společná hrana bloků
+    statement: |
+      Buďte $G_1$, $G_2$ dva bloky grafu $G$. Pak buďto $G_1 = G_2$, nebo $G_1$ a $G_2$
+      nemají žádnou společnou hranu.
+    intuition: |
+      Množina hran grafu se tak rozpadá na bloky – každá hrana patří do právě jednoho bloku
+      (most tvoří blok sám, hrana na kružnici patří do bloku obsahujícího tuto kružnici).
+      Uzly se ale sdílet mohou: společným uzlem bloků je vždy artikulace.
+
+      Užitečná „pracovní“ podoba: **dvě hrany leží ve stejném bloku, právě když jsou
+      totožné, nebo leží na společné kružnici.**
+    proof: |
+      Nechť $h$ je společná hrana bloků $G_1$, $G_2$.
+
+      *Je-li $h$ most*, pak blok obsahující $h$ nemůže mít další hranu (jinak by podle
+      [Tvrzení 4.2](#prop-bez-artikulace-kruznice) $h$ ležela na kružnici), takže
+      $G_1 = G_2 = h$.
+
+      *Leží-li $h$ na nějaké kružnici*, označme $G_h$ podgraf tvořený hranou $h$ a všemi
+      hranami, které leží s $h$ na společné kružnici. Blok $G_1$ obsahuje $h$, není mostem,
+      a tedy podle [Důsledku 4.1](#cor-blok-kruznice) leží každá jeho hrana s $h$ na
+      kružnici: $G_1 \subset G_h$. Stejně $G_2 \subset G_h$.
+
+      Graf $G_h$ je souvislý (každá jeho hrana je s $h$ spojena kružnicí). Pro libovolné
+      dvě jeho hrany $f_1, f_2$ máme kružnici přes $f_1, h$ a kružnici přes $h, f_2$;
+      stejnou konstrukcí jako v důkazu [Tvrzení 4.2](#prop-bez-artikulace-kruznice) z nich
+      složíme kružnici přes $f_1$ a $f_2$. Celá tato kružnice leží v $G_h$ (každá její hrana
+      leží na kružnici s $f_1$, a tedy – opět složením – s $h$). Podle Tvrzení 4.2 tedy
+      $G_h$ nemá artikulaci.
+
+      $G_h$ je tedy souvislý podgraf bez artikulace obsahující $G_1$ i $G_2$; z maximality
+      bloků plyne $G_1 = G_h = G_2$.
+    proof_steps:
+      - Nechť $h$ je společná hrana bloků $G_1$ a $G_2$; je-li $h$ most, je jediným blokem, který ji obsahuje.
+      - Jinak definujeme $G_h$ jako podgraf hran ležících s $h$ na společné kružnici (včetně $h$).
+      - Podle Důsledku 4.1 leží každá hrana bloku $G_1$ (i $G_2$) s $h$ na kružnici, tedy $G_1, G_2 \subset G_h$.
+      - Složením kružnic přes $h$ se ukáže, že každé dvě hrany $G_h$ leží na společné kružnici, takže $G_h$ nemá artikulaci.
+      - Z maximality bloků plyne $G_1 = G_h = G_2$.
+    related: [def-blok, cor-blok-kruznice, prop-bez-artikulace-kruznice, rem-bloky-vs-komponenty, def-blokovy-graf]
+    source: "skripta str. 24; přednáška 6, fólie 2"
+
+  - id: rem-bloky-vs-komponenty
+    kind: remark
+    label: "Poznámka (str. 24)"
+    section: "4.1"
+    title: Bloky versus komponenty
+    terms:
+      - bloky a komponenty
+      - bloky nejsou uzlově disjunktní
+    statement: |
+      Rozklad grafu na bloky se podobá rozkladu na komponenty s tím rozdílem, že bloky
+      **nemusí být uzlově disjunktní**, musí však být **hranově disjunktní**.
+    intuition: |
+      Komponenty jsou třídy ekvivalence na uzlech („spojeny cestou“), bloky jsou třídy
+      ekvivalence na hranách („totožné nebo na společné kružnici“). Uzel, který patří do
+      více bloků, je právě artikulace.
+    related: [thm-bloky-hranove-disjunktni, def-blok]
+    source: "skripta str. 24"
+
+  - id: def-blokovy-graf
+    kind: definition
+    label: "Definice 4.4"
+    section: "4.1"
+    title: Blokový graf
+    terms:
+      - blokový graf
+      - B(G)
+      - block graph
+      - block-cutpoint tree
+      - strom bloků a artikulací
+    statement: |
+      Buď $G$ souvislý graf, $B_1, \dots, B_r$ všechny jeho bloky a $x_1, \dots, x_s$
+      všechny jeho artikulace. Graf $B(G)$ definovaný předpisem
+
+      $$
+      U(B(G)) = \{x_1, \dots, x_s, B_1, \dots, B_r\},
+      $$
+
+      $$
+      H(B(G)) = \bigl\{\{a, b\} \mid \exists\, i, j \text{ tak, že } a = x_i,\ b = B_j \text{ a } x_i \in U(B_j)\bigr\},
+      $$
+
+      se nazývá **blokový graf** grafu $G$.
+    intuition: |
+      Každý blok „smrskneme“ do jednoho uzlu a ponecháme artikulace; artikulaci spojíme
+      s každým blokem, do něhož patří. Vznikne bipartitní graf (bloky × artikulace), který
+      je podle [Věty 4.3](#thm-blokovy-graf-strom) vždy strom. Obrázek $B(G)$ tak shrnuje
+      „hrubou kostru“ grafu: kde jsou slabá místa a jak na sebe navazují 2-souvislé části.
+    examples:
+      - title: Graf se sedmi bloky
+        body: |
+          Graf $G$ má artikulace $x_1, x_2, x_3$ a bloky: $B_1$ – trojúhelník $x_1, t_1, t_2$;
+          $B_2$, $B_3$ – visuté hrany $x_1 p_2$, $x_1 p_3$; $B_4$ – most $x_1 x_2$;
+          $B_5$ – úplný graf $K_4$ na $x_2, q_1, q_2, q_3$; $B_6$ – trojúhelník $x_2, s, x_3$;
+          $B_7$ – čtyřúhelník $x_3, r_1, r_2, r_3$.
+
+          Blokový graf $B(G)$ má 10 uzlů a hrany $x_1B_1$, $x_1B_2$, $x_1B_3$, $x_1B_4$,
+          $x_2B_4$, $x_2B_5$, $x_2B_6$, $x_3B_6$, $x_3B_7$ – je to strom (10 uzlů, 9 hran,
+          souvislý). Listy $B(G)$ jsou vždy bloky (zde $B_1, B_2, B_3, B_5, B_7$).
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 0.5, y: 7 }
+            - { id: t2, x: 0.5, y: 3 }
+            - { id: x1, x: 2.5, y: 5 }
+            - { id: p3, x: 2.5, y: 8 }
+            - { id: p2, x: 2.5, y: 2 }
+            - { id: x2, x: 4.5, y: 5 }
+            - { id: q1, x: 3.5, y: 3.5 }
+            - { id: q2, x: 5.5, y: 3.5 }
+            - { id: q3, x: 4.5, y: 2 }
+            - { id: s, x: 5.8, y: 6.8 }
+            - { id: x3, x: 7, y: 5 }
+            - { id: r1, x: 8.5, y: 6.5 }
+            - { id: r2, x: 10, y: 5 }
+            - { id: r3, x: 8.5, y: 3.5 }
+          edges:
+            - { from: t1, to: t2 }
+            - { from: t1, to: x1 }
+            - { from: t2, to: x1 }
+            - { from: x1, to: p3 }
+            - { from: x1, to: p2 }
+            - { from: x1, to: x2 }
+            - { from: x2, to: q1 }
+            - { from: x2, to: q2 }
+            - { from: x2, to: q3 }
+            - { from: q1, to: q2 }
+            - { from: q1, to: q3 }
+            - { from: q2, to: q3 }
+            - { from: x2, to: s }
+            - { from: s, to: x3 }
+            - { from: x2, to: x3 }
+            - { from: x3, to: r1 }
+            - { from: r1, to: r2 }
+            - { from: r2, to: r3 }
+            - { from: r3, to: x3 }
+      - title: Blokový graf předchozího grafu
+        body: |
+          Uzly $B_j$ jsou bloky, uzly $x_i$ artikulace. Výsledkem je strom.
+        graph:
+          directed: false
+          nodes:
+            - { id: B1, x: 0, y: 5 }
+            - { id: x1, x: 2, y: 5 }
+            - { id: B2, x: 2, y: 8 }
+            - { id: B3, x: 2, y: 2 }
+            - { id: B4, x: 4, y: 5 }
+            - { id: x2, x: 6, y: 5 }
+            - { id: B5, x: 6, y: 2 }
+            - { id: B6, x: 7.5, y: 7 }
+            - { id: x3, x: 9, y: 5 }
+            - { id: B7, x: 10, y: 3 }
+          edges:
+            - { from: x1, to: B1 }
+            - { from: x1, to: B2 }
+            - { from: x1, to: B3 }
+            - { from: x1, to: B4 }
+            - { from: x2, to: B4 }
+            - { from: x2, to: B5 }
+            - { from: x2, to: B6 }
+            - { from: x3, to: B6 }
+            - { from: x3, to: B7 }
+    visualization: blocks
+    related: [def-blok, def-artikulace, thm-blokovy-graf-strom]
+    illustrations:
+      - title: Stavba blokového grafu
+        property: tree
+        graph:
+          directed: false
+          nodes:
+            - { id: B1, x: 0, y: 5 }
+            - { id: x1, x: 2, y: 5 }
+            - { id: B2, x: 2, y: 8 }
+            - { id: B3, x: 2, y: 2 }
+            - { id: B4, x: 4, y: 5 }
+            - { id: x2, x: 6, y: 5 }
+            - { id: B5, x: 6, y: 2 }
+            - { id: B6, x: 7.5, y: 7 }
+            - { id: x3, x: 9, y: 5 }
+            - { id: B7, x: 10, y: 3 }
+          edges: []
+        steps:
+          - caption: |
+              Uzly blokového grafu $B(G)$ pro graf z příkladu výše: sedm bloků $B_1, \dots, B_7$ a tři artikulace $x_1, x_2, x_3$. Hrany zatím nemáme.
+          - caption: |
+              Artikulaci spojíme s každým blokem, do něhož patří: $x_1$ leží v trojúhelníku $B_1$, ve visutých hranách $B_2$, $B_3$ a v mostu $B_4$.
+            add: [[x1, B1], [x1, B2], [x1, B3], [x1, B4]]
+          - caption: |
+              Artikulace $x_2$ leží v mostu $B_4$, v úplném grafu $B_5$ a v trojúhelníku $B_6$. Hrany vedou vždy jen mezi artikulací a blokem – $B(G)$ je bipartitní.
+            add: [[x2, B4], [x2, B5], [x2, B6]]
+          - caption: |
+              Nakonec $x_3$ s bloky $B_6$ a $B_7$. Vznikl souvislý graf s 10 uzly a 9 hranami bez kružnic – **strom**, jak tvrdí Věta 4.3. Listy jsou vždy bloky (koncové bloky).
+            add: [[x3, B6], [x3, B7]]
+    source: "skripta str. 25; přednáška 6, fólie 2"
+
+  - id: thm-blokovy-graf-strom
+    kind: theorem
+    label: "Věta 4.3"
+    section: "4.1"
+    title: Blokový graf je strom
+    terms:
+      - blokový graf je strom
+      - koncový blok
+      - list blokového grafu
+    statement: |
+      Pro každý souvislý graf $G$ je blokový graf $B(G)$ stromem.
+    intuition: |
+      Kdyby v $B(G)$ byl cyklus, bloky na tomto cyklu by byly „spojené dokola“ a jejich
+      sjednocení by bylo větší souvislý podgraf bez artikulace – to odporuje maximalitě
+      bloků. Důsledek: každý souvislý graf, který není sám blokem, má aspoň dva
+      **koncové bloky** (listy stromu $B(G)$), tj. bloky obsahující jedinou artikulaci.
+      Na této stromové struktuře je založeno i hledání bloků backtrackingem – algoritmus,
+      který vstoupí do koncového bloku, ho celý prozkoumá, než se vrátí.
+    proof: |
+      *Důkaz ve skriptech není, doplněno.*
+
+      Nejprve dvě pomocná pozorování (plynou z [Věty 4.2](#thm-bloky-hranove-disjunktni)):
+
+      * (a) **Hrany ležící na společné kružnici patří do stejného bloku.** Kružnice je
+        souvislý graf bez artikulace, leží tedy v nějakém bloku; protože jsou bloky hranově
+        disjunktní, je to blok každé její hrany.
+      * (b) **Uzel ležící ve dvou různých blocích je artikulace.** Má-li $x$ hranu $e$
+        v bloku $B$ a hranu $f$ v bloku $B' \ne B$, nemohou $e, f$ podle (a) ležet na
+        společné kružnici, takže $x$ je artikulace.
+
+      *Souvislost $B(G)$.* Vezměme dva bloky $B, B'$ a cestu v $G$ z uzlu bloku $B$ do uzlu
+      bloku $B'$. Hrany cesty postupně procházejí bloky; kde cesta přechází z jednoho bloku
+      do jiného, děje se to ve společném uzlu, který je podle (b) artikulací, a ta je
+      v $B(G)$ sousední s oběma bloky. Tak dostaneme sled z $B$ do $B'$ v $B(G)$. Každá
+      artikulace je v $B(G)$ sousední s nějakým blokem, takže $B(G)$ je souvislý.
+
+      *Acykličnost.* $B(G)$ je bipartitní (hrany vedou jen mezi artikulacemi a bloky).
+      Předpokládejme pro spor, že obsahuje kružnici, a zvolme nejkratší:
+      $x_1 B_1 x_2 B_2 \dots x_k B_k x_1$, $k \ge 2$. V každém bloku $B_i$ zvolme cestu
+      $P_i$ z $x_i$ do $x_{i+1}$ (indexy modulo $k$). Díky minimalitě kružnice leží $x_2$
+      z bloků $B_1, \dots, B_k$ jen v $B_1$ a $B_2$ (jinak by šlo kružnici zkrátit), takže
+      cesty $P_3, \dots, P_k$ uzlem $x_2$ neprocházejí. Nechť $e$ je poslední hrana cesty
+      $P_1$ (vede do $x_2$, leží v $B_1$) a $f$ první hrana cesty $P_2$ (vychází z $x_2$,
+      leží v $B_2$). Sled $P_2, P_3, \dots, P_k, P_1$ vede z $x_2$ zpět do $x_2$ a uvnitř
+      uzlem $x_2$ neprochází; vynecháme-li $x_2$, obsahuje cestu mezi druhými konci hran
+      $f$ a $e$ vyhýbající se $x_2$. Ta spolu s $e$ a $f$ tvoří kružnici obsahující $e$
+      i $f$. Podle (a) pak $B_1 = B_2$ – spor.
+
+      Souvislý graf bez kružnic je strom.
+    proof_steps:
+      - Pomocné tvrzení – hrany na společné kružnici leží ve stejném bloku (kružnice je bez artikulace a bloky jsou hranově disjunktní).
+      - Pomocné tvrzení – uzel ležící ve dvou blocích je artikulace.
+      - Souvislost – cesta v $G$ mezi dvěma bloky přechází mezi bloky jen přes artikulace, takže dává sled v $B(G)$.
+      - Pro spor vezmeme nejkratší kružnici $x_1 B_1 x_2 B_2 \dots x_k B_k x_1$ v $B(G)$ a v každém $B_i$ cestu z $x_i$ do $x_{i+1}$.
+      - Z těchto cest složíme kružnici v $G$, která obsahuje hranu z $B_1$ i hranu z $B_2$ u uzlu $x_2$.
+      - Podle prvního pomocného tvrzení je pak $B_1 = B_2$, což je spor; $B(G)$ je tedy strom.
+    related: [def-blokovy-graf, thm-bloky-hranove-disjunktni, def-blok]
+    illustrations:
+      - title: Proč v blokovém grafu nemůže být kružnice
+        for: proof
+        property: tree
+        graph:
+          directed: false
+          nodes:
+            - { id: B1, x: 0, y: 5 }
+            - { id: x1, x: 2, y: 5 }
+            - { id: B2, x: 2, y: 8 }
+            - { id: B3, x: 2, y: 2 }
+            - { id: B4, x: 4, y: 5 }
+            - { id: x2, x: 6, y: 5 }
+            - { id: B5, x: 6, y: 2 }
+            - { id: B6, x: 7.5, y: 7 }
+            - { id: x3, x: 9, y: 5 }
+            - { id: B7, x: 10, y: 3 }
+          edges:
+            - { from: x1, to: B1 }
+            - { from: x1, to: B2 }
+            - { from: x1, to: B3 }
+            - { from: x1, to: B4 }
+            - { from: x2, to: B4 }
+            - { from: x2, to: B5 }
+            - { from: x2, to: B6 }
+            - { from: x3, to: B6 }
+            - { from: x3, to: B7 }
+        steps:
+          - caption: |
+              Blokový graf z příkladu u definice je souvislý a bez kružnic – strom.
+          - caption: |
+              Co kdyby $B(G)$ kružnici měl – třeba kdyby $x_2$ ležel i v bloku $B_7$? Kružnice $x_2\,B_6\,x_3\,B_7\,x_2$ by znamenala, že z $x_2$ do $x_3$ vede cesta uvnitř $B_6$ i jiná cesta uvnitř $B_7$.
+            add: [[x2, B7]]
+          - caption: |
+              Obě cesty dohromady by v $G$ daly kružnici, na níž leží hrana z $B_6$ i hrana z $B_7$. Hrany na společné kružnici ale patří do **téhož** bloku, takže $B_6 = B_7$ – spor. Taková kružnice v $B(G)$ tedy nastat nemůže.
+            nodes: { B6: active, B7: active, x2: path, x3: path }
+            witness: true
+          - caption: |
+              Bez nemožné hrany je $B(G)$ zase souvislý graf bez kružnic, tedy strom. Souvislost plyne z toho, že cesta v $G$ přechází mezi bloky jen přes artikulace.
+            remove: [[x2, B7]]
+    source: "skripta str. 25 (bez důkazu); přednáška 6, fólie 2"
+
+  # ------------------------------------------------------------------ 4.2
+  - id: def-hranovy-rez
+    kind: definition
+    label: "Definice 4.5"
+    section: "4.2"
+    title: Hranový řez mezi dvěma uzly
+    terms:
+      - hranový řez
+      - řez mezi uzly
+      - edge cut
+      - separující množina hran
+      - minimální hranový řez
+    statement: |
+      Buď $G$ souvislý graf a $x, y \in U(G)$, $x \ne y$. Množina $B \subset H(G)$
+      taková, že
+
+      1. každá cesta z uzlu $x$ do uzlu $y$ obsahuje alespoň jednu hranu množiny $B$,
+      2. žádná vlastní podmnožina množiny $B$ nemá vlastnost 1,
+
+      se nazývá **hranový řez** grafu $G$ mezi uzly $x$ a $y$.
+    intuition: |
+      Hranový řez je „nejúspornější“ množina hran, jejímž přestřižením oddělíme $x$ od $y$.
+      Podmínka 2 je **minimalita vzhledem k inkluzi** – neznamená, že řez má nejmenší možný
+      počet hran (takový řez je minimum, z něhož počítáme $h_G(x, y)$), ale že z něj nelze
+      žádnou hranu vynechat. Most je přesně jednoprvkový hranový řez.
+    related: [rem-hranovy-rez, def-hranovy-stupen-mezi-uzly, def-most, def-uzlovy-rez]
+    illustrations:
+      - title: Hranové řezy v šestiúhelníku
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: x, x: 0, y: 5 }
+            - { id: p, x: 2.5, y: 9 }
+            - { id: q, x: 7.5, y: 9 }
+            - { id: "y", x: 10, y: 5 }
+            - { id: r, x: 7.5, y: 1 }
+            - { id: s, x: 2.5, y: 1 }
+          edges:
+            - { from: x, to: p }
+            - { from: p, to: q }
+            - { from: q, to: "y" }
+            - { from: "y", to: r }
+            - { from: r, to: s }
+            - { from: s, to: x }
+        steps:
+          - caption: |
+              Jediná hrana nestačí: z $x$ do $y$ vedou dvě cesty ($x\,p\,q\,y$ a $x\,s\,r\,y$) a po přestřižení $\{x, p\}$ zůstane ta druhá.
+            edge_set: [x-p]
+          - caption: |
+              Hrany $\{x, p\}$ a $\{y, r\}$ zasáhnou každou cestu z $x$ do $y$ a žádnou z nich nelze vynechat – je to **hranový řez** mezi $x$ a $y$.
+            edge_set: [x-p, y-r]
+          - caption: |
+              Řezů bývá víc: $x$ od $y$ odděluje i dvojice $\{p, q\}$, $\{r, s\}$, která se $x$ ani $y$ nedotýká. Menší řez neexistuje, proto $h_G(x, y) = 2$.
+            edge_set: [p-q, r-s]
+          - caption: |
+              Přidáme tětivu $\{p, s\}$. Dvojice $\{x, p\}$, $\{y, r\}$ už řezem není – cesta $x\,s\,p\,q\,y$ ji obejde.
+            add: [[p, s]]
+            edge_set: [x-p, y-r]
+          - caption: |
+              Řez teď tvoří např. obě hrany u $x$. Stále $h_G(x, y) = 2$ – a nikdy nemůže být víc než $\min\{d(x), d(y)\}$.
+            edge_set: [x-p, x-s]
+    source: "skripta str. 25; přednáška 6, fólie 3"
+
+  - id: rem-hranovy-rez
+    kind: remark
+    label: "Poznámka (str. 25–26)"
+    section: "4.2"
+    title: Vlastnosti hranového řezu
+    terms:
+      - odstranění řezu
+      - minimalita řezu
+    statement: |
+      1. Odstraněním hranového řezu $B$ mezi $x$ a $y$ se přeruší všechny cesty mezi $x$
+         a $y$: graf $G - B$ je nesouvislý a $x$, $y$ leží v různých komponentách.
+      2. Most je jednoprvkový hranový řez.
+      3. V definici řezu se požaduje minimalita: např. v šestiúhelníku $C_6$ tvoří řez mezi
+         dvěma protějšími uzly dvojice hran, z nichž jedna leží na každé z obou cest;
+         přidáme-li k ní třetí hranu, množina sice stále přerušuje všechny cesty, ale
+         řezem už není (není minimální).
+    intuition: |
+      Minimalita má praktický smysl: díky ní odebrání řezu rozdělí graf právě na
+      **dvě** komponenty (jedna obsahuje $x$, druhá $y$) a každá hrana řezu vede mezi nimi.
+    related: [def-hranovy-rez]
+    source: "skripta str. 25–26"
+
+  - id: def-hranovy-stupen-mezi-uzly
+    kind: definition
+    label: "Definice 4.6"
+    section: "4.2"
+    title: Hranový stupeň souvislosti mezi uzly, matice hranové souvislosti
+    terms:
+      - hranový stupeň souvislosti mezi uzly
+      - h_G(x,y)
+      - lokální hranová souvislost
+      - matice hranové souvislosti
+      - local edge connectivity
+    statement: |
+      Nejmenší počet prvků hranového řezu mezi uzly $x$ a $y$ se nazývá **hranový stupeň
+      souvislosti** grafu $G$ mezi uzly $x$ a $y$ a značí se $h_G(x, y)$.
+
+      Očíslujeme-li uzly čísly $1, \dots, n$ a položíme $h_{i,j} = h_G(i, j)$, popisuje
+      hranovou souvislost grafu **matice hranové souvislosti**
+      $H_G = [h_{i,j}]_{i,j=1}^{n}$.
+    intuition: |
+      $h_G(x, y)$ říká, kolik hran musí „selhat“, aby se $x$ a $y$ ocitly v různých
+      komponentách. Podle [Věty 4.6](#thm-ford-fulkerson-hranova-souvislost) je to zároveň
+      maximální počet hranově disjunktních cest mezi $x$ a $y$. Zjevně
+      $h_G(x, y) \le \min\{d(x), d(y)\}$ (stačí odříznout všechny hrany u $x$).
+    examples:
+      - title: Matice hranové souvislosti
+        body: |
+          Graf na uzlech $1, \dots, 5$ s hranami $12, 14, 24, 23, 34, 45$:
+
+          $$
+          H_G = \begin{bmatrix}
+          - & 2 & 2 & 2 & 1 \\
+          2 & - & 2 & 3 & 1 \\
+          2 & 2 & - & 2 & 1 \\
+          2 & 3 & 2 & - & 1 \\
+          1 & 1 & 1 & 1 & -
+          \end{bmatrix}
+          $$
+
+          Např. $h_G(2, 4) = 3$: uzly $2$ a $4$ spojují tři hranově disjunktní cesty
+          ($2\,4$; $2\,1\,4$; $2\,3\,4$) a $d(2) = 3$. Uzel $5$ je listem, proto
+          $h_G(5, \cdot) = 1$ (hrana $45$ je most).
+        graph:
+          directed: false
+          nodes:
+            - { id: 1, x: 0, y: 8 }
+            - { id: 4, x: 5, y: 8 }
+            - { id: 2, x: 0, y: 2 }
+            - { id: 3, x: 5, y: 2 }
+            - { id: 5, x: 7.5, y: 5 }
+          edges:
+            - { from: 1, to: 2 }
+            - { from: 1, to: 4 }
+            - { from: 2, to: 4 }
+            - { from: 2, to: 3 }
+            - { from: 3, to: 4 }
+            - { from: 4, to: 5 }
+    related: [def-hranovy-rez, def-stupen-souvislosti-grafu, thm-ford-fulkerson-hranova-souvislost, def-uzlovy-stupen-mezi-uzly]
+    source: "skripta str. 26; přednáška 6, fólie 3"
+
+  - id: def-uzlovy-rez
+    kind: definition
+    label: "Definice 4.7"
+    section: "4.2"
+    title: Uzlový řez mezi dvěma uzly
+    terms:
+      - uzlový řez
+      - vertex cut
+      - separátor
+      - separating set
+      - oddělující množina uzlů
+    statement: |
+      Buď $G$ souvislý graf a $x, y \in U(G)$ jeho uzly, $x \ne y$. Neprázdná množina
+      $A \subset U(G)$ taková, že
+
+      1. každá cesta z $x$ do $y$ obsahuje alespoň jeden uzel z množiny $A$,
+      2. žádná vlastní podmnožina množiny $A$ nemá vlastnost 1,
+
+      se nazývá **uzlový řez** grafu $G$ mezi uzly $x$ a $y$.
+    intuition: |
+      Uzlová obdoba hranového řezu: minimální množina uzlů (různých od $x$, $y$ – jinak by
+      stačilo vzít $\{x\}$), jejímž odebráním oddělíme $x$ od $y$. Pozor: jsou-li $x$ a $y$
+      **sousední**, žádný uzlový řez mezi nimi neexistuje – hrana $\{x, y\}$ je cesta, kterou
+      odebíráním jiných uzlů nepřerušíme. Proto Definice 4.8 tento případ ošetřuje zvlášť
+      a Mengerova věta mluví o nesousedních uzlech.
+
+      Slovo „neprázdná“ je ve fóliích; ve skriptech chybí.
+    related: [rem-uzlovy-rez, def-uzlovy-stupen-mezi-uzly, def-artikulace, def-hranovy-rez]
+    illustrations:
+      - title: Uzlové řezy mezi x a y
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: x, x: 0, y: 5 }
+            - { id: p, x: 3, y: 8.5 }
+            - { id: q, x: 3, y: 1.5 }
+            - { id: r, x: 7, y: 8.5 }
+            - { id: s, x: 7, y: 1.5 }
+            - { id: "y", x: 10, y: 5 }
+          edges:
+            - { from: x, to: p }
+            - { from: x, to: q }
+            - { from: p, to: r }
+            - { from: q, to: s }
+            - { from: p, to: s }
+            - { from: r, to: "y" }
+            - { from: s, to: "y" }
+        steps:
+          - caption: |
+              Každá cesta z $x$ do $y$ prochází uzlem $p$ nebo $q$ a žádný z nich sám nestačí – $\{p, q\}$ je **uzlový řez** mezi $x$ a $y$.
+            set: [p, q]
+          - caption: |
+              Řez nemusí ležet u $x$: odděluje i $\{r, s\}$. Jednoprvkový řez (artikulace) tu není, proto $u_G(x, y) = 2$.
+            set: [r, s]
+          - caption: |
+              Dvojice $\{q, r\}$ řezem není – cesta $x\,p\,s\,y$ se jí vyhne.
+            set: [q, r]
+          - caption: |
+              Přidáme hranu $\{x, y\}$. Teď žádný uzlový řez mezi $x$ a $y$ neexistuje: hranu mezi nimi odebráním **jiných** uzlů nepřerušíme. Proto se pro sousední uzly klade $u_G(x, y) = n - 1$.
+            add: [[x, "y"]]
+            set: [p, q]
+    source: "skripta str. 26; přednáška 6, fólie 3"
+
+  - id: rem-uzlovy-rez
+    kind: remark
+    label: "Poznámka (str. 26)"
+    section: "4.2"
+    title: Vlastnosti uzlového řezu
+    terms:
+      - artikulace je jednoprvkový uzlový řez
+    statement: |
+      1. Odstraněním uzlového řezu dostaneme opět nesouvislý graf.
+      2. Artikulace je jednoprvkový uzlový řez.
+    intuition: |
+      Bod 2 je přesně [doplněné tvrzení](#prop-artikulace-rozpojuje): uzel je artikulací,
+      právě když jeho odebrání rozpojí graf, tj. když $\{x\}$ odděluje nějakou dvojici uzlů.
+    related: [def-uzlovy-rez, def-artikulace, prop-artikulace-rozpojuje]
+    source: "skripta str. 26"
+
+  - id: def-uzlovy-stupen-mezi-uzly
+    kind: definition
+    label: "Definice 4.8"
+    section: "4.2"
+    title: Uzlový stupeň souvislosti mezi uzly, matice uzlové souvislosti
+    terms:
+      - uzlový stupeň souvislosti mezi uzly
+      - u_G(x,y)
+      - lokální uzlová souvislost
+      - matice uzlové souvislosti
+      - local vertex connectivity
+    statement: |
+      Nejmenší počet prvků uzlového řezu oddělujícího uzly $x$ a $y$ se nazývá **uzlový
+      stupeň souvislosti** grafu $G$ mezi uzly $x$ a $y$ a značí se $u_G(x, y)$.
+      Neexistuje-li uzlový řez mezi $x$ a $y$, tj. jsou-li uzly $x$ a $y$ sousední,
+      klademe $u_G(x, y) = |U(G)| - 1$.
+
+      Z hodnot $u_G(x, y)$ sestavíme analogicky **matici uzlové souvislosti** $U_G$.
+    intuition: |
+      Konvence $|U(G)| - 1$ pro sousední uzly je volena tak, aby vyšlo $u(K_n) = n - 1$
+      a aby sousední dvojice „nekazily“ minimum v definici $u(G)$: oddělující množina uzlů
+      různých od $x, y$ má nejvýše $n - 2$ prvků, takže sousední dvojice nikdy nejsou
+      „nejslabším místem“, pokud graf není úplný.
+    examples:
+      - title: Matice uzlové souvislosti
+        body: |
+          Pro graf z příkladu u [matice hranové souvislosti](#def-hranovy-stupen-mezi-uzly)
+          (hrany $12, 14, 24, 23, 34, 45$, $n = 5$):
+
+          $$
+          U_G = \begin{bmatrix}
+          - & 4 & 2 & 4 & 1 \\
+          4 & - & 4 & 4 & 1 \\
+          2 & 4 & - & 4 & 1 \\
+          4 & 4 & 4 & - & 4 \\
+          1 & 1 & 1 & 4 & -
+          \end{bmatrix}
+          $$
+
+          Sousední dvojice mají hodnotu $n - 1 = 4$; $u_G(1, 3) = 2$ (řez $\{2, 4\}$),
+          $u_G(x, 5) = 1$ pro $x \ne 4$ (řez $\{4\}$, uzel $4$ je artikulace).
+    related: [def-uzlovy-rez, def-stupen-souvislosti-grafu, thm-menger, def-hranovy-stupen-mezi-uzly]
+    source: "skripta str. 26; přednáška 6, fólie 3"
+
+  - id: def-stupen-souvislosti-grafu
+    kind: definition
+    label: "Definice 4.9"
+    section: "4.2"
+    title: Uzlový a hranový stupeň souvislosti grafu, k-souvislost
+    terms:
+      - k-souvislost
+      - k-souvislý graf
+      - uzlová souvislost
+      - hranová souvislost
+      - uzlově k-souvislý
+      - hranově k-souvislý
+      - u(G)
+      - h(G)
+      - kappa(G)
+      - lambda(G)
+      - vertex connectivity
+      - edge connectivity
+      - k-connected graph
+      - 2-souvislý graf
+    statement: |
+      Nejmenší z čísel $u_G(x, y)$ (přes všechny dvojice různých uzlů) nazveme **uzlový
+      stupeň souvislosti** grafu $G$ a značíme jej $u(G)$. Nejmenší z čísel $h_G(x, y)$
+      nazveme **hranový stupeň souvislosti** grafu $G$ a značíme jej $h(G)$.
+
+      Řekneme, že graf $G$ je **uzlově (hranově) $k$-souvislý**, jestliže
+      $u(G) \ge k$ ($h(G) \ge k$).
+    intuition: |
+      $u(G)$ je nejmenší počet uzlů, jejichž odebráním graf rozpojíme (u úplného grafu
+      $n - 1$), $h(G)$ nejmenší počet hran, jejichž odebráním graf rozpojíme. V literatuře
+      se značí $\kappa(G)$ a $\lambda(G)$.
+
+      **Příklady:** strom s aspoň 3 uzly: $u = h = 1$; kružnice $C_n$: $u = h = 2$;
+      $K_n$: $u = h = n - 1$; krychle $Q_3$: $u = h = 3$. Graf je 1-souvislý, právě když
+      je souvislý; je 2-souvislý, právě když je souvislý, má aspoň 3 uzly a nemá
+      artikulaci.
+
+      Pozor na rozlišení: „$G$ je $k$-souvislý“ znamená $u(G) \ge k$, ne $u(G) = k$.
+      Každý 3-souvislý graf je tedy i 2-souvislý.
+    related: [def-uzlovy-stupen-mezi-uzly, def-hranovy-stupen-mezi-uzly, rem-k-souvislost, thm-u-h-delta, cor-whitney-globalni]
+    source: "skripta str. 26; přednáška 6, fólie 4"
+
+  - id: rem-k-souvislost
+    kind: remark
+    label: "Poznámka (str. 27)"
+    section: "4.2"
+    title: Konvence ke k-souvislosti
+    terms:
+      - k-souvislost znamená uzlovou
+      - nesouvislý graf souvislost 0
+    statement: |
+      1. Často se pro jednoduchost používá pojem **$k$-souvislost** ve významu uzlové
+         $k$-souvislosti. Hranová $k$-souvislost se vždy uvádí explicitně.
+      2. Pro nesouvislé grafy klademe $u(G) = h(G) = 0$ (příslušné řezy jsou pak prázdné
+         množiny).
+    intuition: |
+      Bod 2 je přirozený: nesouvislý graf je „rozpojen“ už bez odebrání čehokoli.
+    related: [def-stupen-souvislosti-grafu]
+    source: "skripta str. 27"
+
+  - id: thm-u-h-delta
+    kind: theorem
+    label: "Věta 4.4"
+    section: "4.2"
+    title: "Nerovnost u(G) ≤ h(G) ≤ δ(G)"
+    terms:
+      - Whitneyho nerovnost
+      - u(G) ≤ h(G) ≤ δ(G)
+      - minimální stupeň
+      - delta(G)
+      - kappa lambda delta
+    statement: |
+      Pro každý graf $G$ platí
+
+      $$
+      u(G) \le h(G) \le \delta(G),
+      $$
+
+      kde $\delta(G) = \min\{d(x) \mid x \in U(G)\}$ je minimální stupeň grafu $G$.
+    intuition: |
+      *Druhá nerovnost:* odříznutím všech hran u uzlu nejmenšího stupně ho izolujeme.
+      *První nerovnost:* z každé hrany minimálního hranového řezu stačí „sebrat“ jeden
+      konec – tak dostaneme uzlovou množinu stejné velikosti, která graf rozpojí (s malou
+      opatrností u posledního kroku). Uzly jsou tedy „silnější zbraň“ než hrany: odebrání
+      uzlu odstraní najednou všechny jeho hrany.
+
+      Nerovnosti mohou být ostré: dva grafy $K_5$ spojené třemi hranami, jejichž konce
+      v jedné z kopií jsou jen dva uzly, mají $u = 2$, $h = 3$, $\delta = 4$. Krychle $Q_3$
+      má $u = h = \delta = 3$.
+    proof: |
+      **Druhá nerovnost.** Nechť $x$ je uzel stupně $\delta(G)$ (a $G$ má aspoň 2 uzly).
+      Množina všech hran incidentních s $x$ odděluje $x$ od ostatních uzlů a obsahuje
+      hranový řez; proto $h(G) \le \delta(G)$. (Pro nesouvislý $G$ je $h(G) = 0$.)
+
+      **První nerovnost.** Je-li $h(G) = 0$, je $G$ nesouvislý a $u(G) = 0$. Je-li
+      $h(G) = 1$, je $u(G) \le 1$: buď je $G = K_2$ ($u = 1$), nebo má $G$ most s koncem
+      stupně aspoň 2, a ten je artikulací.
+
+      Nechť tedy $h(G) = k \ge 2$ a $B$ je hranový řez o $k$ hranách. Odebereme z $G$
+      libovolných $k - 1$ hran řezu $B$; vznikne graf, v němž zbylá hrana $\{u, v\}$ řezu
+      je mostem. Pro každou odebranou hranu vybereme jeden její konec různý od $u$ i $v$;
+      vznikne množina uzlů $A$, $|A| \le k - 1$.
+
+      * Je-li $G - A$ nesouvislý, je $u(G) \le |A| \le k - 1$.
+      * Je-li $G - A$ souvislý, je $\{u, v\}$ jeho mostem (všechny ostatní hrany řezu
+        zmizely spolu s uzly z $A$). Graf $G$ má alespoň $k + 2$ uzlů: kdyby jich měl jen
+        $k + 1$, plyne z $\delta(G) \ge h(G) = k$, že $G = K_{k+1}$, a pak $u(G) = k$ a
+        tvrzení platí. Graf $G - A$ má tedy aspoň 3 uzly, takže jeden z uzlů $u$, $v$ má
+        v $G - A$ ještě jiného souseda a jeho odebráním se $G - A$ rozpadne. Dostáváme
+        $k$-prvkovou (nebo menší) množinu uzlů rozpojující $G$, tedy $u(G) \le k$.
+
+      V každém případě $u(G) \le k = h(G)$.
+    proof_steps:
+      - Hrany u uzlu minimálního stupně oddělí tento uzel od zbytku grafu, takže $h(G) \le \delta(G)$.
+      - Případy $h(G) = 0$ (nesouvislý graf) a $h(G) = 1$ (most, jehož konec je artikulací, nebo $K_2$) jsou snadné.
+      - Pro $h(G) = k \ge 2$ vezmeme minimální řez $B$ a odebereme z něj $k-1$ hran; zbylá hrana $\{u,v\}$ je most.
+      - Z každé odebrané hrany vezmeme konec různý od $u, v$ a dostaneme množinu $A$ s nejvýše $k-1$ uzly.
+      - Je-li $G - A$ nesouvislý, je $u(G) \le k - 1$.
+      - Jinak má $G - A$ most $\{u,v\}$ a aspoň 3 uzly (případ $G = K_{k+1}$ zvlášť), takže odebrání $u$ nebo $v$ graf rozpojí a $u(G) \le k$.
+    examples:
+      - title: Ostré nerovnosti – dvě kopie K5
+        body: |
+          Dvě kopie $K_5$ (uzly $a_1, \dots, a_5$ a $b_1, \dots, b_5$) spojíme hranami
+          $a_3 b_2$, $a_5 b_4$, $a_5 b_2$. Každý uzel má stupeň aspoň 4, tedy
+          $\delta = 4$. Tři spojovací hrany tvoří hranový řez a menší neexistuje
+          (každé dva uzly uvnitř kopie $K_5$ spojují 4 hranově disjunktní cesty), takže
+          $h = 3$. Odebráním dvou uzlů $a_3, a_5$ se graf rozpadne, artikulace neexistuje,
+          tedy $u = 2$.
+        graph:
+          directed: false
+          nodes:
+            - { id: a1, x: 1.5, y: 9 }
+            - { id: a2, x: 0, y: 6 }
+            - { id: a3, x: 3, y: 6 }
+            - { id: a4, x: 0.5, y: 3 }
+            - { id: a5, x: 2.5, y: 3 }
+            - { id: b1, x: 8.5, y: 9 }
+            - { id: b2, x: 7, y: 6 }
+            - { id: b3, x: 10, y: 6 }
+            - { id: b4, x: 7.5, y: 3 }
+            - { id: b5, x: 9.5, y: 3 }
+          edges:
+            - { from: a1, to: a2 }
+            - { from: a1, to: a3 }
+            - { from: a1, to: a4 }
+            - { from: a1, to: a5 }
+            - { from: a2, to: a3 }
+            - { from: a2, to: a4 }
+            - { from: a2, to: a5 }
+            - { from: a3, to: a4 }
+            - { from: a3, to: a5 }
+            - { from: a4, to: a5 }
+            - { from: b1, to: b2 }
+            - { from: b1, to: b3 }
+            - { from: b1, to: b4 }
+            - { from: b1, to: b5 }
+            - { from: b2, to: b3 }
+            - { from: b2, to: b4 }
+            - { from: b2, to: b5 }
+            - { from: b3, to: b4 }
+            - { from: b3, to: b5 }
+            - { from: b4, to: b5 }
+            - { from: a3, to: b2 }
+            - { from: a5, to: b4 }
+            - { from: a5, to: b2 }
+      - title: Rovnosti – krychle Q3
+        body: |
+          Graf krychle (vnější a vnitřní čtyřúhelník propojené čtyřmi „příčkami“) je
+          3-regulární, $\delta = 3$, a nelze ho rozpojit odebráním dvou uzlů ani dvou hran:
+          $u = h = \delta = 3$.
+        graph:
+          directed: false
+          nodes:
+            - { id: 1, x: 0, y: 9 }
+            - { id: 2, x: 10, y: 9 }
+            - { id: 3, x: 10, y: 1 }
+            - { id: 4, x: 0, y: 1 }
+            - { id: 5, x: 3, y: 6.5 }
+            - { id: 6, x: 7, y: 6.5 }
+            - { id: 7, x: 7, y: 3.5 }
+            - { id: 8, x: 3, y: 3.5 }
+          edges:
+            - { from: 1, to: 2 }
+            - { from: 2, to: 3 }
+            - { from: 3, to: 4 }
+            - { from: 4, to: 1 }
+            - { from: 5, to: 6 }
+            - { from: 6, to: 7 }
+            - { from: 7, to: 8 }
+            - { from: 8, to: 5 }
+            - { from: 1, to: 5 }
+            - { from: 2, to: 6 }
+            - { from: 3, to: 7 }
+            - { from: 4, to: 8 }
+    related: [def-stupen-souvislosti-grafu, thm-h-odhad-hran, def-hranovy-rez, def-uzlovy-rez]
+    illustrations:
+      - title: "h(G) = 2 < δ(G) = 3"
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: a2, x: 1, y: 8.5 }
+            - { id: a3, x: 1, y: 1.5 }
+            - { id: a4, x: 2, y: 5 }
+            - { id: a1, x: 4, y: 5 }
+            - { id: b1, x: 6.5, y: 8.5 }
+            - { id: b2, x: 6.5, y: 1.5 }
+            - { id: b4, x: 8, y: 5 }
+            - { id: b3, x: 10, y: 5 }
+          edges:
+            - { from: a1, to: a2 }
+            - { from: a1, to: a3 }
+            - { from: a1, to: a4 }
+            - { from: a2, to: a3 }
+            - { from: a2, to: a4 }
+            - { from: a3, to: a4 }
+            - { from: b1, to: b2 }
+            - { from: b1, to: b3 }
+            - { from: b1, to: b4 }
+            - { from: b2, to: b3 }
+            - { from: b2, to: b4 }
+            - { from: b3, to: b4 }
+            - { from: a1, to: b1 }
+            - { from: a1, to: b2 }
+        steps:
+          - caption: |
+              Dvě kopie $K_4$ spojené hranami $a_1 b_1$, $a_1 b_2$. Žádná hrana není most (každá leží na kružnici), takže $h(G) \ge 2$.
+            edge_set: [a1-b1]
+          - caption: |
+              Dvě spojovací hrany graf rozpojí: $h(G) = 2$.
+            edge_set: [a1-b1, a1-b2]
+          - caption: |
+              Uzel nejmenšího stupně $b_3$ ($\delta(G) = 3$) izolujeme odebráním jeho tří hran – proto vždy $h(G) \le \delta(G)$. Tady je nerovnost ostrá: $2 < 3$, protože levnější je řez „uprostřed“ grafu.
+            edge_set: [b3-b1, b3-b2, b3-b4]
+      - title: "u(G) = 1 < h(G) = 2"
+        for: proof
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a2, x: 1, y: 8.5 }
+            - { id: a3, x: 1, y: 1.5 }
+            - { id: a4, x: 2, y: 5 }
+            - { id: a1, x: 4, y: 5 }
+            - { id: b1, x: 6.5, y: 8.5 }
+            - { id: b2, x: 6.5, y: 1.5 }
+            - { id: b4, x: 8, y: 5 }
+            - { id: b3, x: 10, y: 5 }
+          edges:
+            - { from: a1, to: a2 }
+            - { from: a1, to: a3 }
+            - { from: a1, to: a4 }
+            - { from: a2, to: a3 }
+            - { from: a2, to: a4 }
+            - { from: a3, to: a4 }
+            - { from: b1, to: b2 }
+            - { from: b1, to: b3 }
+            - { from: b1, to: b4 }
+            - { from: b2, to: b3 }
+            - { from: b2, to: b4 }
+            - { from: b3, to: b4 }
+            - { from: a1, to: b1 }
+            - { from: a1, to: b2 }
+        steps:
+          - caption: |
+              Uzly jsou „silnější zbraň“ než hrany: odebráním $a_1$ zmizí obě spojovací hrany najednou. Tedy $u(G) = 1 < h(G) = 2 < \delta(G) = 3$ – všechny tři hodnoty jsou různé.
+            set: [a1]
+          - caption: |
+              Myšlenka důkazu $u \le h$: z každé hrany minimálního hranového řezu $\{a_1 b_1, a_1 b_2\}$ vezmeme jeden konec. Množina $\{b_1, b_2\}$ má nejvýš tolik uzlů, kolik má řez hran, a graf rozpojí.
+            set: [b1, b2]
+          - caption: |
+              Libovolná dvojice uzlů to ale není: po odebrání $a_2, a_3$ drží $a_4$ se zbytkem přes $a_1$. Důkaz proto konce vybírá pečlivě – z hran řezu, a tak, aby nezbyl jen jediný uzel.
+            set: [a2, a3]
+    source: "skripta str. 27; přednáška 6, fólie 4"
+
+  - id: thm-h-odhad-hran
+    kind: theorem
+    label: "Věta 4.5"
+    section: "4.2"
+    title: Horní odhad hranové souvislosti počtem hran
+    terms:
+      - odhad h(G)
+      - h(G) ≤ 2m/n
+      - průměrný stupeň
+    statement: |
+      V každém grafu $G$ s alespoň 2 uzly platí
+
+      $$
+      h(G) \le \frac{2|H(G)|}{|U(G)|}.
+      $$
+    intuition: |
+      Pravá strana je **průměrný stupeň** grafu. Minimální stupeň nemůže být větší než
+      průměrný, a hranová souvislost nemůže být větší než minimální stupeň. Důsledek:
+      chceme-li $k$-souvislou síť na $n$ uzlech, potřebujeme aspoň $\lceil kn/2 \rceil$
+      hran (např. 3-souvislý graf na 10 uzlech má aspoň 15 hran).
+    proof: |
+      Podle známé rovnosti (princip sudosti) je $\sum_{x \in U(G)} d_G(x) = 2|H(G)|$.
+      Protože $d(x) \ge \delta(G)$ pro každý uzel $x$, je
+      $\sum_x d_G(x) \ge |U(G)| \cdot \delta(G)$, a tedy
+      $\delta(G) \le \dfrac{2|H(G)|}{|U(G)|}$. Podle [Věty 4.4](#thm-u-h-delta) je
+      $h(G) \le \delta(G)$, což dává tvrzení.
+    proof_steps:
+      - Součet stupňů všech uzlů je roven $2|H(G)|$.
+      - Každý stupeň je alespoň $\delta(G)$, takže součet stupňů je alespoň $|U(G)|\,\delta(G)$.
+      - Odtud $\delta(G) \le 2|H(G)|/|U(G)|$.
+      - Podle Věty 4.4 je $h(G) \le \delta(G)$, a tím je odhad dokázán.
+    related: [thm-u-h-delta, def-stupen-souvislosti-grafu]
+    source: "skripta str. 27; přednáška 6, fólie 4"
+
+  # ------------------------------------------------------------------ 4.3
+  - id: thm-ford-fulkerson-hranova-souvislost
+    kind: theorem
+    label: "Věta 4.6"
+    section: "4.3"
+    title: "Ford–Fulkersonova věta pro hranovou souvislost"
+    terms:
+      - Ford-Fulkersonova věta pro hranovou souvislost
+      - hranově disjunktní cesty
+      - edge-disjoint paths
+      - Mengerova věta hranová verze
+      - hranová souvislost a toky
+    statement: |
+      Graf $G$ je hranově $k$-souvislý mezi uzly $a$ a $b$, $a \ne b$ (tj.
+      $h_G(a, b) \ge k$), právě když v něm existuje $k$ hranově disjunktních cest
+      vedoucích z $a$ do $b$.
+    intuition: |
+      Dvě „duální“ veličiny se rovnají: **nejmenší počet hran, které oddělí $a$ od $b$** =
+      **největší počet cest z $a$ do $b$, které nesdílejí hranu**. Snadný směr: má-li
+      $k$ cest společné jen uzly, musí řez přestřihnout každou zvlášť, tedy má aspoň $k$
+      hran. Těžký směr (existence cest) dává věta o maximálním toku a minimálním řezu.
+
+      Důkaz je zároveň **algoritmus**: $h_G(a, b)$ je velikost maximálního toku v síti
+      vzniklé symetrickou orientací $G$ s jednotkovými propustnostmi
+      ([algoritmus](#alg-hranova-souvislost)).
+    proof: |
+      Převedeme úlohu na maximální tok. Sestrojme síť $\vec{G}$: každou hranu $\{x, y\}$
+      grafu $G$ nahradíme dvojicí opačně orientovaných hran $(x, y)$ a $(y, x)$ (symetrická
+      orientace), všechny propustnosti položíme rovny 1; $a$ je zdroj, $b$ stok.
+
+      *Minimální řez sítě má velikost $h_G(a, b)$.* Řez v síti je určen množinou uzlů $S$
+      s $a \in S$, $b \notin S$; jeho propustnost je počet hran $G$ mezi $S$ a
+      $U \setminus S$. Ty přerušují všechny cesty z $a$ do $b$, obsahují tedy hranový řez,
+      takže propustnost je aspoň $h_G(a, b)$. Naopak pro hranový řez $B$ o $h_G(a, b)$
+      hranách vezmeme za $S$ množinu uzlů dosažitelných z $a$ v $G - B$; z minimality $B$
+      vedou mezi $S$ a doplňkem právě hrany $B$, takže řez má propustnost $h_G(a, b)$.
+
+      1. Nechť $h_G(a, b) \ge k$. Podle [Ford–Fulkersonovy věty](#thm-ford-fulkerson)
+         (max. tok = min. řez) má maximální tok velikost aspoň $k$, a protože propustnosti
+         jsou celočíselné, existuje celočíselný maximální tok – na každé hraně 0 nebo 1.
+         (Nese-li tok obě hrany $(x, y)$ i $(y, x)$, můžeme ho na obou vynulovat, velikost
+         se nezmění.) Hrany s tokem 1 se rozkládají na aspoň $k$ orientovaných cest z $a$
+         do $b$, které nesdílejí hranu; v $G$ jsou to hranově disjunktní cesty.
+      2. Nechť naopak v $G$ existuje $k$ hranově disjunktních cest z $a$ do $b$. Pošleme po
+         každé tok 1 (v příslušné orientaci); dostaneme přípustný tok velikosti $k$. Proto
+         má každý řez v síti propustnost aspoň $k$, a podle předchozího odstavce
+         $h_G(a, b) \ge k$. (Přímo: každý hranový řez musí obsahovat aspoň jednu hranu
+         z každé z $k$ hranově disjunktních cest.)
+    proof_steps:
+      - Sestrojíme síť $\vec{G}$ symetrickou orientací grafu $G$, všechny propustnosti 1, zdroj $a$, stok $b$.
+      - Ukážeme, že minimální řez v $\vec{G}$ má propustnost právě $h_G(a,b)$ (řezy v síti odpovídají množinám hran oddělujícím $a$ od $b$).
+      - Je-li $h_G(a,b) \ge k$, má podle Ford–Fulkersonovy věty maximální tok velikost aspoň $k$ a lze ho zvolit celočíselný (0/1 na hranách).
+      - Hrany s tokem 1 se rozloží na aspoň $k$ cest z $a$ do $b$ bez společných hran.
+      - Obráceně $k$ hranově disjunktních cest dává tok velikosti $k$, takže každý řez má aspoň $k$ hran a $h_G(a,b) \ge k$.
+    related: [thm-ford-fulkerson, alg-ford-fulkerson, def-hranovy-stupen-mezi-uzly, thm-menger, alg-hranova-souvislost, cor-whitney-globalni]
+    illustrations:
+      - title: Disjunktní cesty a minimální řez
+        property: disconnecting-edges
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 5 }
+            - { id: p, x: 2.5, y: 8.5 }
+            - { id: q, x: 2.5, y: 1.5 }
+            - { id: m, x: 5, y: 5 }
+            - { id: r, x: 7.5, y: 8.5 }
+            - { id: s, x: 7.5, y: 1.5 }
+            - { id: b, x: 10, y: 5 }
+          edges:
+            - { from: a, to: p }
+            - { from: a, to: q }
+            - { from: p, to: m }
+            - { from: q, to: m }
+            - { from: m, to: r }
+            - { from: m, to: s }
+            - { from: r, to: b }
+            - { from: s, to: b }
+        steps:
+          - caption: |
+              Dvě cesty z $a$ do $b$ bez společné hrany: $a\,p\,m\,r\,b$ a $a\,q\,m\,s\,b$ (uzel $m$ sdílet smějí). V síti s jednotkovými propustnostmi je to tok velikosti 2.
+            edges: { a-p: path, p-m: path, m-r: path, r-b: path, a-q: tree, q-m: tree, m-s: tree, s-b: tree }
+            edge_labels: { a-p: "1/1", p-m: "1/1", m-r: "1/1", r-b: "1/1", a-q: "1/1", q-m: "1/1", m-s: "1/1", s-b: "1/1" }
+          - caption: |
+              Snadný směr věty: každý hranový řez musí přestřihnout **každou** z disjunktních cest zvlášť. Jedna hrana proto nestačí – druhá cesta zůstane.
+            edge_set: [a-p]
+          - caption: |
+              Dvě hrany $\{p, m\}$, $\{q, m\}$ už $a$ od $b$ oddělí. Minimální řez má 2 hrany = maximální počet hranově disjunktních cest, tedy $h_G(a, b) = 2$.
+            edge_set: [p-m, q-m]
+          - caption: |
+              Uzlově disjunktní ty cesty nejsou – obě procházejí $m$, který je artikulací. Uzlová souvislost mezi $a$ a $b$ je jen 1; tu popisuje Mengerova věta.
+            nodes: { m: active }
+            edges: { a-p: path, p-m: path, m-r: path, r-b: path, a-q: tree, q-m: tree, m-s: tree, s-b: tree }
+    source: "skripta str. 27–28; přednáška 6, fólie 5"
+
+  - id: thm-menger
+    kind: theorem
+    label: "Věta 4.7"
+    section: "4.3"
+    title: Mengerova věta
+    terms:
+      - Mengerova věta
+      - Menger
+      - uzlově disjunktní cesty
+      - vnitřně disjunktní cesty
+      - internally disjoint paths
+      - vertex-disjoint paths
+      - Menger's theorem
+    statement: |
+      Graf $G$ je uzlově $k$-souvislý mezi **nesousedními** uzly $a$ a $b$ (tj.
+      $u_G(a, b) \ge k$), právě když v něm existuje $k$ uzlově disjunktních cest
+      vedoucích z $a$ do $b$.
+
+      (Uzlově disjunktní cesty z $a$ do $b$ mají společné jen koncové uzly $a$, $b$.)
+    intuition: |
+      Uzlová obdoba Věty 4.6: nejmenší počet uzlů oddělujících $a$ od $b$ = největší počet
+      cest z $a$ do $b$, které se „nepotkávají“ ve vnitřních uzlech. Předpoklad
+      nesousednosti je nutný – sousední uzly odebráním jiných uzlů oddělit nejde a hrana
+      $\{a, b\}$ by v síti dala nekonečný tok.
+
+      **Trik „půlení uzlů“:** uzlová omezení převedeme na hranová tak, že každý uzel $x$
+      rozdělíme na vstupní polouzel $(x, 1)$ a výstupní polouzel $(x, 2)$ spojené hranou
+      propustnosti 1 – uzlem pak může projít nejvýše jedna jednotka toku, tj. nejvýše
+      jedna cesta.
+    proof: |
+      *Náčrt úplného důkazu (skripta uvádějí jen konstrukci a odkaz na analogii
+      s Větou 4.6).*
+
+      Zavedeme síť $\vec{G}$:
+
+      $$
+      U(\vec{G}) = \{(x, i) \mid x \in U(G),\ i = 1, 2\},
+      $$
+
+      $$
+      H(\vec{G}) = \{((x, 1), (x, 2)) \mid x \in U(G)\} \cup \{((x, 2), (y, 1)) \mid \{x, y\} \in H(G)\}.
+      $$
+
+      Hrany typu $((x, 1), (x, 2))$ mají propustnost 1, hrany typu $((x, 2), (y, 1))$
+      (každá hrana $G$ dává dvě, pro obě orientace) propustnost $\infty$. Zdrojem je
+      $(a, 2)$, stokem $(b, 1)$.
+
+      *Konečné řezy odpovídají uzlovým množinám oddělujícím $a$ od $b$.* Protože $a, b$
+      nejsou sousední, neexistuje hrana $((a, 2), (b, 1))$ a konečné řezy existují. Řez
+      konečné propustnosti (množina $S \ni (a, 2)$, $(b, 1) \notin S$) nesmí opouštět žádná
+      hrana s propustností $\infty$, takže ho opouštějí jen hrany $((x, 1), (x, 2))$ pro
+      uzly $x$ z jisté množiny $A \subset U(G) \setminus \{a, b\}$. Každá cesta
+      $a, v_1, \dots, v_m, b$ v $G$ odpovídá cestě
+      $(a,2), (v_1,1), (v_1,2), \dots, (v_m,2), (b,1)$ v síti, která musí $S$ opustit, tedy
+      některé $v_i \in A$: množina $A$ odděluje $a$ od $b$ a propustnost řezu je
+      $|A| \ge u_G(a, b)$. Naopak pro uzlový řez $A$ s $u_G(a, b)$ prvky položíme
+      $S = \{(x, 1), (x, 2) \mid x \text{ dosažitelný z } a \text{ v } G - A\} \cup \{(x, 1) \mid x \in A\}$;
+      ze $S$ vycházejí jen hrany $((x, 1), (x, 2))$, $x \in A$, takže řez má propustnost
+      $u_G(a, b)$. Minimální řez má tedy propustnost $u_G(a, b)$.
+
+      *Toky odpovídají vnitřně disjunktním cestám.* Celočíselný tok velikosti $k$ se
+      rozloží na $k$ cest ze $(a, 2)$ do $(b, 1)$; každá prochází uzlem $x \ne a, b$ přes
+      hranu $((x, 1), (x, 2))$ s propustností 1, takže žádné dvě cesty nesdílejí vnitřní
+      uzel – v $G$ jsou to uzlově disjunktní cesty. Obráceně $k$ uzlově disjunktních cest
+      v $G$ dává tok velikosti $k$.
+
+      Podle věty o maximálním toku a minimálním řezu
+      ([Ford–Fulkerson](#thm-ford-fulkerson)) tedy: $u_G(a, b) \ge k$ $\iff$ max. tok
+      $\ge k$ $\iff$ existuje $k$ uzlově disjunktních cest.
+    proof_steps:
+      - Každý uzel $x$ rozpůlíme na $(x,1)$ a $(x,2)$ s hranou propustnosti 1; hraně $\{x,y\}$ odpovídají hrany $((x,2),(y,1))$ a $((y,2),(x,1))$ s propustností $\infty$.
+      - Zdrojem je $(a,2)$, stokem $(b,1)$; díky nesousednosti $a, b$ existují řezy konečné propustnosti.
+      - Konečný řez mohou opouštět jen hrany $((x,1),(x,2))$ a příslušné uzly $x$ tvoří množinu oddělující $a$ od $b$.
+      - Naopak z minimálního uzlového řezu sestrojíme řez sítě stejné propustnosti, takže min. řez = $u_G(a,b)$.
+      - Celočíselný maximální tok se rozloží na cesty, které díky propustnosti 1 na „půlicích“ hranách nesdílejí vnitřní uzly.
+      - Podle věty max. tok = min. řez dostaneme $u_G(a,b) \ge k$, právě když existuje $k$ uzlově disjunktních cest.
+    examples:
+      - title: Konstrukce sítě půlením uzlů
+        body: |
+          Graf $G$ s uzly $a, x, y, b$ a hranami $ax$, $ay$, $xy$, $xb$, $yb$.
+          Uzly $a$ a $b$ jsou nesousední a $u_G(a, b) = 2$ (řez $\{x, y\}$); odpovídající
+          dvě uzlově disjunktní cesty jsou $a\,x\,b$ a $a\,y\,b$.
+
+          V síti (níže) mají hrany $(v, 1) \to (v, 2)$ propustnost 1 a ostatní hrany
+          propustnost $\infty$ (atribut `cap`). Maximální tok ze $(a, 2)$ do $(b, 1)$
+          má velikost 2 a minimální řez tvoří hrany $(x,1)\to(x,2)$ a $(y,1)\to(y,2)$.
+        graph:
+          directed: true
+          nodes:
+            - { id: a1, x: 0, y: 5 }
+            - { id: a2, x: 2, y: 5 }
+            - { id: x1, x: 4, y: 9 }
+            - { id: x2, x: 6, y: 9 }
+            - { id: y1, x: 4, y: 1 }
+            - { id: y2, x: 6, y: 1 }
+            - { id: b1, x: 8, y: 5 }
+            - { id: b2, x: 10, y: 5 }
+          edges:
+            - { from: a1, to: a2, w: 1 }
+            - { from: x1, to: x2, w: 1 }
+            - { from: y1, to: y2, w: 1 }
+            - { from: b1, to: b2, w: 1 }
+            - { from: a2, to: x1, cap: "∞" }
+            - { from: x2, to: a1, cap: "∞" }
+            - { from: a2, to: y1, cap: "∞" }
+            - { from: y2, to: a1, cap: "∞" }
+            - { from: x2, to: y1, cap: "∞" }
+            - { from: y2, to: x1, cap: "∞" }
+            - { from: x2, to: b1, cap: "∞" }
+            - { from: b2, to: x1, cap: "∞" }
+            - { from: y2, to: b1, cap: "∞" }
+            - { from: b2, to: y1, cap: "∞" }
+    related: [thm-ford-fulkerson-hranova-souvislost, thm-ford-fulkerson, def-uzlovy-stupen-mezi-uzly, rem-puleni-uzlu, alg-uzlova-souvislost, cor-whitney-globalni]
+    illustrations:
+      - title: Vnitřně disjunktní cesty = nejmenší uzlový řez
+        property: separating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 5 }
+            - { id: p1, x: 3, y: 9 }
+            - { id: p2, x: 3, y: 5 }
+            - { id: p3, x: 3, y: 1 }
+            - { id: r1, x: 7, y: 7.5 }
+            - { id: r2, x: 7, y: 2.5 }
+            - { id: b, x: 10, y: 5 }
+          edges:
+            - { from: a, to: p1 }
+            - { from: a, to: p2 }
+            - { from: a, to: p3 }
+            - { from: p1, to: r1 }
+            - { from: p2, to: r1 }
+            - { from: p2, to: r2 }
+            - { from: p3, to: r2 }
+            - { from: r1, to: b }
+            - { from: r2, to: b }
+        steps:
+          - caption: |
+              Uzly $a$, $b$ nesousedí. Cesty $a\,p_1\,r_1\,b$ a $a\,p_3\,r_2\,b$ mají společné jen konce, takže každý uzlový řez musí z každé odebrat jiný uzel: $u_G(a, b) \ge 2$.
+            edges: { a-p1: path, p1-r1: path, r1-b: path, a-p3: tree, p3-r2: tree, r2-b: tree }
+          - caption: |
+              Řez $\{r_1, r_2\}$ má dva uzly, tedy $u_G(a, b) = 2$ – přesně tolik, kolik je disjunktních cest. Třetí cesta neexistuje, každá musí projít $r_1$ nebo $r_2$.
+            set: [r1, r2]
+          - caption: |
+              Přidáme hranu $\{p_1, b\}$. Řez $\{r_1, r_2\}$ přestane stačit – cesta $a\,p_1\,b$ ho obejde.
+            add: [[p1, b]]
+            set: [r1, r2]
+          - caption: |
+              Teď vedou tři vnitřně disjunktní cesty ($a\,p_1\,b$, $a\,p_2\,r_1\,b$, $a\,p_3\,r_2\,b$) a nejmenší řez $\{p_1, r_1, r_2\}$ má tři uzly: $u_G(a, b) = 3$. Maximum cest se vždy rovná minimu řezu.
+            set: [p1, r1, r2]
+            edges: { a-p1: path, p1-b: path, a-p2: tree, p2-r1: tree, r1-b: tree, a-p3: active, p3-r2: active, r2-b: active }
+            witness: true
+    source: "skripta str. 28; přednáška 6, fólie 5"
+
+  - id: rem-puleni-uzlu
+    kind: remark
+    label: "Poznámka (str. 28)"
+    section: "4.3"
+    title: Důkazy vět 4.6 a 4.7 jako algoritmy; půlení uzlů
+    terms:
+      - půlení uzlů
+      - štěpení uzlů
+      - vstupní polouzel
+      - výstupní polouzel
+      - node splitting
+      - vertex splitting
+    statement: |
+      Myšlenky důkazů vět 4.6 a 4.7 mají samostatnou důležitost: dávají **algoritmy** pro
+      určení hranové, resp. uzlové souvislosti grafu (pomocí maximálního toku).
+      Konstrukce z důkazu Věty 4.7 („půlení uzlů“) je standardní metoda, která převádí
+      uzlovou souvislost na hranovou, a umožňuje tak použít aparát toků v sítích i na
+      uzlovou souvislost. Vzniklým „půlkám uzlů“ se říká **vstupní polouzel** a
+      **výstupní polouzel**.
+    intuition: |
+      Stejný trik se hodí všude, kde má omezenou kapacitu **uzel** (křižovatka, server):
+      uzel nahradíme hranou s danou propustností. Algoritmy a jejich složitost jsou
+      v kapitole o prohledávání ([hranová](#alg-hranova-souvislost) a
+      [uzlová souvislost](#alg-uzlova-souvislost)).
+    related: [thm-menger, thm-ford-fulkerson-hranova-souvislost, alg-hranova-souvislost, alg-uzlova-souvislost]
+    source: "skripta str. 28"
+
+  - id: cor-whitney-globalni
+    kind: corollary
+    section: "4.3"
+    title: "Globální charakterizace k-souvislých grafů (Whitney)"
+    terms:
+      - Whitneyho věta
+      - Whitney
+      - charakterizace k-souvislých grafů
+      - globální Mengerova věta
+      - k disjunktních cest mezi každými dvěma uzly
+    statement: |
+      Nechť $G$ je graf na $n$ uzlech a $k \ge 1$.
+
+      1. $h(G) \ge k$, právě když každé dva různé uzly grafu $G$ spojuje $k$ hranově
+         disjunktních cest.
+      2. Je-li $n \ge k + 1$, pak $u(G) \ge k$, právě když každé dva nesousední uzly grafu
+         $G$ spojuje $k$ uzlově (vnitřně) disjunktních cest.
+    intuition: |
+      Toto je obvyklá „učebnicová“ podoba charakterizace $k$-souvislých grafů
+      (H. Whitney, 1932): $k$-souvislost není jen o tom, že graf nejde snadno rozpojit,
+      ale také o tom, že mezi libovolnými dvěma uzly vede $k$ nezávislých tras – redundance
+      sítě. Ve skriptech je obsažena implicitně ve větách 4.6, 4.7 a Definici 4.9.
+
+      Předpoklad $n \ge k + 1$ v bodě 2 je potřeba kvůli konvenci
+      $u_G(x, y) = n - 1$ pro sousední uzly (úplný graf $K_n$ má $u = n - 1$, ne víc).
+    proof: |
+      *Ve skriptech není jako samostatné tvrzení, doplněno.*
+
+      1. $h(G) = \min_{x \ne y} h_G(x, y) \ge k$ platí, právě když $h_G(x, y) \ge k$ pro
+         všechny dvojice, což je podle [Věty 4.6](#thm-ford-fulkerson-hranova-souvislost)
+         totéž jako existence $k$ hranově disjunktních cest mezi každými dvěma uzly.
+      2. $u(G) = \min_{x \ne y} u_G(x, y)$. Pro sousední dvojice je $u_G(x, y) = n - 1 \ge k$
+         díky předpokladu $n \ge k + 1$. Podmínka $u(G) \ge k$ je tedy ekvivalentní
+         s $u_G(x, y) \ge k$ pro všechny **nesousední** dvojice, což je podle
+         [Mengerovy věty](#thm-menger) totéž jako existence $k$ uzlově disjunktních cest
+         mezi nimi.
+    proof_steps:
+      - Hranová souvislost $h(G)$ je minimum lokálních hodnot $h_G(x,y)$ přes všechny dvojice uzlů.
+      - Podle Věty 4.6 je $h_G(x,y) \ge k$ ekvivalentní s existencí $k$ hranově disjunktních cest mezi $x$ a $y$.
+      - U uzlové souvislosti mají sousední dvojice $u_G(x,y) = n-1 \ge k$, takže rozhodují jen nesousední dvojice.
+      - Pro nesousední dvojice použijeme Mengerovu větu.
+    related: [thm-menger, thm-ford-fulkerson-hranova-souvislost, def-stupen-souvislosti-grafu]
+    source: "doplněno (důsledek vět 4.6, 4.7 a Definice 4.9)"
+    supplemented: true
+
+quiz:
+  - id: q-miry-01
+    question: |
+      Které tvrzení o mostu $\{x, y\}$ souvislého grafu $G$ platí **vždy**?
+    options:
+      - Oba uzly $x$ a $y$ jsou artikulacemi grafu $G$.
+      - 'Graf $G - \{x, y\}$ je nesouvislý.'
+      - Uzly $x$ a $y$ mají lichý stupeň.
+      - Graf $G$ nemá žádnou kružnici.
+    correct: 1
+    explanation: |
+      Most neleží na žádné kružnici, takže jeho odebráním se graf rozpojí (Tvrzení 4.1).
+      Konce mostu nemusí být artikulacemi – v grafu $K_2$ i u listu stromu je koncem mostu
+      uzel stupně 1. Liché stupně má graf s mostem někde (Věta 4.1), ne nutně v koncích
+      mostu. A graf s mostem jinde kružnice mít může.
+    related: [prop-most-rozpojuje, rem-artikulace-a-mosty, thm-most-liche-stupne]
+
+  - id: q-miry-02
+    question: |
+      Souvislý graf $G$ má všechny uzly sudého stupně. Co lze říci o jeho mostech?
+    options:
+      - Má právě jeden most.
+      - Nemá žádný most.
+      - Má sudý počet mostů.
+      - Nelze nic říci.
+    correct: 1
+    explanation: |
+      Podle Věty 4.1 má souvislý graf s mostem aspoň dva uzly lichého stupně. Má-li všechny
+      stupně sudé, most mít nemůže. (Důkaz: po odebrání mostu by každá ze dvou komponent
+      měla jediný lichý uzel, což odporuje principu sudosti.)
+    related: [thm-most-liche-stupne]
+
+  - id: q-miry-03
+    question: |
+      Kolik bloků má strom s $n \ge 2$ uzly?
+    options:
+      - '$1$'
+      - '$n - 1$'
+      - '$n$'
+      - Tolik, kolik má listů.
+    correct: 1
+    explanation: |
+      Každá hrana stromu je most a každý most je samostatným blokem. Strom má $n - 1$ hran,
+      tedy $n - 1$ bloků. Artikulacemi jsou nekoncové uzly.
+    related: [def-blok, rem-blok]
+
+  - id: q-miry-04
+    question: |
+      Které tvrzení o dvou různých blocích $B_1 \ne B_2$ téhož grafu platí?
+    options:
+      - Nemají žádný společný uzel.
+      - Nemají žádnou společnou hranu, ale mohou mít společný uzel – artikulaci.
+      - Mají právě jednu společnou hranu.
+      - Jeden je vždy podgrafem druhého.
+    correct: 1
+    explanation: |
+      Bloky jsou hranově disjunktní (Věta 4.2), ale mohou sdílet uzel; společný uzel dvou
+      bloků je vždy artikulací. Tím se liší od komponent, které jsou uzlově disjunktní.
+    related: [thm-bloky-hranove-disjunktni, rem-bloky-vs-komponenty]
+
+  - id: q-miry-05
+    question: |
+      Souvislý graf má 4 bloky a 3 artikulace. Kolik hran má jeho blokový graf $B(G)$?
+    options:
+      - '$3$'
+      - '$4$'
+      - '$6$'
+      - '$7$'
+    correct: 2
+    explanation: |
+      $B(G)$ má $4 + 3 = 7$ uzlů a podle Věty 4.3 je to strom, má tedy $7 - 1 = 6$ hran.
+    related: [def-blokovy-graf, thm-blokovy-graf-strom]
+
+  - id: q-miry-06
+    question: |
+      Která trojice hodnot $(u(G), h(G), \delta(G))$ **nemůže** nastat pro žádný graf?
+    options:
+      - '$(2, 3, 4)$'
+      - '$(3, 3, 3)$'
+      - '$(3, 2, 4)$'
+      - '$(1, 1, 5)$'
+    correct: 2
+    explanation: |
+      Podle Věty 4.4 vždy $u(G) \le h(G) \le \delta(G)$, takže $u = 3 > h = 2$ je
+      nemožné. Trojice $(2,3,4)$ nastává pro dvě kopie $K_5$ spojené třemi hranami,
+      $(3,3,3)$ pro krychli a $(1,1,5)$ např. pro dvě kopie $K_6$ spojené mostem.
+    related: [thm-u-h-delta]
+
+  - id: q-miry-07
+    question: |
+      Graf má 10 uzlů a 14 hran. Jaká je největší možná hodnota $h(G)$?
+    options:
+      - '$1$'
+      - '$2$'
+      - '$3$'
+      - '$4$'
+    correct: 1
+    explanation: |
+      Podle Věty 4.5 je $h(G) \le 2|H|/|U| = 28/10 = 2{,}8$, a protože $h(G)$ je celé
+      číslo, je $h(G) \le 2$. Hodnota 2 je dosažitelná (např. kružnice $C_{10}$
+      se čtyřmi tětivami).
+    related: [thm-h-odhad-hran]
+
+  - id: q-miry-08
+    question: |
+      Jakou hodnotu má podle definice $u_G(x, y)$, jsou-li $x$ a $y$ **sousední** uzly
+      grafu na $n$ uzlech?
+    options:
+      - '$0$'
+      - '$1$'
+      - '$n - 2$'
+      - '$n - 1$'
+    correct: 3
+    explanation: |
+      Sousední uzly nelze oddělit odebráním jiných uzlů (hrana mezi nimi zůstane), uzlový
+      řez neexistuje a klade se $u_G(x, y) = |U(G)| - 1$. Díky tomu vyjde $u(K_n) = n - 1$.
+    related: [def-uzlovy-stupen-mezi-uzly]
+
+  - id: q-miry-09
+    question: |
+      Proč je v Mengerově větě předpoklad, že uzly $a$, $b$ jsou **nesousední**?
+    options:
+      - Protože pro sousední uzly neexistuje žádná cesta z $a$ do $b$.
+      - Protože sousední uzly nelze oddělit odebráním jiných uzlů – v síti by hrana $\{a,b\}$ dala nekonečný tok.
+      - Protože pro sousední uzly vždy existuje jen jedna cesta.
+      - Předpoklad je zbytečný, věta platí pro libovolné dva uzly.
+    correct: 1
+    explanation: |
+      Je-li $\{a, b\}$ hrana, žádný uzlový řez mezi $a$ a $b$ neexistuje. V síti
+      s půlenými uzly by vedla hrana $((a,2),(b,1))$ s nekonečnou propustností, takže by
+      neexistoval konečný řez a tvrzení by nedávalo smysl.
+    related: [thm-menger, def-uzlovy-rez]
+
+  - id: q-miry-10
+    question: |
+      V konstrukci sítě z důkazu Mengerovy věty (půlení uzlů) mají propustnost 1:
+    options:
+      - 'hrany $((x,2),(y,1))$ odpovídající hranám grafu'
+      - 'hrany $((x,1),(x,2))$ spojující polouzly téhož uzlu'
+      - všechny hrany sítě
+      - jen hrany vycházející ze zdroje
+    correct: 1
+    explanation: |
+      Jednotková propustnost na hraně mezi vstupním a výstupním polouzlem zajistí, že
+      každým uzlem projde nejvýše jedna cesta. Hrany odpovídající hranám grafu mají
+      propustnost $\infty$, aby je minimální řez nikdy neobsahoval – řez se tak skládá jen
+      z „uzlů“.
+    related: [thm-menger, rem-puleni-uzlu]
+
+  - id: q-miry-11
+    question: |
+      Jak se podle důkazu Věty 4.6 určí $h_G(a, b)$?
+    options:
+      - Jako počet uzlů na nejkratší cestě z $a$ do $b$.
+      - Jako maximální tok ze zdroje $a$ do stoku $b$ v symetrické orientaci $G$ s jednotkovými propustnostmi.
+      - Jako $\min\{d(a), d(b)\}$.
+      - Jako maximální tok v síti s půlenými uzly.
+    correct: 1
+    explanation: |
+      Každou hranu nahradíme dvojicí opačných orientovaných hran s propustností 1;
+      minimální řez sítě odpovídá minimálnímu hranovému řezu, takže velikost maximálního
+      toku je $h_G(a, b)$. Hodnota $\min\{d(a), d(b)\}$ je jen horní odhad. Síť s půlenými
+      uzly slouží k určení uzlové souvislosti.
+    related: [thm-ford-fulkerson-hranova-souvislost, alg-hranova-souvislost]
+
+  - id: q-miry-12
+    question: |
+      Graf vznikne ze dvou kopií $K_5$, které mají společný právě jeden uzel. Jaké jsou
+      hodnoty $u(G)$, $h(G)$, $\delta(G)$?
+    options:
+      - '$u = 1$, $h = 1$, $\delta = 4$'
+      - '$u = 1$, $h = 4$, $\delta = 4$'
+      - '$u = 4$, $h = 4$, $\delta = 4$'
+      - '$u = 2$, $h = 4$, $\delta = 4$'
+    correct: 1
+    explanation: |
+      Společný uzel je artikulace, takže $u = 1$. Most v grafu není – každá hrana leží
+      v nějakém $K_5$ – a k oddělení uzlu jedné kopie od uzlu druhé je potřeba přestřihnout
+      4 hrany (všechny hrany u uzlu jedné kopie nebo u společného uzlu „na jedné straně“),
+      tedy $h = 4 = \delta$. Hezký příklad, že $u$ může být mnohem menší než $h$.
+    related: [thm-u-h-delta, def-artikulace]
+
+  - id: q-miry-13
+    question: |
+      V šestiúhelníku $C_6$ zvolíme dva protější uzly $x$, $y$. Která množina hran **je**
+      hranovým řezem mezi $x$ a $y$?
+    options:
+      - Jedna libovolná hrana.
+      - Dvě hrany ležící na téže z obou cest mezi $x$ a $y$.
+      - Dvě hrany, z nichž každá leží na jiné z obou cest mezi $x$ a $y$.
+      - Tři hrany, z nichž dvě leží na jedné cestě a jedna na druhé.
+    correct: 2
+    explanation: |
+      Mezi $x$ a $y$ vedou v $C_6$ právě dvě cesty; řez musí zasáhnout obě. Dvě hrany na
+      různých cestách to splňují a žádnou nelze vynechat. Tři hrany cesty také přeruší,
+      ale nejsou minimální (podmínka 2 definice), takže řezem nejsou.
+    related: [def-hranovy-rez, rem-hranovy-rez]
+
+  - id: q-miry-14
+    question: |
+      Jakou časovou složitost má určení hranového stupně souvislosti $h(G)$ celého grafu
+      postupem „maximální tok pro všechny dvojice uzlů“ (Dinicův algoritmus, $O(n^3)$ na
+      jeden tok)?
+    options:
+      - '$O(n + m)$'
+      - '$O(n^3)$'
+      - '$O(n^5)$'
+      - Exponenciální.
+    correct: 2
+    explanation: |
+      Dvojic uzlů je $O(n^2)$ a pro každou počítáme tok v čase $O(n^3)$, celkem $O(n^5)$.
+      Vylepšení (Even, Hopcroft, Tarjan) dává $O(m^2\sqrt{n}) \subseteq O(n^{4{,}5})$.
+      V čase $O(n + m)$ jde jen zjistit 1-, 2- a 3-souvislost (backtracking).
+    related: [alg-hranova-souvislost, thm-ford-fulkerson-hranova-souvislost]

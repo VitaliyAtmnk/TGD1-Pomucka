@@ -1,0 +1,1846 @@
+id: toky
+number: 3
+title: Toky v sítích
+source: "TGD1 skripta kap. 2 (str. 5–11); přednášky 3 (od definice sítě) a 4"
+exam_questions: [6, 7]
+summary: |
+  Síť je orientovaný graf s propustnostmi hran a intenzitami uzlů; tok je hranové ohodnocení,
+  které respektuje propustnosti a v každém uzlu „zákon zachování“. Kapitola charakterizuje,
+  kdy tok v síti existuje (věta 2.1), a pro síť s jedním zdrojem a jedním stokem dokazuje
+  Fordovu–Fulkersonovu větu „maximální tok = minimální řez“. Prakticky nejdůležitější jsou
+  algoritmy: Fordův–Fulkersonův (rezervní polocesty) a jeho polynomiální varianta
+  Edmonds–Karp (nejkratší polocesty hledané prohledáváním do šířky).
+sections:
+  - number: "2.1"
+    title: Síť, existence toku v síti
+  - number: "2.2"
+    title: Síť s jedním zdrojem a jedním stokem
+  - number: "2.3"
+    title: Maximální tok
+  - number: "2.4"
+    title: Ford–Fulkersonův algoritmus
+  - number: "2.5"
+    title: Edmonds–Karpův algoritmus
+  - number: "2.6"
+    title: Dokončení důkazu věty 2.1
+items:
+  # ------------------------------------------------------------------ 2.1
+  - id: def-sit
+    kind: definition
+    label: "Definice 2.1"
+    section: "2.1"
+    title: Síť
+    terms: [síť, network, dopravní síť, ohodnocení hran, ohodnocení uzlů, flow network]
+    statement: |
+      **Síť** je orientovaný graf $\vec{G}$ s ohodnocením hran $r : H(\vec{G}) \to (0, \infty)$
+      a ohodnocením uzlů $a : U(\vec{G}) \to \mathbb{R}$.
+
+      Značení: uzly očíslujeme $1, \dots, n$ a píšeme krátce $a_i = a(i)$ pro
+      $i \in U(\vec{G})$ a $r_{ij} = r((i,j))$ pro $(i,j) \in H(\vec{G})$.
+    intuition: |
+      Síť je tedy orientovaný graf, jehož hrany mají **kladná** reálná čísla (kolik lze
+      maximálně přepravit) a uzly **libovolná** reálná čísla včetně záporných (kolik se v uzlu
+      vyrábí, resp. spotřebovává). Představ si potrubí: hrany jsou trubky s danou kapacitou,
+      uzly jsou křižovatky, vrty (kladná intenzita) nebo odběratelé (záporná intenzita).
+    related: [def-tok, def-intenzita-propustnost]
+    source: "skripta str. 5; přednáška 3, fólie 9"
+
+  - id: def-tok
+    kind: definition
+    label: "Definice 2.2"
+    section: "2.1"
+    title: Tok v síti
+    terms: [tok, flow, zákon zachování, Kirchhoffův zákon, podmínka propustnosti, přípustný tok]
+    statement: |
+      Buď $\vec{G}$ síť s ohodnocením uzlů $a_i$ a ohodnocením hran $r_{ij}$.
+      **Tok** v síti $\vec{G}$ je nezáporné hranové ohodnocení
+      $x : H(\vec{G}) \to \langle 0, \infty)$ splňující:
+
+      1. pro každý uzel $i \in U(\vec{G})$ platí (zákon zachování)
+      $$
+      \sum_{j;\,(i,j) \in H(\vec{G})} x_{ij} \;-\; \sum_{j;\,(j,i) \in H(\vec{G})} x_{ji} \;=\; a_i ,
+      $$
+      2. pro každou hranu $(i,j) \in H(\vec{G})$ platí $0 \le x_{ij} \le r_{ij}$.
+    intuition: |
+      Podmínka 1: co z uzlu **vyteče** mínus co do něj **přiteče** se rovná tomu, co v uzlu
+      přebývá ($a_i > 0$), resp. chybí ($a_i < 0$). V neutrálním uzlu se nic neztrácí ani
+      nevzniká. Podmínka 2: po hraně nelze poslat víc, než je její propustnost, a tok nesmí
+      téct „proti směru“ hrany (záporné hodnoty nejsou povoleny).
+
+      **Pozor:** tok je vázán na pevné intenzity uzlů. V obecné síti tok vůbec nemusí
+      existovat – viz [příklady](#def-intenzita-propustnost) a [větu 2.1](#thm-existence-toku).
+    examples:
+      - title: Železniční přeprava (motivace)
+        body: |
+          Města $1, \dots, n$ jsou spojena železnicí; $(i,j) \in H(\vec{G})$, právě když vede
+          trať přímo z $i$ do $j$ (obousměrná trať dává dvojici hran $(i,j)$, $(j,i)$).
+          Město $i$ vyrobí $b_i$ a spotřebuje $c_i$ jednotek zboží za jednotku času;
+          položíme $a_i = b_i - c_i$. Trať $(i,j)$ unese nejvýše $r_{ij}$ jednotek
+          (obecně $r_{ij} \ne r_{ji}$). Je-li $x_{ij}$ skutečně převážené množství z $i$ do $j$,
+          musí platit $0 \le x_{ij} \le r_{ij}$ (podmínka 2) a rozdíl vyvezeného a dovezeného
+          zboží v městě $i$ musí být roven přebytku $a_i$ (podmínka 1).
+    related: [def-sit, def-intenzita-propustnost, thm-existence-toku]
+    illustrations:
+      - title: Zákon zachování uzel po uzlu
+        graph:
+          directed: true
+          nodes:
+            - { id: p, x: 1, y: 2 }
+            - { id: q, x: 1, y: 8 }
+            - { id: m, x: 5, y: 6 }
+            - { id: t, x: 9.5, y: 3 }
+          edges:
+            - { from: p, to: m, w: 3 }
+            - { from: p, to: t, w: 2 }
+            - { from: q, to: m, w: 2 }
+            - { from: m, to: t, w: 4 }
+        steps:
+          - caption: |
+              Síť: u uzlů jsou intenzity, u hran propustnosti. Uzly $p$, $q$ jsou zdroje ($a_p = 3$, $a_q = 1$),
+              $m$ je neutrální a $t$ je stok ($a_t = -4$). Součet intenzit je $0$ – co se vyrobí, to se spotřebuje.
+            nodes: { p: source, q: source, t: sink }
+            labels: { p: "a=3", q: "a=1", m: "a=0", t: "a=−4" }
+          - caption: |
+              Tok (u hran $x_{ij}/r_{ij}$). Pod uzly je bilance „odtok − přítok“: v každém uzlu vyjde přesně
+              jeho intenzita a na žádné hraně tok nepřekročí propustnost – je to **tok**.
+            edge_labels: { p-m: "2/3", p-t: "1/2", q-m: "1/2", m-t: "3/4" }
+            labels: { p: "3−0 = 3 ✓", q: "1−0 = 1 ✓", m: "3−3 = 0 ✓", t: "0−4 = −4 ✓" }
+          - caption: |
+              Neutrální uzel $m$ jen přeposílá: přiteče do něj $2 + 1 = 3$ jednotky a stejně tolik odteče
+              po hraně $(m,t)$. Nic se v něm neztrácí ani nevzniká.
+            nodes: { m: active }
+            edges: { p-m: active, q-m: active, m-t: active }
+            edge_labels: { p-m: "2/3", p-t: "1/2", q-m: "1/2", m-t: "3/4" }
+            labels: { m: "přítok 3 = odtok 3" }
+          - caption: |
+              Přesuneme jednotku z hrany $(p,t)$ na $(p,m)$. Uzel $p$ je pořád v pořádku, ale do $m$ teď
+              přiteče $4$ a odteče jen $3$, a do $t$ přiteče jen $3$. Zákon zachování je porušen – **není** to tok.
+            nodes: { m: rejected, t: rejected }
+            edge_labels: { p-m: "3/3", p-t: "0/2", q-m: "1/2", m-t: "3/4" }
+            labels: { p: "3−0 = 3 ✓", q: "1−0 = 1 ✓", m: "3−4 = −1 ✗", t: "0−3 = −3 ✗" }
+          - caption: |
+              Opravíme to zvýšením toku na $(m,t)$ na $4$ (propustnost to dovolí). Zase máme tok – jiný než
+              v kroku 2. Tok v síti tedy **nemusí být jednoznačný**.
+            edge_labels: { p-m: "3/3", p-t: "0/2", q-m: "1/2", m-t: "4/4" }
+            labels: { p: "3−0 = 3 ✓", q: "1−0 = 1 ✓", m: "4−4 = 0 ✓", t: "0−4 = −4 ✓" }
+    source: "skripta str. 5; přednáška 3, fólie 9"
+
+  - id: def-intenzita-propustnost
+    kind: definition
+    label: "Definice 2.3"
+    section: "2.1"
+    title: Intenzita, propustnost, zdroj, stok
+    terms: [intenzita uzlu, propustnost hrany, kapacita hrany, capacity, zdroj, stok, neutrální uzel, source, sink]
+    statement: |
+      Je-li $i \in U(\vec{G})$, číslo $a_i$ se nazývá **intenzita** uzlu $i$;
+      pro $(i,j) \in H(\vec{G})$ se číslo $r_{ij}$ nazývá **propustnost** hrany $(i,j)$.
+
+      Uzel $i$ se nazývá
+      * **zdroj**, je-li $a_i > 0$,
+      * **stok**, je-li $a_i < 0$,
+      * **neutrální uzel**, je-li $a_i = 0$.
+    intuition: |
+      Zdroj produkuje (tok z něj musí odtékat), stok spotřebovává (tok do něj musí přitékat),
+      neutrální uzel jen přeposílá. V angličtině *source*, *sink*, *capacity*.
+    examples:
+      - title: Sítě, v nichž neexistuje žádný tok
+        body: |
+          Tři malé sítě (u uzlů intenzity, u hran propustnosti) – v žádné z nich tok neexistuje:
+
+          1. Uzel s intenzitou $2$ (zdroj) nemá žádnou vycházející hranu – jediná hrana vede
+             **do** něj ze stoku s intenzitou $-2$. Zdroj nemá kudy svůj přebytek odeslat.
+             (Množina $A$ = {zdroj}: $a(A) = 2 > r(A, \bar{A}) = 0$.)
+          2. Trojúhelník: levý uzel má intenzitu $3$, horní $0$, pravý $-3$; hrany
+             levý→horní ($2$), horní→pravý ($1$), levý→pravý ($1$). Přes horní uzel projde nejvýš
+             $1$, přímou hranou nejvýš $1$, celkem $2 < 3$.
+             (Pro $A$ = {levý, horní}: $a(A) = 3 > r(A,\bar{A}) = 1 + 1 = 2$.)
+          3. Uzly s intenzitami $2$ a $-1$ spojené hranou propustnosti $2$: součet intenzit je
+             $1 \ne 0$, přebytek jedné jednotky nemá kam odtéct.
+
+          Graf níže ukazuje síť 2.
+        graph:
+          directed: true
+          nodes:
+            - { id: L, x: 1, y: 7, a: 3 }
+            - { id: H, x: 5, y: 3, a: 0 }
+            - { id: P, x: 9, y: 7, a: -3 }
+          edges:
+            - { from: L, to: H, w: 2 }
+            - { from: H, to: P, w: 1 }
+            - { from: L, to: P, w: 1 }
+    related: [def-sit, def-tok, thm-existence-toku]
+    source: "skripta str. 6; přednáška 3, fólie 9"
+
+  - id: def-rez
+    kind: definition
+    label: "Definice 2.4"
+    section: "2.1"
+    title: Řez sítě
+    terms: [řez, cut, řez sítě, separace, množina hran mezi A a doplňkem]
+    statement: |
+      Nechť $\vec{G}$ je síť, $A \subset U(\vec{G})$ množina uzlů a $\bar{A} = U(\vec{G}) \setminus A$.
+      Množina hran
+      $$
+      (A, \bar{A}) = \{ (x,y) \mid x \in A,\ y \in \bar{A} \}
+      $$
+      se nazývá **řez** sítě $\vec{G}$.
+
+      *Poznámka.* Jde o orientovanou obdobu pojmu separace z KMA/DMA; termín „řez“ se používá,
+      protože je v této souvislosti v literatuře obvyklejší. Důležité řezy budou splňovat
+      i podmínku minimality.
+    intuition: |
+      Řez obsahuje jen hrany vedoucí **z** $A$ **do** $\bar{A}$; hrany opačného směru
+      $(\bar{A}, A)$ do řezu nepatří. Odebráním řezu přerušíme všechny orientované cesty
+      z $A$ do $\bar{A}$ – proto omezuje, kolik toku může z $A$ odtéct.
+    related: [def-oznaceni-souctu, prop-bilance-mnoziny, def-minimalni-rez]
+    illustrations:
+      - title: Řez tvoří jen hrany vedoucí z A ven
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2 }
+            - { from: z, to: b, w: 2 }
+            - { from: z, to: c, w: 1 }
+            - { from: a, to: d, w: 1 }
+            - { from: a, to: e, w: 2 }
+            - { from: b, to: d, w: 1 }
+            - { from: b, to: e, w: 2 }
+            - { from: c, to: d, w: 2 }
+            - { from: c, to: e, w: 1 }
+            - { from: d, to: s, w: 4 }
+            - { from: e, to: s, w: 1 }
+        steps:
+          - caption: |
+              $A = \{z\}$: řez $(A, \bar{A})$ tvoří tři hrany vycházející ze $z$ (červeně), jeho propustnost je
+              $r(A,\bar{A}) = 2 + 2 + 1 = 5$.
+            nodes: { z: visited }
+            edges: { z-a: cut, z-b: cut, z-c: cut }
+          - caption: |
+              $A = \{z, a, b, e\}$: do řezu patří $(a,d)$, $(b,d)$, $(z,c)$ a $(e,s)$, tedy $r(A,\bar{A}) = 4$.
+              Hrana $(c,e)$ vede **z $\bar{A}$ do $A$** – do řezu nepatří (patří do $(\bar{A}, A)$).
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { a-d: cut, b-d: cut, z-c: cut, e-s: cut, c-e: back, z-a: dim, z-b: dim, a-e: dim, b-e: dim }
+          - caption: |
+              Odebereme hrany řezu. Ze $z$ se teď po směru hran dostaneme jen do uzlů množiny $A$ – řez
+              přerušil **všechny** orientované cesty z $A$ do $\bar{A}$ (hrana $c \to e$ tomu nevadí, vede dovnitř).
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { a-d: hidden, b-d: hidden, z-c: hidden, e-s: hidden, c-e: back }
+    source: "skripta str. 6; přednáška 3, fólie 10"
+
+  - id: def-oznaceni-souctu
+    kind: definition
+    section: "2.1"
+    title: "Označení f(A) a g(A, Ā)"
+    terms: [součet přes množinu, a(A), "r(A, Ā)", "x(A, Ā)", propustnost množiny hran]
+    statement: |
+      Nechť $\vec{G}$ je síť a $A \subset U(\vec{G})$.
+      * Je-li $f : U(\vec{G}) \to \mathbb{R}$ funkce na uzlech, označíme $f(A) = \sum_{i \in A} f_i$.
+      * Je-li $g : H(\vec{G}) \to \mathbb{R}$ funkce na hranách, označíme
+        $g(A, \bar{A}) = \sum_{(i,j) \in (A, \bar{A})} g_{ij}$.
+
+      Typicky: $a(A)$ je součet intenzit uzlů z $A$, $r(A,\bar{A})$ součet propustností hran
+      řezu a $x(A,\bar{A})$ tok přes řez ve směru z $A$ do $\bar{A}$.
+    related: [def-rez, prop-bilance-mnoziny]
+    source: "skripta str. 6; přednáška 3, fólie 10"
+
+  - id: prop-bilance-mnoziny
+    kind: proposition
+    label: "Tvrzení 2.1"
+    section: "2.1"
+    title: Bilance toku přes řez
+    terms: [tvrzení 2.1, bilance toku, zákon zachování pro množinu, tok přes řez]
+    statement: |
+      Nechť $\vec{G}$ je síť, $x$ tok v $\vec{G}$ a $A \subset U(\vec{G})$. Pak
+      $$
+      a(A) = x(A, \bar{A}) - x(\bar{A}, A).
+      $$
+    intuition: |
+      Zákon zachování platí nejen pro jednotlivé uzly, ale pro libovolnou „krabici“ uzlů:
+      čistý odtok z množiny $A$ ven je roven jejímu celkovému přebytku. Toky po hranách uvnitř
+      $A$ se při sčítání vyruší – každá taková hrana je pro jeden svůj konec odtokem a pro
+      druhý přítokem.
+    proof: |
+      Sečteme podmínku 1 z definice toku přes všechny uzly $i \in A$:
+      $$
+      a(A) = \sum_{i \in A} a_i
+      = \sum_{i \in A} \sum_{j;\,(i,j) \in H(\vec{G})} x_{ij} \;-\; \sum_{i \in A} \sum_{j;\,(j,i) \in H(\vec{G})} x_{ji}.
+      $$
+      První dvojitá suma sčítá toky na všech hranách, které **vycházejí** z některého uzlu
+      množiny $A$. Takové hrany končí buď v $A$, nebo v $\bar{A}$, takže suma je rovna
+      $x(A, A) + x(A, \bar{A})$. Druhá dvojitá suma sčítá toky na všech hranách
+      **vcházejících** do uzlů z $A$; ty začínají v $A$ nebo v $\bar{A}$, suma je tedy
+      $x(A, A) + x(\bar{A}, A)$. Odečtením se člen $x(A,A)$ (hrany uvnitř $A$) vyruší:
+      $$
+      a(A) = \big(x(A,A) + x(A,\bar{A})\big) - \big(x(A,A) + x(\bar{A},A)\big) = x(A,\bar{A}) - x(\bar{A},A).
+      $$
+    proof_steps:
+      - Sečteme rovnici zákona zachování přes všechny uzly množiny $A$; vlevo vznikne $a(A)$.
+      - Suma odtoků z uzlů $A$ se rozdělí podle koncového uzlu hrany na $x(A,A) + x(A,\bar{A})$.
+      - Suma přítoků do uzlů $A$ se rozdělí podle počátečního uzlu na $x(A,A) + x(\bar{A},A)$.
+      - Člen $x(A,A)$ (hrany uvnitř $A$) se při odečtení vyruší a zbude $a(A) = x(A,\bar{A}) - x(\bar{A},A)$.
+    examples:
+      - title: Kontrola na konkrétním toku
+        body: |
+          V síti z [příkladu k Fordovu–Fulkersonovu algoritmu](#alg-ford-fulkerson) s výsledným tokem
+          velikosti 4 zvolme $A = \{z, a\}$. Pak $a(A) = a_z + a_a = 4 + 0 = 4$,
+          $x(A,\bar{A}) = x_{zb} + x_{zc} + x_{ad} + x_{ae} = 2 + 1 + 1 + 0 = 4$ a
+          $x(\bar{A}, A) = 0$ (do $z$ ani $a$ nevede hrana z $\bar{A}$). Skutečně $4 = 4 - 0$.
+    related: [def-tok, def-rez, def-oznaceni-souctu, thm-existence-toku, prop-tok-a-rez]
+    illustrations:
+      - title: Toky uvnitř krabice se vyruší
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 2 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 1 }
+            - { from: c, to: d, w: 2, x: 1 }
+            - { from: c, to: e, w: 1, x: 0 }
+            - { from: d, to: s, w: 4, x: 3 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Tok velikosti 4 ($a_z = 4$, $a_s = -4$, ostatní uzly neutrální). Pro jediný uzel $A = \{d\}$ je
+              tvrzení přímo zákon zachování: odteče $3$ (červeně), přiteče $1 + 1 + 1 = 3$, tedy $a_d = 3 - 3 = 0$.
+            nodes: { d: visited }
+            edges: { d-s: cut, a-d: back, b-d: back, c-d: back }
+            labels: { z: "a=4", s: "a=−4", d: "a=0" }
+          - caption: |
+              $A = \{a, b, d, e\}$: ven teče $x(A,\bar{A}) = 3 + 1 = 4$, dovnitř $x(\bar{A},A) = 1 + 2 + 1 + 0 = 4$,
+              rozdíl je $0 = a(A)$. Šedé hrany uvnitř $A$ se nepočítají: každá je odtokem pro jeden svůj konec
+              a přítokem pro druhý, takže se při sčítání bilancí vyruší.
+            nodes: { a: visited, b: visited, d: visited, e: visited }
+            edges: { d-s: cut, e-s: cut, z-a: back, z-b: back, c-d: back, c-e: back, a-d: dim, a-e: dim, b-d: dim, b-e: dim }
+            labels: { z: "a=4", s: "a=−4" }
+          - caption: |
+              $A = \{z, a, b, e\}$ obsahuje zdroj: ven teče $1 + 1 + 1 + 1 = 4$, dovnitř jen po $(c,e)$, kde je tok $0$.
+              Rozdíl $4 - 0 = 4 = a(A) = a_z$ – čistý odtok z množiny je roven jejímu přebytku.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut, c-e: back, z-a: dim, z-b: dim, a-e: dim, b-e: dim }
+            labels: { z: "a=4", s: "a=−4" }
+    source: "skripta str. 6–7; přednáška 3, fólie 10"
+
+  - id: thm-existence-toku
+    kind: theorem
+    label: "Věta 2.1"
+    section: "2.1"
+    title: Existence toku v síti
+    terms: [věta 2.1, existence toku, podmínka existence toku, Galeova věta, přípustný tok]
+    statement: |
+      V síti $\vec{G}$ existuje tok, právě když $a(U(\vec{G})) = 0$ a pro každou množinu uzlů
+      $A \subset U(\vec{G})$ platí $a(A) \le r(A, \bar{A})$.
+    intuition: |
+      Nutnost je zřejmá: všechno, co zdroje vyrobí, musí stoky spotřebovat (součet intenzit
+      je nula), a z žádné množiny uzlů nelze vyvézt víc, než unesou hrany vedoucí ven
+      (čistý přebytek $a(A)$ musí projít řezem $(A,\bar{A})$). Překvapivá je postačitelnost:
+      jiné překážky neexistují. Ověřovat podmínku pro všech $2^n$ množin $A$ by bylo
+      exponenciální – v praxi existenci toku rozhodneme polynomiálně převodem na maximální tok
+      (viz [konstrukce fiktivního zdroje a stoku](#rem-fiktivni-zdroj-stok)).
+    proof: |
+      **1. Nutnost.** Nechť $x$ je tok v $\vec{G}$. Protože $0 \le x_{ij} \le r_{ij}$ pro každou
+      hranu, je $x(A,\bar{A}) \le r(A,\bar{A})$ a $x(\bar{A},A) \ge 0$. Podle
+      [tvrzení 2.1](#prop-bilance-mnoziny) tedy
+      $a(A) = x(A,\bar{A}) - x(\bar{A},A) \le r(A,\bar{A})$. Pro $A = U(\vec{G})$ je
+      $\bar{A} = \emptyset$, oba řezy jsou prázdné a dostáváme $a(U(\vec{G})) = 0$.
+
+      **2. Postačitelnost** (skripta odd. 2.6, využívá [Fordovu–Fulkersonovu větu](#thm-ford-fulkerson)).
+      Nechť $a(U(\vec{G})) = 0$ a $a(A) \le r(A,\bar{A})$ pro všechna $A$. Označme
+      $a^+ = \sum_{i:\,a_i > 0} a_i$ celkovou produkci zdrojů; díky $a(U(\vec{G})) = 0$ je
+      také $\sum_{i:\,a_i<0} (-a_i) = a^+$. Je-li $a^+ = 0$, jsou všechny uzly neutrální a
+      nulový tok vyhovuje. Nechť tedy $a^+ > 0$.
+
+      Sestrojíme síť $\vec{G}'$ s jedním zdrojem a jedním stokem: přidáme nový uzel $z$ a nový
+      uzel $s$; pro každý uzel $i$ s $a_i > 0$ přidáme hranu $(z,i)$ s propustností $a_i$, pro
+      každý uzel s $a_i < 0$ hranu $(i,s)$ s propustností $-a_i$; všem původním uzlům dáme
+      intenzitu $0$.
+
+      *Řez $(\{z\}, \overline{\{z\}})$ je minimální.* Jeho propustnost je $a^+$. Buď
+      $(A', \bar{A}')$ libovolný řez v $\vec{G}'$ oddělující $z$ a $s$ a $A = A' \setminus \{z\}
+      \subset U(\vec{G})$. Řez obsahuje hrany $(A,\bar{A})$ původní sítě, hrany $(z,i)$ pro
+      zdroje $i \notin A$ a hrany $(i,s)$ pro stoky $i \in A$, takže
+      $$
+      r'(A',\bar{A}') = r(A,\bar{A}) + \sum_{i \notin A,\, a_i>0} a_i + \sum_{i \in A,\, a_i<0} (-a_i).
+      $$
+      Z předpokladu $r(A,\bar{A}) \ge a(A) = \sum_{i \in A,\, a_i>0} a_i - \sum_{i \in A,\, a_i<0} (-a_i)$,
+      a po dosazení $r'(A',\bar{A}') \ge \sum_{i \in A,\,a_i>0} a_i + \sum_{i \notin A,\,a_i>0} a_i = a^+$.
+      (Pro $A = U(\vec{G})$ je $r(A,\bar{A}) = 0 = a(A)$, nerovnost tedy platí také.)
+
+      *Maximální tok nasytí nové hrany.* Podle Fordovy–Fulkersonovy věty má maximální tok
+      $x'$ v $\vec{G}'$ velikost $a^+$. Celý tok opouští $z$ po hranách $(z,i)$, jejichž
+      propustnosti dávají součet právě $a^+$ – všechny tedy musí být nasycené:
+      $x'_{zi} = a_i$. Podobně do $s$ přitéká $a^+$ po hranách $(i,s)$ s celkovou propustností
+      $a^+$, takže $x'_{is} = -a_i$.
+
+      *Restrikce je hledaný tok.* Nechť $x$ je zúžení $x'$ na hrany $\vec{G}$. Podmínka
+      propustnosti zřejmě platí. Pro zdroj $i$ dává zákon zachování v $\vec{G}'$ (intenzita $0$):
+      (odtok v $\vec{G}$) $-$ (přítok v $\vec{G}$) $- x'_{zi} = 0$, tedy odtok $-$ přítok $= a_i$.
+      Pro stok $i$: (odtok v $\vec{G}$) $+ x'_{is} -$ (přítok v $\vec{G}$) $= 0$, tedy
+      odtok $-$ přítok $= -x'_{is} = a_i$. Neutrální uzly se nezměnily. Tedy $x$ je tok v $\vec{G}$.
+    proof_steps:
+      - "Nutnost: pro tok $x$ je $x(A,\\bar{A}) \\le r(A,\\bar{A})$ a $x(\\bar{A},A) \\ge 0$, takže z tvrzení 2.1 plyne $a(A) \\le r(A,\\bar{A})$."
+      - "Volbou $A = U(\\vec{G})$ (prázdné řezy) dostaneme z tvrzení 2.1 podmínku $a(U(\\vec{G})) = 0$."
+      - "Postačitelnost: přidáme fiktivní zdroj $z$ s hranami $(z,i)$ propustnosti $a_i$ ke zdrojům a fiktivní stok $s$ s hranami $(i,s)$ propustnosti $-a_i$ od stoků."
+      - "Z podmínky $a(A) \\le r(A,\\bar{A})$ odvodíme, že každý řez oddělující $z$ a $s$ má propustnost alespoň $a^+$, tedy $(\\{z\\}, \\overline{\\{z\\}})$ je minimální řez."
+      - "Podle Fordovy–Fulkersonovy věty má maximální tok velikost $a^+$, a proto nasytí všechny nové hrany u $z$ i u $s$."
+      - "Zúžení tohoto toku na původní síť splňuje zákon zachování s původními intenzitami $a_i$, je to tedy hledaný tok."
+    examples:
+      - title: Ověření existence toku převodem na maximální tok
+        body: |
+          Síť: uzly $1$ ($a_1 = 2$), $2$ ($a_2 = 1$), $3$ ($a_3 = -3$), $4$ ($a_4 = 0$);
+          hrany $(1,3)$: $1$, $(1,4)$: $2$, $(2,4)$: $1$, $(4,3)$: $3$. Součet intenzit je $0$.
+
+          Přidáme $z$ s hranami $(z,1)$: $2$, $(z,2)$: $1$ a $s$ s hranou $(3,s)$: $3$; $a^+ = 3$.
+          Maximální tok: $z\,1\,3\,s$ (1), $z\,1\,4\,3\,s$ (1), $z\,2\,4\,3\,s$ (1) má velikost
+          $3 = a^+$, takže tok v původní síti existuje: $x_{13} = 1$, $x_{14} = 1$, $x_{24} = 1$,
+          $x_{43} = 2$. Kontrola v uzlu 4: odtok $2$ − přítok $2$ = $0 = a_4$.
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: "1", x: 3, y: 2, a: 2 }
+            - { id: "2", x: 3, y: 8, a: 1 }
+            - { id: "4", x: 6, y: 6, a: 0 }
+            - { id: "3", x: 8, y: 3, a: -3 }
+            - { id: s, x: 10, y: 3 }
+          edges:
+            - { from: z, to: "1", w: 2, x: 2 }
+            - { from: z, to: "2", w: 1, x: 1 }
+            - { from: "1", to: "3", w: 1, x: 1 }
+            - { from: "1", to: "4", w: 2, x: 1 }
+            - { from: "2", to: "4", w: 1, x: 1 }
+            - { from: "4", to: "3", w: 3, x: 2 }
+            - { from: "3", to: s, w: 3, x: 3 }
+    related: [prop-bilance-mnoziny, thm-ford-fulkerson, rem-fiktivni-zdroj-stok, def-tok]
+    illustrations:
+      - title: Překážkou toku je úzký řez
+        graph:
+          directed: true
+          nodes:
+            - { id: L, x: 1, y: 7.5 }
+            - { id: H, x: 5, y: 2 }
+            - { id: P, x: 9, y: 7.5 }
+          edges:
+            - { from: L, to: H, w: 2 }
+            - { from: H, to: P, w: 1 }
+            - { from: L, to: P, w: 1 }
+        steps:
+          - caption: |
+              Zdroj $L$ má intenzitu $3$, stok $P$ intenzitu $-3$, $H$ je neutrální. Součet intenzit je $0$,
+              první podmínka věty tedy platí. Existuje tok?
+            nodes: { L: source, P: sink }
+            labels: { L: "a=3", H: "a=0", P: "a=−3" }
+          - caption: |
+              $A = \{L\}$: přebytek $a(A) = 3$ musí odtéct řezem $(A,\bar{A}) = \{(L,H), (L,P)\}$ s propustností
+              $2 + 1 = 3$. Podmínka $a(A) \le r(A,\bar{A})$ platí – z $L$ samotného se přebytek vyvézt dá.
+            nodes: { L: visited }
+            edges: { L-H: cut, L-P: cut }
+            labels: { L: "a=3", H: "a=0", P: "a=−3" }
+          - caption: |
+              $A = \{L, H\}$: $a(A) = 3$, ale z $A$ vedou ven jen hrany $(H,P)$ a $(L,P)$ s propustností $1 + 1 = 2$.
+              Je $a(A) = 3 > 2 = r(A,\bar{A})$, takže **tok neexistuje** – úzké hrdlo je hrana $(H,P)$.
+            nodes: { L: visited, H: visited }
+            edges: { H-P: cut, L-P: cut, L-H: dim }
+            labels: { L: "a=3", H: "a=0", P: "a=−3" }
+          - caption: |
+              Malá změna: propustnost hrany $(H,P)$ zvýšíme na $2$. Teď $r(\{L,H\}, \{P\}) = 3 \ge 3$ a podmínku
+              splňují i všechny ostatní množiny $A$.
+            edges: { H-P: active }
+            edge_labels: { H-P: "2" }
+            labels: { L: "a=3", H: "a=0", P: "a=−3" }
+          - caption: |
+              Věta slibuje, že jiná překážka než úzký řez neexistuje – a tok skutečně najdeme:
+              $x_{LH} = 2$, $x_{HP} = 2$, $x_{LP} = 1$ (u hran $x/r$). V každém uzlu odtok − přítok = intenzita.
+            edge_labels: { L-H: "2/2", H-P: "2/2", L-P: "1/1" }
+            labels: { L: "3−0 = 3 ✓", H: "2−2 = 0 ✓", P: "0−3 = −3 ✓" }
+      - title: Postačitelnost přes fiktivní zdroj a stok
+        for: proof
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: "1", x: 3, y: 2 }
+            - { id: "2", x: 3, y: 8 }
+            - { id: "4", x: 6, y: 7 }
+            - { id: "3", x: 7, y: 2 }
+            - { id: s, x: 10, y: 4.5 }
+          edges:
+            - { from: "1", to: "3", w: 1 }
+            - { from: "1", to: "4", w: 2 }
+            - { from: "2", to: "4", w: 1 }
+            - { from: "4", to: "3", w: 3 }
+        steps:
+          - caption: |
+              Síť s více zdroji ($a_1 = 2$, $a_2 = 1$) a stokem $a_3 = -3$; součet intenzit je $0$ a podmínka
+              $a(A) \le r(A,\bar{A})$ platí. Uzly $z$ a $s$ jsou zatím nepřipojené – přidáme je v dalším kroku.
+            nodes: { "1": source, "2": source, "3": sink }
+            labels: { "1": "a=2", "2": "a=1", "3": "a=−3", "4": "a=0" }
+          - caption: |
+              Fiktivní zdroj $z$ spojíme se zdroji hranami s propustností $a_i$, stok s fiktivním stokem $s$ hranou
+              s propustností $-a_3 = 3$. Původní uzly teď mají intenzitu $0$; celková produkce je $a^+ = 3$.
+            add: [[z, "1", 2], [z, "2", 1], ["3", s, 3]]
+            nodes: { z: source, s: sink }
+            edges: { z-1: active, z-2: active, 3-s: active }
+            labels: { "1": "a=0", "2": "a=0", "3": "a=0", "4": "a=0" }
+          - caption: |
+              Řez $(\{z\}, \overline{\{z\}})$ má propustnost $a^+ = 3$. Z podmínky $a(A) \le r(A,\bar{A})$ plyne,
+              že **žádný** řez oddělující $z$ a $s$ není menší – tento řez je minimální.
+            nodes: { z: visited }
+            edges: { z-1: cut, z-2: cut }
+          - caption: |
+              Podle Fordovy–Fulkersonovy věty má maximální tok velikost $3$. Hrany ze $z$ mají celkovou propustnost
+              právě $3$, takže je maximální tok musí všechny **nasytit** – stejně tak hranu do $s$.
+            edges: { z-1: path, z-2: path, 3-s: path }
+            edge_labels: { z-1: "2/2", z-2: "1/1", 1-3: "1/1", 1-4: "1/2", 2-4: "1/1", 4-3: "2/3", 3-s: "3/3" }
+          - caption: |
+              Fiktivní uzly odstraníme. Na zbylých hranách je tok, který splňuje zákon zachování s **původními**
+              intenzitami: v uzlu $1$ chyběla jen přitékající hrana ze $z$, a proto teď odtok − přítok $= 2 = a_1$.
+            remove: [[z, "1"], [z, "2"], ["3", s]]
+            edge_labels: { 1-3: "1/1", 1-4: "1/2", 2-4: "1/1", 4-3: "2/3" }
+            labels: { "1": "2−0 = 2 ✓", "2": "1−0 = 1 ✓", "3": "0−3 = −3 ✓", "4": "2−2 = 0 ✓" }
+    source: "skripta str. 7 a 11 (odd. 2.6); přednáška 3, fólie 10"
+
+  # ------------------------------------------------------------------ 2.2
+  - id: def-velikost-toku
+    kind: definition
+    section: "2.2"
+    title: Síť s jedním zdrojem a jedním stokem, velikost toku
+    terms: [síť s jedním zdrojem a jedním stokem, velikost toku, hodnota toku, value of flow, nulový tok, "|x|"]
+    statement: |
+      Uvažujme síť $\vec{G}$ s jedním zdrojem $z$ a jedním stokem $s$; ostatní uzly jsou neutrální.
+      Má-li zdroj intenzitu $a \ge 0$, musí mít stok intenzitu $-a$ (jinak by podle
+      [věty 2.1](#thm-existence-toku) žádný tok neexistoval). Číslo $a$ – množství produktu
+      přepraveného ze $z$ do $s$ – se pro tok $x$ nazývá **velikost toku** $x$ a značí se $|x|$.
+
+      Intenzitu $a$ zde chápeme jako volnou: porovnáváme toky různých velikostí v síti s danými
+      propustnostmi.
+    intuition: |
+      Pro $a = 0$ je nulový tok ($x_{ij} = 0$ pro všechny hrany) vždy tokem – v každé síti
+      s jedním zdrojem a stokem tedy existuje alespoň jeden tok. Smysluplná otázka proto je,
+      jak velký tok lze ze $z$ do $s$ nejvýše poslat.
+    related: [def-maximalni-tok, def-minimalni-rez, prop-tok-a-rez]
+    source: "skripta str. 7; přednáška 4, fólie 1"
+
+  - id: def-maximalni-tok
+    kind: definition
+    label: "Definice 2.5"
+    section: "2.2"
+    title: Maximální tok
+    terms: [maximální tok, maximum flow, max-flow, největší tok]
+    statement: |
+      Nechť $\vec{G}$ je síť s jedním zdrojem $z$ a jedním stokem $s$ a $x$ tok v $\vec{G}$.
+      Tok $x$ je **maximální tok** v $\vec{G}$, jestliže pro každý tok $x'$ v $\vec{G}$ platí
+      $|x'| \le |x|$.
+    intuition: |
+      Maximální tok nemusí být jediný – jednoznačná je jen jeho velikost. (V příkladu
+      k [Edmondsovu–Karpovu algoritmu](#alg-edmonds-karp) vyjde jiný maximální tok než ve skriptech,
+      ale stejné velikosti 4.)
+    related: [def-velikost-toku, thm-ford-fulkerson, alg-ford-fulkerson]
+    source: "skripta str. 7; přednáška 4, fólie 1"
+
+  - id: def-minimalni-rez
+    kind: definition
+    label: "Definice 2.6"
+    section: "2.2"
+    title: Propustnost řezu, minimální řez
+    terms: [propustnost řezu, kapacita řezu, minimální řez, minimum cut, min-cut, řez oddělující uzly]
+    statement: |
+      Nechť $\vec{G}$ je síť s jedním zdrojem $z$ a jedním stokem $s$ a $(A, \bar{A})$ řez sítě $\vec{G}$.
+      * Číslo $r(A, \bar{A})$ se nazývá **propustnost řezu** $(A,\bar{A})$.
+      * Řez $(A,\bar{A})$ je **minimální řez** sítě $\vec{G}$, jestliže pro každý řez
+        $(A', \bar{A}')$ sítě $\vec{G}$ platí $r(A,\bar{A}) \le r(A', \bar{A}')$.
+      * Jsou-li $u, v \in U(\vec{G})$, řekneme, že řez $(A,\bar{A})$ **odděluje** uzly $u$, $v$,
+        jestliže $u \in A$ a $v \in \bar{A}$.
+    intuition: |
+      Propustnost řezu sčítá jen hrany z $A$ do $\bar{A}$ – hrany opačného směru se nepočítají
+      (ani se neodečítají). Ve [Fordově–Fulkersonově větě](#thm-ford-fulkerson) se minimum bere přes
+      řezy **oddělující $z$ a $s$**.
+    related: [def-rez, prop-tok-a-rez, thm-ford-fulkerson]
+    illustrations:
+      - title: Které řezy jsou minimální?
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: p, x: 5, y: 1.5 }
+            - { id: q, x: 5, y: 8.5 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: p, w: 100 }
+            - { from: z, to: q, w: 100 }
+            - { from: p, to: q, w: 1 }
+            - { from: p, to: s, w: 100 }
+            - { from: q, to: s, w: 100 }
+        steps:
+          - caption: |
+              $A = \{z\}$: řez tvoří hrany $(z,p)$ a $(z,q)$, propustnost $100 + 100 = 200$.
+            nodes: { z: visited }
+            edges: { z-p: cut, z-q: cut }
+          - caption: |
+              $A = \{z, p\}$: řez je $\{(z,q), (p,q), (p,s)\}$ s propustností $100 + 1 + 100 = 201$. Svislá hrana
+              vede z $A$ ven, takže se započítá – tento řez minimální **není**.
+            nodes: { z: visited, p: visited }
+            edges: { z-q: cut, p-q: cut, p-s: cut, z-p: dim }
+          - caption: |
+              $A = \{z, q\}$: řez je $\{(z,p), (q,s)\}$, propustnost $200$. Hrana $(p,q)$ teď vede z $\bar{A}$ **do** $A$ –
+              do propustnosti řezu se nepočítá, ani se neodečítá.
+            nodes: { z: visited, q: visited }
+            edges: { z-p: cut, q-s: cut, p-q: back, z-q: dim }
+          - caption: |
+              $A = \{z, p, q\}$: řez $\{(p,s), (q,s)\}$ má opět propustnost $200$. Minimální řez tedy nemusí být
+              jediný; jednoznačná je jen jeho propustnost (zde $200$ = velikost maximálního toku).
+            nodes: { z: visited, p: visited, q: visited }
+            edges: { p-s: cut, q-s: cut, z-p: dim, z-q: dim, p-q: dim }
+    source: "skripta str. 7; přednáška 4, fólie 1"
+
+  - id: prop-tok-a-rez
+    kind: proposition
+    label: "Tvrzení 2.2"
+    section: "2.2"
+    title: Velikost toku a propustnost řezu
+    terms: [tvrzení 2.2, slabá dualita, tok je nejvýše propustnost řezu, horní odhad toku]
+    statement: |
+      Nechť $\vec{G}$ je síť s jedním zdrojem $z$ a jedním stokem $s$, $(A,\bar{A})$ řez
+      oddělující $z$ a $s$ a $x$ tok v $\vec{G}$. Pak
+      1. $|x| = x(A,\bar{A}) - x(\bar{A},A)$,
+      2. $|x| \le r(A,\bar{A})$.
+    intuition: |
+      Každý tok musí řezem „protlačit“ celou svou velikost, a protože řez víc než
+      $r(A,\bar{A})$ neunese, je **každý** řez horním odhadem **každého** toku. Najdeme-li tedy
+      tok a řez se stejnou hodnotou, jsou oba optimální – na tom stojí důkaz
+      [Fordovy–Fulkersonovy věty](#thm-ford-fulkerson) i test optimality v algoritmu.
+    proof: |
+      (i) Použijeme [tvrzení 2.1](#prop-bilance-mnoziny) na množinu $A$. Ta obsahuje zdroj $z$,
+      neobsahuje stok $s$ a ostatní uzly jsou neutrální, takže $a(A) = a_z = |x|$. Tedy
+      $|x| = x(A,\bar{A}) - x(\bar{A},A)$.
+
+      (ii) Z podmínky 2 definice toku plyne $x(A,\bar{A}) \le r(A,\bar{A})$ a $x(\bar{A},A) \ge 0$.
+      Dosazením do (i) dostaneme $|x| \le r(A,\bar{A}) - 0$.
+    proof_steps:
+      - Množina $A$ obsahuje $z$, neobsahuje $s$ a ostatní uzly jsou neutrální, proto $a(A) = |x|$.
+      - "Tvrzení 2.1 pro množinu $A$ dává $|x| = x(A,\\bar{A}) - x(\\bar{A},A)$."
+      - "Z omezení $0 \\le x_{ij} \\le r_{ij}$ je $x(A,\\bar{A}) \\le r(A,\\bar{A})$ a $x(\\bar{A},A) \\ge 0$."
+      - "Dosazením do vztahu (i) plyne $|x| \\le r(A,\\bar{A})$."
+    examples:
+      - title: Dva řezy v síti ze skript
+        body: |
+          Pro výsledný tok velikosti 4 z [příkladu k F–F algoritmu](#alg-ford-fulkerson):
+          * $A = \{z\}$: $r(A,\bar{A}) = r_{za} + r_{zb} + r_{zc} = 2 + 2 + 1 = 5 \ge 4$.
+          * $A = \{z, a, b, e\}$: řez tvoří hrany $(a,d), (b,d), (z,c), (e,s)$, propustnost
+            $1+1+1+1 = 4$; $x(A,\bar{A}) = 4$ a $x(\bar{A}, A) = x_{ce} = 0$, takže $|x| = 4 - 0$.
+            Tento řez je minimální a tok maximální.
+    related: [prop-bilance-mnoziny, def-minimalni-rez, thm-ford-fulkerson]
+    illustrations:
+      - title: Každý řez shora omezuje každý tok
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 0 }
+            - { from: c, to: e, w: 1, x: 1 }
+            - { from: d, to: s, w: 4, x: 2 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Tok velikosti $|x| = 3$ (u hran $x/r$). Řez s $A = \{z\}$: ven teče $1 + 1 + 1 = 3$, dovnitř nic,
+              takže $|x| = 3 - 0$. Propustnost řezu je $5 \ge 3$.
+            nodes: { z: visited }
+            edges: { z-a: cut, z-b: cut, z-c: cut }
+          - caption: |
+              $A = \{z, a, b, e\}$: ven teče $x(A,\bar{A}) = 1 + 1 + 1 + 1 = 4$, ale po $(c,e)$ se $1$ vrací
+              dovnitř, takže $|x| = 4 - 1 = 3$. Odhad $|x| \le r(A,\bar{A}) = 4$ platí, ale rovnost ne.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut, c-e: back }
+          - caption: |
+              Po zlepšení toku na velikost $4$ je stejný řez **těsný**: hrany ven jsou nasycené a $(c,e)$ je nulová,
+              $|x| = 4 - 0 = r(A,\bar{A})$. Žádný tok nemůže být větší než $4$ a žádný řez menší – oba jsou optimální.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut, c-e: back }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+    source: "skripta str. 7; přednáška 4, fólie 1"
+
+  # ------------------------------------------------------------------ 2.3
+  - id: rem-naivni-orientovane-cesty
+    kind: remark
+    section: "2.3"
+    title: Proč nestačí zvětšovat tok jen po orientovaných cestách
+    terms: [naivní algoritmus, hladový algoritmus pro tok, orientované cesty nestačí, zpětná hrana, greedy max flow]
+    statement: |
+      Naivní postup: začni s nulovým tokem; dokud existuje orientovaná cesta $P$ ze $z$ do $s$,
+      jejíž žádná hrana není nasycená, přičti ke všem hranám $P$ největší možné číslo $c$
+      (nejmenší volnou kapacitu na $P$). Výsledkem je zase tok, větší o $c$.
+
+      **Tento postup obecně nenajde maximální tok.** V síti na obrázku (všechny propustnosti
+      $1$) může být v prvním kroku zvolena cesta $z \to p \to q \to s$ přes svislou hranu.
+      Pak už žádná orientovaná cesta s volnou kapacitou neexistuje a postup skončí s tokem
+      velikosti $1$, přestože maximální tok (po cestách $z\,p\,s$ a $z\,q\,s$) má velikost $2$.
+    intuition: |
+      Chybný první krok nejde „vzít zpět“, pokud se smíme pohybovat jen po směru hran. Pro
+      každou síť sice existuje šťastné pořadí cest, ale nemáme návod, jak ho poznat. Řešením je
+      dovolit i průchod hranou **proti směru**, a tím tok na ní snížit (přesměrovat): to je
+      přesně [polocesta](#def-polocesta) s nesouhlasnými hranami. V příkladu polocesta
+      $z \to q \leftarrow p \to s$ (svislou hranou proti směru) zvětší tok na 2.
+    examples:
+      - title: Uvíznutí naivního postupu
+        body: |
+          Tok po prvním (nešťastném) kroku: $x_{zp} = x_{pq} = x_{qs} = 1$, ostatní $0$.
+          Hrany $(z,p)$ a $(q,s)$ jsou nasycené, takže žádná orientovaná cesta ze $z$ do $s$
+          s volnou kapacitou neexistuje. Rezervní polocesta $z, q, p, s$ (hrana $(p,q)$ nesouhlasná,
+          rezerva $\min\{1, 1, 1\} = 1$) ale existuje.
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: p, x: 5, y: 2 }
+            - { id: q, x: 5, y: 8 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: p, w: 1, x: 1 }
+            - { from: z, to: q, w: 1, x: 0 }
+            - { from: p, to: q, w: 1, x: 1 }
+            - { from: p, to: s, w: 1, x: 0 }
+            - { from: q, to: s, w: 1, x: 1 }
+    related: [def-polocesta, def-rezervni-polocesta, alg-ford-fulkerson]
+    illustrations:
+      - title: Naivní postup uvízne, polocesta ho zachrání
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: p, x: 5, y: 1.5 }
+            - { id: q, x: 5, y: 8.5 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: p, w: 1, x: 0 }
+            - { from: z, to: q, w: 1, x: 0 }
+            - { from: p, to: q, w: 1, x: 0 }
+            - { from: p, to: s, w: 1, x: 0 }
+            - { from: q, to: s, w: 1, x: 0 }
+        steps:
+          - caption: |
+              Všechny propustnosti jsou $1$, začínáme nulovým tokem (u hran $x/r$). Maximální tok má zjevně
+              velikost $2$ – po cestách $z\,p\,s$ a $z\,q\,s$.
+          - caption: |
+              Naivní postup si ale může jako první vybrat orientovanou cestu $z \to p \to q \to s$ přes svislou
+              hranu a pošle po ní $1$.
+            edges: { z-p: path, p-q: path, q-s: path }
+            edge_labels: { z-p: "1/1", p-q: "1/1", q-s: "1/1" }
+          - caption: |
+              Teď je každá orientovaná cesta ze $z$ do $s$ zablokovaná: $z\,p\,s$ i $z\,p\,q\,s$ vedou přes nasycenou
+              $(z,p)$, $z\,q\,s$ přes nasycenou $(q,s)$. Naivní postup **skončí s tokem 1**, přestože maximum je $2$.
+            edges: { z-p: active, q-s: active }
+            edge_labels: { z-p: "1/1", p-q: "1/1", q-s: "1/1" }
+          - caption: |
+              Polocesta $z \to q \leftarrow p \to s$ projde svislou hranu **proti směru** (modře). Na souhlasných hranách
+              je volno $1$, na nesouhlasné teče $1$ – rezerva je $1$, tok jde zvětšit.
+            edges: { z-q: path, p-q: back, p-s: path }
+            edge_labels: { z-p: "1/1", p-q: "1/1", q-s: "1/1" }
+          - caption: |
+              Po úpravě: na $(z,q)$ a $(p,s)$ přičteme $1$, na $(p,q)$ odečteme $1$. Jednotka, která tekla z $p$ do $q$,
+              byla „přesměrována“ – tok má velikost $2$ a je maximální.
+            edge_labels: { z-p: "1/1", z-q: "1/1", p-q: "0/1", p-s: "1/1", q-s: "1/1" }
+    source: "skripta str. 8"
+
+  - id: def-polocesta
+    kind: definition
+    label: "Definice 2.7"
+    section: "2.3"
+    title: Polocesta
+    terms: [polocesta, semipath, souhlasná hrana, nesouhlasná hrana, dopředná hrana, zpětná hrana, triviální polocesta]
+    statement: |
+      Nechť $u, w \in U(\vec{G})$. **Polocesta** z $u$ do $w$ je posloupnost
+      $u = v_0, h_1, v_1, h_2, \dots, h_k, v_k = w$, kde $v_i$ jsou navzájem různé uzly, $h_i$ jsou
+      hrany a pro každé $i = 1, \dots, k$ platí buď
+      * $h_i = v_{i-1} v_i$ – pak jde o **souhlasnou** hranu polocesty, nebo
+      * $h_i = v_i v_{i-1}$ – **nesouhlasná** hrana.
+
+      Speciálně připouštíme i triviální polocestu tvořenou jediným uzlem ($k = 0$).
+    intuition: |
+      Polocesta je cesta v symetrizaci grafu, u níž si pamatujeme, které hrany procházíme po
+      směru (souhlasné) a které proti směru (nesouhlasné). Po souhlasné hraně tok
+      zvyšujeme, po nesouhlasné snižujeme – tím „vracíme“ dřívější nevýhodná rozhodnutí.
+    related: [def-rezervni-polocesta, rem-naivni-orientovane-cesty]
+    source: "skripta str. 8; přednáška 4, fólie 2"
+
+  - id: def-rezervni-polocesta
+    kind: definition
+    label: "Definice 2.7"
+    section: "2.3"
+    title: Rezerva polocesty, rezervní polocesta
+    terms: [rezerva polocesty, rezervní polocesta, zlepšující cesta, augmenting path, nasycená hrana, nulová hrana, Theta, reziduální kapacita]
+    statement: |
+      Nechť $x$ je tok v síti $\vec{G}$ a $P$ polocesta. **Rezerva** polocesty $P$ je nezáporné číslo
+      $$
+      \Theta(P) = \min\{\Theta_s(P),\ \Theta_n(P)\},
+      $$
+      kde
+      $$
+      \Theta_s(P) = \min\{ r_{ij} - x_{ij} \mid (i,j) \text{ je souhlasná hrana } P \},\qquad
+      \Theta_n(P) = \min\{ x_{ij} \mid (i,j) \text{ je nesouhlasná hrana } P \}.
+      $$
+      Polocesta $P$ je **rezervní**, jestliže $\Theta(P) > 0$. Triviální polocestu (jediný uzel)
+      považujeme také za rezervní.
+
+      Hrana $(i,j)$ je **nasycená**, je-li $x_{ij} = r_{ij}$, a **nulová**, je-li $x_{ij} = 0$.
+      Polocesta je tedy rezervní, právě když neobsahuje žádnou souhlasnou nasycenou ani
+      nesouhlasnou nulovou hranu.
+    intuition: |
+      Rezerva říká, o kolik lze tok podél polocesty změnit: na souhlasné hraně můžeme přidat
+      nejvýš to, co zbývá do propustnosti, na nesouhlasné ubrat nejvýš to, co po ní teče.
+      V anglické literatuře se rezervní polocestě říká *augmenting path* a pracuje se
+      s tzv. reziduálním grafem, v němž je rezervní polocesta obyčejnou orientovanou cestou.
+    examples:
+      - title: Výpočet rezervy
+        body: |
+          V síti ze skript s tokem velikosti 3 (viz [příklad u F–F](#alg-ford-fulkerson)) uvažujme
+          polocestu $z, b, e, c, d, s$:
+          * $(z,b)$ souhlasná, $(x,r) = (1,2)$ → rezerva $1$,
+          * $(b,e)$ souhlasná, $(0,2)$ → $2$,
+          * $(c,e)$ nesouhlasná (procházíme z $e$ do $c$), $x_{ce} = 1$ → $1$,
+          * $(c,d)$ souhlasná, $(0,2)$ → $2$,
+          * $(d,s)$ souhlasná, $(2,4)$ → $2$.
+
+          $\Theta_s = \min\{1,2,2,2\} = 1$, $\Theta_n = 1$, tedy $\Theta(P) = 1 > 0$ – polocesta je rezervní.
+    related: [def-polocesta, prop-rezervni-polocesta, alg-ford-fulkerson]
+    illustrations:
+      - title: Rezervní a nerezervní polocesty
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 0 }
+            - { from: c, to: e, w: 1, x: 1 }
+            - { from: d, to: s, w: 4, x: 2 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Tok velikosti 3 (u hran $x/r$). Hrany $(z,c)$, $(a,d)$, $(b,d)$, $(e,s)$ jsou nasycené, takže žádná
+              **orientovaná** cesta ze $z$ do $s$ s volnou kapacitou neexistuje. Tok přesto maximální není.
+          - caption: |
+              Polocesta $z, b, e, c, d, s$: souhlasné hrany červeně, nesouhlasná $(c,e)$ modře. U hran je
+              „↑ kolik lze přidat“ ($r - x$), resp. „↓ kolik lze ubrat“ ($x$). $\Theta = \min\{1, 2, 1, 2, 2\} = 1 > 0$ –
+              polocesta je **rezervní**.
+            edges: { z-b: path, b-e: path, c-e: back, c-d: path, d-s: path }
+            edge_labels: { z-b: "1/2 ↑1", b-e: "0/2 ↑2", c-e: "1/1 ↓1", c-d: "0/2 ↑2", d-s: "2/4 ↑2" }
+          - caption: |
+              Polocesta $z, a, d, s$ (obyčejná cesta) obsahuje **souhlasnou nasycenou** hranu $(a,d)$:
+              $\Theta = \min\{1, 0, 2\} = 0$, polocesta rezervní **není**.
+            edges: { z-a: path, a-d: active, d-s: path }
+            edge_labels: { z-a: "1/2 ↑1", a-d: "1/1 ↑0", d-s: "2/4 ↑2" }
+          - caption: |
+              Polocesta $z, b, e, a$ (do uzlu $a$) prochází hranu $(a,e)$ proti směru, ale po ní nic neteče –
+              **nesouhlasná nulová** hrana. Ubrat z ní nelze, $\Theta = 0$.
+            edges: { z-b: path, b-e: path, a-e: active }
+            edge_labels: { z-b: "1/2 ↑1", b-e: "0/2 ↑2", a-e: "0/2 ↓0" }
+    source: "skripta str. 8; přednáška 4, fólie 2"
+
+  - id: prop-rezervni-polocesta
+    kind: proposition
+    label: "Tvrzení 2.3"
+    section: "2.3"
+    title: Rezervní polocesta zvětší tok
+    terms: [tvrzení 2.3, zlepšení toku, augmentace, úprava toku podél polocesty]
+    statement: |
+      Nechť $\vec{G}$ je síť s jedním zdrojem $z$ a jedním stokem $s$ a $x$ tok v $\vec{G}$.
+      Existuje-li v $\vec{G}$ rezervní polocesta ze $z$ do $s$ vzhledem k $x$, pak tok $x$ není maximální.
+    intuition: |
+      Podél rezervní polocesty „protlačíme“ dalších $\Theta$ jednotek: na souhlasných hranách
+      přidáme, na nesouhlasných ubereme. V každém vnitřním uzlu se přítok a odtok změní
+      o stejnou hodnotu, takže zákon zachování zůstane v platnosti; jen ze zdroje odteče o
+      $\Theta$ víc.
+    proof: |
+      Nechť $P: z = v_0, h_1, v_1, \dots, h_k, v_k = s$ je rezervní polocesta s rezervou
+      $\Theta = \Theta(P) > 0$. Definujme
+      $$
+      x'_{ij} = \begin{cases}
+        x_{ij} + \Theta & \text{je-li } (i,j) \text{ souhlasná hrana } P,\\
+        x_{ij} - \Theta & \text{je-li } (i,j) \text{ nesouhlasná hrana } P,\\
+        x_{ij} & \text{jinak.}
+      \end{cases}
+      $$
+      *Propustnosti:* na souhlasné hraně je $\Theta \le r_{ij} - x_{ij}$, tedy $x'_{ij} \le r_{ij}$;
+      na nesouhlasné je $\Theta \le x_{ij}$, tedy $x'_{ij} \ge 0$.
+
+      *Zákon zachování ve vnitřním uzlu* $v_i$ ($0 < i < k$): uzel leží na dvou hranách
+      $h_i$, $h_{i+1}$ polocesty (uzly polocesty jsou různé, jiné hrany $P$ se ho netýkají).
+      Rozebereme veličinu (odtok $-$ přítok):
+      * obě hrany souhlasné: přítok $+\Theta$ (po $h_i$), odtok $+\Theta$ (po $h_{i+1}$) – beze změny;
+      * $h_i$ souhlasná, $h_{i+1}$ nesouhlasná: obě hrany vcházejí do $v_i$, jedna $+\Theta$, druhá $-\Theta$;
+      * $h_i$ nesouhlasná, $h_{i+1}$ souhlasná: obě vycházejí z $v_i$, jedna $-\Theta$, druhá $+\Theta$;
+      * obě nesouhlasné: odtok $-\Theta$ (po $h_i$), přítok $-\Theta$ (po $h_{i+1}$) – beze změny.
+
+      *Zdroj:* týká se ho jen hrana $h_1$; je-li souhlasná, odtok vzroste o $\Theta$, je-li
+      nesouhlasná, přítok klesne o $\Theta$ – v obou případech (odtok $-$ přítok) vzroste o $\Theta$.
+      Symetricky u stoku klesne o $\Theta$. Tedy $x'$ je tok velikosti $|x'| = |x| + \Theta > |x|$
+      a $x$ není maximální.
+    proof_steps:
+      - Vezmeme rezervní polocestu ze $z$ do $s$ s rezervou $\Theta > 0$.
+      - Na souhlasných hranách přičteme $\Theta$, na nesouhlasných odečteme $\Theta$, ostatní hrany necháme.
+      - Díky definici rezervy zůstane $0 \le x'_{ij} \le r_{ij}$ na všech hranách.
+      - Ve vnitřních uzlech polocesty se rozdíl odtoku a přítoku nezmění (čtyři případy podle orientace dvou sousedních hran).
+      - Rozdíl odtoku a přítoku ve zdroji vzroste o $\Theta$, proto $x'$ je tok velikosti $|x| + \Theta$ a $x$ nebyl maximální.
+    related: [def-rezervni-polocesta, thm-ford-fulkerson, alg-ford-fulkerson, cor-charakterizace-max-toku]
+    illustrations:
+      - title: Úprava podél polocesty zachová zákon zachování
+        for: proof
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 0 }
+            - { from: c, to: e, w: 1, x: 1 }
+            - { from: d, to: s, w: 4, x: 2 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Tok velikosti $3$ a rezervní polocesta $z, b, e, c, d, s$ s rezervou $\Theta = 1$ (souhlasné hrany červeně,
+              nesouhlasná $(c,e)$ modře).
+            edges: { z-b: path, b-e: path, c-e: back, c-d: path, d-s: path }
+            labels: { z: "|x| = 3" }
+          - caption: |
+              Na souhlasných hranách přičteme $\Theta = 1$, na nesouhlasné odečteme. Díky volbě $\Theta$ zůstane
+              $0 \le x_{ij} \le r_{ij}$: přidáváme nejvýš volnou kapacitu, ubíráme nejvýš to, co teče.
+            edges: { z-b: path, b-e: path, c-e: back, c-d: path, d-s: path }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+          - caption: |
+              Uzel $e$: obě hrany polocesty do něj **vcházejí** – po $(b,e)$ přiteče o $1$ víc, po $(c,e)$ o $1$ méně.
+              Přítok se nezmění, bilance zůstane $0$. (U $b$ a $d$ jsou obě hrany souhlasné: přítok i odtok $+1$.)
+            nodes: { e: active }
+            edges: { b-e: path, c-e: back }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+            labels: { e: "přítok +1 −1" }
+          - caption: |
+              Uzel $c$: obě hrany z něj **vycházejí** – po $(c,e)$ odteče o $1$ méně, po $(c,d)$ o $1$ víc. Odtok se
+              nezmění. Zákon zachování tedy platí ve všech vnitřních uzlech polocesty.
+            nodes: { c: active }
+            edges: { c-e: back, c-d: path }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+            labels: { c: "odtok −1 +1" }
+          - caption: |
+              Jen ve zdroji vzroste odtok o $\Theta$ (a ve stoku přítok). Nový tok má velikost $|x| + \Theta = 4$, původní
+              tok tedy maximální nebyl.
+            nodes: { z: source, s: sink }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+            labels: { z: "|x| = 4" }
+    source: "skripta str. 8; přednáška 4, fólie 2"
+
+  - id: thm-ford-fulkerson
+    kind: theorem
+    label: "Věta 2.2"
+    section: "2.3"
+    title: Fordova–Fulkersonova věta
+    terms: [Fordova–Fulkersonova věta, věta o maximálním toku a minimálním řezu, max-flow min-cut, max flow = min cut, věta 2.2, Ford Fulkerson theorem]
+    statement: |
+      **[Ford, Fulkerson]** Buď $\vec{G}$ síť s jedním zdrojem $z$ a jedním stokem $s$.
+      Velikost maximálního toku v $\vec{G}$ je rovna propustnosti minimálního řezu oddělujícího $z$ a $s$.
+    intuition: |
+      Z [tvrzení 2.2](#prop-tok-a-rez) víme „$\le$“: žádný tok není větší než žádný řez.
+      Věta říká, že mezi nimi není mezera – nejužší místo sítě přesně určuje, kolik jí proteče.
+      Důkaz je konstruktivní: z maximálního toku sestrojíme množinu $R$ uzlů dosažitelných
+      po rezervních polocestách a řez $(R,\bar{R})$ je minimální. Totéž dává **certifikát
+      optimality**: kdo chce ověřit, že tok je maximální, stačí mu ukázat řez stejné propustnosti.
+    proof: |
+      Nechť $x$ je maximální tok v $\vec{G}$. (Maximální tok existuje: množina všech toků je
+      uzavřená a omezená podmnožina $\mathbb{R}^{|H(\vec{G})|}$ a velikost toku je spojitá
+      funkce, takže nabývá maxima. Pro celočíselné propustnosti to plyne i z konečnosti
+      F–F algoritmu. *Toto zdůvodnění ve skriptech není, doplněno.*)
+
+      Označme $R$ množinu všech uzlů $w$, do nichž existuje ze $z$ rezervní polocesta
+      (vzhledem k $x$). Zřejmě $z \in R$ (triviální polocesta) a $s \notin R$, protože jinak by
+      podle [tvrzení 2.3](#prop-rezervni-polocesta) tok $x$ nebyl maximální. Řez $(R, \bar{R})$
+      tedy odděluje $z$ a $s$.
+
+      * Každá hrana $(i,j) \in (R,\bar{R})$ je **nasycená**: kdyby $x_{ij} < r_{ij}$, prodloužili
+        bychom rezervní polocestu ze $z$ do $i$ o souhlasnou hranu $(i,j)$ ($j$ na ní neleží,
+        protože $j \notin R$) a dostali rezervní polocestu do $j$, tj. $j \in R$ – spor.
+      * Každá hrana $(j,i) \in (\bar{R},R)$ je **nulová**: kdyby $x_{ji} > 0$, prodloužili bychom
+        polocestu do $i$ o nesouhlasnou hranu $(j,i)$ a opět dostali $j \in R$ – spor.
+
+      Tedy $x(R,\bar{R}) = r(R,\bar{R})$ a $x(\bar{R},R) = 0$, a podle tvrzení 2.2 (i)
+      $$
+      |x| = x(R,\bar{R}) - x(\bar{R},R) = r(R,\bar{R}).
+      $$
+      Pro libovolný řez $(A,\bar{A})$ oddělující $z$ a $s$ je podle tvrzení 2.2 (ii)
+      $r(R,\bar{R}) = |x| \le r(A,\bar{A})$, takže $(R,\bar{R})$ je minimální řez oddělující
+      $z$ a $s$ a jeho propustnost je rovna velikosti maximálního toku.
+    proof_steps:
+      - Vezmeme maximální tok $x$ (existuje díky kompaktnosti množiny toků).
+      - Definujeme $R$ jako množinu uzlů dosažitelných ze $z$ po rezervních polocestách; $z \in R$ a podle tvrzení 2.3 je $s \notin R$.
+      - "Hrany řezu $(R,\\bar{R})$ jsou nasycené, jinak by šlo polocestu prodloužit souhlasnou hranou mimo $R$."
+      - "Hrany z $\\bar{R}$ do $R$ jsou nulové, jinak by šlo polocestu prodloužit nesouhlasnou hranou."
+      - "Podle tvrzení 2.2 (i) je $|x| = r(R,\\bar{R}) - 0 = r(R,\\bar{R})$."
+      - "Podle tvrzení 2.2 (ii) je každý řez oddělující $z$ a $s$ alespoň $|x|$, takže $(R,\\bar{R})$ je minimální a max. tok = min. řez."
+    related: [prop-tok-a-rez, prop-rezervni-polocesta, cor-charakterizace-max-toku, alg-ford-fulkerson, thm-existence-toku]
+    illustrations:
+      - title: Z maximálního toku sestrojíme minimální řez
+        for: proof
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 2 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 1 }
+            - { from: c, to: d, w: 2, x: 1 }
+            - { from: c, to: e, w: 1, x: 0 }
+            - { from: d, to: s, w: 4, x: 3 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Vezmeme maximální tok $x$ (zde velikosti $4$, u hran $x/r$). Chceme najít řez se stejnou propustností.
+            nodes: { z: source, s: sink }
+          - caption: |
+              $R$ = uzly dosažitelné ze $z$ po rezervních polocestách: $(z,a)$ není nasycená → $a$; $(a,e)$ je prázdná
+              → $e$; po $(b,e)$ teče $1$, smíme ji projít proti směru → $b$. Dál to nejde: $R = \{z, a, b, e\}$.
+              Kdyby $s \in R$, šlo by tok zvětšit – takže $s \notin R$.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-a: path, a-e: path, b-e: back }
+          - caption: |
+              Každá hrana z $R$ ven je **nasycená**: kdyby třeba $(e,s)$ měla volnou kapacitu, prodloužili bychom
+              polocestu do $e$ o tuto hranu a $s$ by patřil do $R$ – spor.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut }
+          - caption: |
+              Každá hrana z $\bar{R}$ do $R$ je **nulová**: kdyby po $(c,e)$ něco teklo, prošli bychom ji z $e$ proti
+              směru a $c$ by patřil do $R$ – spor.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { c-e: back }
+          - caption: |
+              Proto $|x| = x(R,\bar{R}) - x(\bar{R},R) = 4 - 0 = r(R,\bar{R})$. Protože žádný řez není menší než
+              žádný tok, je $(R,\bar{R})$ **minimální řez** a maximální tok = minimální řez.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut, c-e: back }
+    source: "skripta str. 9; přednáška 4, fólie 2"
+
+  - id: cor-charakterizace-max-toku
+    kind: corollary
+    section: "2.3"
+    title: Tok je maximální, právě když neexistuje rezervní polocesta
+    terms: [charakterizace maximálního toku, test maximality, kritérium optimality toku, certifikát optimality]
+    statement: |
+      Nechť $\vec{G}$ je síť s jedním zdrojem $z$ a jedním stokem $s$ a $x$ tok v $\vec{G}$.
+      Tok $x$ je maximální, právě když v $\vec{G}$ neexistuje rezervní polocesta ze $z$ do $s$
+      vzhledem k $x$. V tom případě je $(R,\bar{R})$, kde $R$ je množina uzlů dosažitelných ze $z$
+      po rezervních polocestách, minimální řez.
+    intuition: |
+      Toto je obrácení [tvrzení 2.3](#prop-rezervni-polocesta) a je základem
+      [F–F algoritmu](#alg-ford-fulkerson): když už rezervní polocesta neexistuje, můžeme skončit,
+      a množina $R$ (označené uzly) rovnou ukáže minimální řez jako důkaz optimality.
+    proof: |
+      Implikace „maximální ⇒ neexistuje rezervní polocesta“ je [tvrzení 2.3](#prop-rezervni-polocesta)
+      (v obměněné podobě).
+
+      Naopak nechť rezervní polocesta ze $z$ do $s$ neexistuje. Definujme $R$ jako v důkazu
+      [věty 2.2](#thm-ford-fulkerson); pak $s \notin R$. Stejnou úvahou jako tam jsou hrany
+      $(R,\bar{R})$ nasycené a hrany $(\bar{R},R)$ nulové, takže $|x| = r(R,\bar{R})$. Pro každý
+      tok $x'$ je podle [tvrzení 2.2](#prop-tok-a-rez) (ii) $|x'| \le r(R,\bar{R}) = |x|$, tedy
+      $x$ je maximální. Stejně tak $r(R,\bar{R}) = |x| \le r(A,\bar{A})$ pro každý řez oddělující
+      $z$ a $s$, takže $(R,\bar{R})$ je minimální.
+    proof_steps:
+      - Směr „maximální ⇒ bez rezervní polocesty“ je obměna tvrzení 2.3.
+      - Neexistuje-li rezervní polocesta, sestrojíme množinu $R$ dosažitelných uzlů; $s \notin R$.
+      - "Hrany z $R$ ven jsou nasycené, hrany dovnitř nulové, proto $|x| = r(R,\\bar{R})$."
+      - "Každý jiný tok $x'$ splňuje $|x'| \\le r(R,\\bar{R}) = |x|$, takže $x$ je maximální a řez $(R,\\bar{R})$ minimální."
+    related: [prop-rezervni-polocesta, thm-ford-fulkerson, alg-ford-fulkerson]
+    illustrations:
+      - title: Test maximality pomocí množiny R
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 0 }
+            - { from: c, to: e, w: 1, x: 1 }
+            - { from: d, to: s, w: 4, x: 2 }
+            - { from: e, to: s, w: 1, x: 1 }
+        steps:
+          - caption: |
+              Je tok velikosti $3$ maximální? Orientovaně se do $s$ s volnou kapacitou nedostaneme, ale rozhoduje,
+              zda existuje **rezervní polocesta**.
+          - caption: |
+              Hledáme $R$: ze $z$ do $a$, $b$; z nich do $e$; z $e$ proti směru po $(c,e)$ (teče $1$) do $c$;
+              z $c$ do $d$ a z $d$ do $s$. Je $s \in R$ – rezervní polocesta $z, b, e, c, d, s$ existuje, tok **není** maximální.
+            nodes: { z: visited, a: visited, b: visited, c: visited, d: visited, e: visited, s: path }
+            edges: { z-b: path, b-e: path, c-e: back, c-d: path, d-s: path }
+          - caption: |
+              Po úpravě o $\Theta = 1$ má tok velikost $4$. Nová množina $R = \{z, a, b, e\}$ už $s$ neobsahuje:
+              tok je maximální a hrany $(R,\bar{R})$ (červeně) tvoří minimální řez s propustností $4$ – certifikát optimality.
+            nodes: { z: visited, a: visited, b: visited, e: visited }
+            edges: { z-c: cut, a-d: cut, b-d: cut, e-s: cut }
+            edge_labels: { z-b: "2/2", b-e: "1/2", c-e: "0/1", c-d: "1/2", d-s: "3/4" }
+    source: "skripta str. 9 (poznámka za důkazem věty 2.2)"
+
+  # ------------------------------------------------------------------ 2.4
+  - id: alg-ford-fulkerson
+    kind: algorithm
+    label: "Algoritmus 2.1"
+    section: "2.4"
+    title: Ford–Fulkersonův algoritmus
+    terms: [Ford–Fulkersonův algoritmus, Ford-Fulkerson, algoritmus maximálního toku, metoda zlepšujících cest, augmenting path method, FF]
+    statement: |
+      Vstup: síť $\vec{G}$ s jedním zdrojem $z$, jedním stokem $s$ a propustnostmi $r_{ij}$.
+      Výstup: maximální tok $x$ (a jako vedlejší produkt minimální řez $(R,\bar{R})$).
+
+      Algoritmus opakovaně zvětšuje tok podél libovolné rezervní polocesty ze $z$ do $s$,
+      dokud nějaká existuje. Způsob hledání polocesty není předepsán.
+    pseudocode: |
+      1. Polož $x_{ij} := 0$ pro každou hranu $(i,j) \in H(\vec{G})$ (nulový tok).
+      2. Existuje-li v $\vec{G}$ rezervní polocesta $P$ ze $z$ do $s$ (vzhledem k $x$), urči
+         $\Theta = \Theta(P)$ a uprav tok:
+         $$
+         x_{ij} := \begin{cases}
+           x_{ij} + \Theta & (i,j) \text{ souhlasná hrana } P,\\
+           x_{ij} - \Theta & (i,j) \text{ nesouhlasná hrana } P,\\
+           x_{ij} & (i,j) \text{ neleží na } P,
+         \end{cases}
+         $$
+         a pokračuj bodem 2.
+      3. Neexistuje-li rezervní polocesta ze $z$ do $s$, je tok $x$ maximální. Množina $R$ uzlů
+         dosažitelných ze $z$ po rezervních polocestách určuje minimální řez $(R,\bar{R})$.
+    complexity: |
+      Pro celočíselné propustnosti: každá iterace zvětší tok alespoň o $1$, takže iterací je nejvýše
+      $|x^*|$ (velikost maximálního toku, omezená např. $r(\{z\}, \overline{\{z\}})$). Jedna iterace
+      = prohledání grafu při hledání polocesty + úprava toku, tj. $O(n + m)$. Celkem
+      $O(m \cdot |x^*|)$ – **pseudopolynomiální**: závisí na velikosti propustností, ne jen
+      na $n = |U(\vec{G})|$ a $m = |H(\vec{G})|$ (viz síť s $Q$, kde stačí nešťastná volba a
+      potřebujeme $2Q$ iterací). Pro iracionální propustnosti nemusí skončit vůbec.
+      Polynomiální je až varianta [Edmonds–Karp](#alg-edmonds-karp), $O(nm^2)$.
+    intuition: |
+      Algoritmus je přímým přepisem důkazu [Fordovy–Fulkersonovy věty](#thm-ford-fulkerson):
+      dokud lze tok zlepšit, zlepšíme ho; když nelze, konstrukce množiny $R$ dokazuje optimalitu.
+      Oproti [naivnímu postupu](#rem-naivni-orientovane-cesty) smí polocesty procházet hrany proti
+      směru, čímž se opravují dřívější špatná rozhodnutí.
+
+      **Typická chyba:** skončit, když už neexistuje *orientovaná* cesta s volnou kapacitou
+      (viz příklad níže – tok 3 vypadá maximálně, ale není).
+    examples:
+      - title: "Příklad ze skript – zadání"
+        body: |
+          Najděme maximální tok v síti na obrázku (čísla u hran jsou propustnosti).
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2 }
+            - { from: z, to: b, w: 2 }
+            - { from: z, to: c, w: 1 }
+            - { from: a, to: d, w: 1 }
+            - { from: a, to: e, w: 2 }
+            - { from: b, to: d, w: 1 }
+            - { from: b, to: e, w: 2 }
+            - { from: c, to: d, w: 2 }
+            - { from: c, to: e, w: 1 }
+            - { from: d, to: s, w: 4 }
+            - { from: e, to: s, w: 1 }
+      - title: "Příklad ze skript – tok velikosti 3 po orientovaných cestách"
+        body: |
+          Nulový tok snadno zvětšíme po orientovaných cestách $z\,a\,d\,s$, $z\,c\,e\,s$ a $z\,b\,d\,s$
+          (každá o 1). Dostaneme tok velikosti 3 (u hran $x$ = tok, $w$ = propustnost).
+
+          Teď už žádná **orientovaná** cesta ze $z$ do $s$ s kladnou rezervou neexistuje: hrany
+          $(a,d)$, $(b,d)$, $(e,s)$, $(z,c)$ jsou nasycené. Tok ale ještě maximální není:
+          při konstrukci množiny $R$ zjistíme $s \in R$ díky polocestě $z, b, e, c, d, s$
+          s nesouhlasnou hranou $(c,e)$ a rezervou $1$ (výpočet viz
+          [rezerva polocesty](#def-rezervni-polocesta)).
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 0 }
+            - { from: c, to: e, w: 1, x: 1 }
+            - { from: d, to: s, w: 4, x: 2 }
+            - { from: e, to: s, w: 1, x: 1 }
+      - title: "Příklad ze skript – maximální tok velikosti 4 a minimální řez"
+        body: |
+          Úpravou podél polocesty $z, b, e, c, d, s$ o $\Theta = 1$: $x_{zb}: 1 \to 2$, $x_{be}: 0 \to 1$,
+          $x_{ce}: 1 \to 0$ (nesouhlasná), $x_{cd}: 0 \to 1$, $x_{ds}: 2 \to 3$. Tok má velikost 4.
+
+          Nová konstrukce $R$: ze $z$ se dostaneme do $a$ ($x_{za} = 1 < 2$), z $a$ do $e$
+          ($x_{ae} = 0 < 2$), z $e$ proti směru do $b$ ($x_{be} = 1 > 0$). Hrany $(z,b)$, $(z,c)$,
+          $(a,d)$, $(b,d)$, $(e,s)$ jsou nasycené a $(c,e)$ nulová, takže dál se nedostaneme:
+          $R = \{z, a, b, e\}$, $s \notin R$ – tok je maximální.
+          Minimální řez $(R,\bar{R}) = \{(a,d), (b,d), (z,c), (e,s)\}$ má propustnost $1+1+1+1 = 4$.
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5, inR: true }
+            - { id: a, x: 3, y: 2, inR: true }
+            - { id: b, x: 3, y: 5, inR: true }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7, inR: true }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 1 }
+            - { from: z, to: b, w: 2, x: 2 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 0 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 1 }
+            - { from: c, to: d, w: 2, x: 1 }
+            - { from: c, to: e, w: 1, x: 0 }
+            - { from: d, to: s, w: 4, x: 3 }
+            - { from: e, to: s, w: 1, x: 1 }
+    visualization: max-flow
+    related: [thm-ford-fulkerson, def-rezervni-polocesta, prop-konecnost-ff, rem-ff-zavislost-na-propustnostech, alg-edmonds-karp, cor-charakterizace-max-toku]
+    source: "skripta str. 9–11; přednáška 4, fólie 3"
+
+  - id: prop-konecnost-ff
+    kind: proposition
+    label: "Tvrzení 2.4"
+    section: "2.4"
+    title: Konečnost F–F algoritmu pro celočíselné propustnosti
+    terms: [tvrzení 2.4, konečnost Ford–Fulkersonova algoritmu, celočíselné propustnosti, celočíselný tok, integralita toku]
+    statement: |
+      Jsou-li v síti $\vec{G}$ propustnosti všech hran celá čísla, pak Ford–Fulkersonův algoritmus
+      skončí po konečném počtu kroků.
+    intuition: |
+      Celá čísla se nemohou zvětšovat „donekonečna po malých kouscích“: každý krok přidá aspoň
+      jedničku a strop je dán propustností libovolného řezu.
+
+      Důležitý vedlejší důsledek (**integralita**): v síti s celočíselnými propustnostmi existuje
+      maximální tok, který je celočíselný na každé hraně – algoritmus ho najde. Toho se využívá
+      např. při hledání [největšího párování](#alg-parovani-max-tok).
+    proof: |
+      Indukcí podle počtu kroků ukážeme, že tok je po každém kroku na všech hranách celočíselný.
+      Výchozí nulový tok celočíselný je. Je-li celočíselný tok $x$, jsou všechna čísla
+      $r_{ij} - x_{ij}$ a $x_{ij}$ celá, a tedy i rezerva $\Theta$ (minimum z nich) je celé
+      kladné číslo, tj. $\Theta \ge 1$. Po úpravě o $\pm\Theta$ je tok opět celočíselný.
+
+      Velikost toku tak v každém kroku vzroste o $\Theta \ge 1$. Přitom je podle
+      [tvrzení 2.2](#prop-tok-a-rez) shora omezena propustností libovolného řezu oddělujícího
+      $z$ a $s$, např. $r(\{z\},\overline{\{z\}})$ (součet propustností hran vycházejících ze zdroje),
+      tedy i propustností minimálního řezu. Počet kroků je proto nejvýše tato propustnost –
+      konečné číslo.
+    proof_steps:
+      - Výchozí nulový tok je celočíselný.
+      - Je-li tok celočíselný, je rezerva $\Theta$ minimem celých kladných čísel, tedy $\Theta \ge 1$, a upravený tok je opět celočíselný.
+      - Každý krok tedy zvětší velikost toku alespoň o 1.
+      - Velikost toku je shora omezena propustností libovolného řezu oddělujícího $z$ a $s$ (tvrzení 2.2).
+      - Počet kroků je proto nejvýše propustnost minimálního řezu – algoritmus je konečný.
+    related: [alg-ford-fulkerson, rem-ff-zavislost-na-propustnostech, prop-tok-a-rez]
+    source: "skripta str. 9–10; přednáška 4, fólie 3"
+
+  - id: rem-ff-zavislost-na-propustnostech
+    kind: remark
+    section: "2.4"
+    title: Slabiny F–F algoritmu – iracionální propustnosti a síť s Q
+    terms: [patologický případ, síť s Q, 2Q kroků, iracionální propustnosti, racionální propustnosti, pseudopolynomiální algoritmus, nekonečný běh]
+    statement: |
+      1. Algoritmus je konečný i pro **racionální** propustnosti. Pro obecné reálné propustnosti
+         však (poněkud překvapivě) existují sítě, v nichž F–F algoritmus konečný není.
+         Proto se omezujeme na sítě s celočíselnými propustnostmi.
+      2. Doba běhu závisí nejen na počtu uzlů a hran, ale i na **velikosti propustností**.
+         V síti na obrázku je $Q$ velké číslo. Volíme-li nešťastně v každém kroku rezervní polocestu
+         přes svislou hranu (propustnost 1) – střídavě $z\,p\,q\,s$ a $z\,q\,p\,s$ (s nesouhlasnou
+         hranou $(p,q)$) – vzroste tok vždy jen o 1 a potřebujeme $2Q$ kroků. Přitom dvě polocesty
+         $z\,p\,s$ a $z\,q\,s$ by stačily.
+    intuition: |
+      Racionální případ převedeme na celočíselný: vynásobíme všechny propustnosti společným
+      jmenovatelem $D$; běh algoritmu se tím jen přeškáluje a rezerva je vždy alespoň $1/D$.
+      U iracionálních propustností mohou rezervy tvořit konvergentní řadu, tok se zvětšuje
+      o stále menší kousky a může dokonce konvergovat k hodnotě menší, než je maximum
+      (známé příklady konstruované se zlatým řezem – *doplněno mimo skripta*).
+
+      Příklad s $Q$ ukazuje, že počet kroků $2Q$ je exponenciální vzhledem k délce zápisu vstupu
+      (číslo $Q$ zapíšeme pomocí $\log_2 Q$ bitů). F–F algoritmus tedy **není polynomiální**;
+      nápravu přináší [Edmonds–Karp](#alg-edmonds-karp) – nejkratší polocesta by zde měla jen 2 hrany
+      a algoritmus by skončil po 2 krocích.
+    examples:
+      - title: Síť s Q (zde Q = 100)
+        body: |
+          Propustnosti: $(z,p)$, $(z,q)$, $(p,s)$, $(q,s)$ mají $Q = 100$, svislá hrana $(p,q)$ má $1$.
+          Maximální tok má velikost $2Q = 200$. Při střídání polocest přes svislou hranu
+          vzroste tok v každém kroku o 1 – celkem 200 kroků.
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: p, x: 5, y: 2 }
+            - { id: q, x: 5, y: 8 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: p, w: 100 }
+            - { from: z, to: q, w: 100 }
+            - { from: p, to: q, w: 1 }
+            - { from: p, to: s, w: 100 }
+            - { from: q, to: s, w: 100 }
+    related: [alg-ford-fulkerson, prop-konecnost-ff, alg-edmonds-karp]
+    illustrations:
+      - title: Síť s Q – po jednotkách, nebo najednou
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: p, x: 5, y: 1.5 }
+            - { id: q, x: 5, y: 8.5 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: p, w: 100, x: 0 }
+            - { from: z, to: q, w: 100, x: 0 }
+            - { from: p, to: q, w: 1, x: 0 }
+            - { from: p, to: s, w: 100, x: 0 }
+            - { from: q, to: s, w: 100, x: 0 }
+        steps:
+          - caption: |
+              $Q = 100$, svislá hrana má propustnost $1$. Maximální tok má velikost $2Q = 200$.
+          - caption: |
+              Nešťastná volba: polocesta $z\,p\,q\,s$ přes svislou hranu. Její rezerva je jen $1$ (omezuje ji
+              hrana $(p,q)$), tok vzroste na $1$.
+            edges: { z-p: path, p-q: path, q-s: path }
+            edge_labels: { z-p: "1/100", p-q: "1/1", q-s: "1/100" }
+          - caption: |
+              Další nešťastná volba: $z\,q\,p\,s$, svislou hranu proti směru (může ubrat $1$). Rezerva je opět $1$, tok $2$
+              a svislá hrana je zase prázdná – situace se může opakovat.
+            edges: { z-q: path, p-q: back, p-s: path }
+            edge_labels: { z-p: "1/100", z-q: "1/100", p-q: "0/1", p-s: "1/100", q-s: "1/100" }
+          - caption: |
+              Střídáním těchto dvou polocest roste tok vždy jen o $1$: potřebujeme $2Q = 200$ kroků. Počet kroků roste
+              s **hodnotou** $Q$, tedy exponenciálně v délce jejího zápisu ($\log_2 Q$ bitů).
+            edge_labels: { z-p: "100/100", z-q: "100/100", p-q: "0/1", p-s: "100/100", q-s: "100/100" }
+          - caption: |
+              Edmonds–Karp volí nejkratší polocesty: $z\,p\,s$ a $z\,q\,s$ (2 hrany) s rezervou $100$. Stejný maximální
+              tok najde za **2 kroky** a svislou hranu nikdy nepoužije.
+            edges: { z-p: path, p-s: path, z-q: tree, q-s: tree }
+            edge_labels: { z-p: "100/100", z-q: "100/100", p-q: "0/1", p-s: "100/100", q-s: "100/100" }
+    source: "skripta str. 10"
+
+  # ------------------------------------------------------------------ 2.5
+  - id: alg-edmonds-karp
+    kind: algorithm
+    section: "2.5"
+    title: Edmonds–Karpův algoritmus
+    terms: [Edmonds–Karpův algoritmus, Edmonds-Karp, nejkratší rezervní polocesta, prohledávání do šířky, BFS, breadth-first search, polynomiální algoritmus maximálního toku]
+    statement: |
+      Modifikace [Ford–Fulkersonova algoritmu](#alg-ford-fulkerson): v kroku 2 volíme vždy
+      **nejkratší** rezervní polocestu ze $z$ do $s$ (s nejmenším počtem hran). Hledáme ji
+      **prohledáváním do šířky** (BFS) z uzlu $z$, kde sousedy uzlu $v$ jsou uzly $w$, pro něž
+      $(v,w)$ je nenasycená hrana nebo $(w,v)$ je nenulová hrana.
+
+      Počet opakování kroku 2 pak nezávisí na propustnostech hran – viz
+      [větu o složitosti](#thm-edmonds-karp-slozitost).
+    pseudocode: |
+      1. Polož $x_{ij} := 0$ pro všechny hrany.
+      2. Jedna iterace – hledání nejkratší rezervní polocesty pro aktuální tok $x$:
+         - (a) $T$ je strom na jediném uzlu $z$; seznam (fronta) $L = (z)$; $z$ je **označený**,
+           ostatní uzly **neoznačené**.
+         - (b) Je-li $L \ne \emptyset$, nechť $v$ je první uzel seznamu $L$.
+           - Je-li $v = s$: jednoznačně určená polocesta ze $z$ do $s$ ve stromu $T$ je hledaná
+             nejkratší rezervní polocesta $P$. Uprav podél ní tok jako ve F–F algoritmu
+             (o $\Theta(P)$) a začni novou iteraci (krok 2).
+           - Jinak označ všechny neoznačené sousedy $w$ uzlu $v$, pro něž $(v,w)$ je nenasycená
+             hrana nebo $(w,v)$ je nenulová hrana, připoj je ve stromu $T$ hranou k $v$ a přidej
+             je na konec seznamu $L$. Vyřaď $v$ z $L$ a pokračuj bodem (b).
+         - (c) Je-li $L = \emptyset$, rezervní polocesta ze $z$ do $s$ neexistuje a tok $x$ je
+           maximální; označené uzly tvoří množinu $R$ minimálního řezu $(R,\bar{R})$.
+    complexity: |
+      $O(n m^2)$, kde $n = |U(\vec{G})|$, $m = |H(\vec{G})|$ (pro souvislou síť, $m \ge n-1$).
+      Jedna iterace (BFS + úprava toku) trvá $O(n + m) = O(m)$, protože každou hranu
+      prozkoumáme nejvýše dvakrát (z každého konce jednou). Počet iterací je $O(nm)$ a
+      **nezávisí na propustnostech** ([věta o složitosti](#thm-edmonds-karp-slozitost)).
+      Skripta uvádějí „zhruba $m^2 n$“ jako odhad celkové náročnosti.
+    intuition: |
+      BFS zpracovává uzly po vrstvách podle vzdálenosti od $z$, takže první nalezená cesta do
+      $s$ je nejkratší. Krátké polocesty mají výhodu: v síti s $Q$ by algoritmus okamžitě
+      zvolil dvě polocesty délky 2 a nikdy nešel přes svislou hranu. Obecně se vzdálenosti
+      od $z$ v „reziduální síti“ nikdy nezmenšují, a to omezí počet iterací polynomem.
+
+      Kdy uzel označit: po hraně $(v,w)$ jdeme **po směru**, pokud na ní ještě zbývá kapacita
+      ($x_{vw} < r_{vw}$); po hraně $(w,v)$ jdeme **proti směru**, pokud po ní něco teče
+      ($x_{wv} > 0$).
+    examples:
+      - title: Běh Edmonds–Karpova algoritmu na síti ze skript
+        body: |
+          Síť jako v [příkladu k F–F](#alg-ford-fulkerson); sousedy procházíme abecedně.
+
+          1. BFS: $z$ označí $a, b, c$; $a$ označí $d, e$; $b$, $c$ nic nového; $d$ označí $s$.
+             Polocesta $z\,a\,d\,s$, $\Theta = \min\{2,1,4\} = 1$. Tok 1.
+          2. $z$: $a, b, c$; $a$: jen $e$ ($(a,d)$ nasycená); $b$: $d$; $c$: nic; $e$: $s$.
+             Polocesta $z\,a\,e\,s$, $\Theta = \min\{1,2,1\} = 1$. Tok 2.
+          3. $z$: $b, c$ ($(z,a)$ nasycená); $b$: $d, e$; $c$: nic; $d$: $s$.
+             Polocesta $z\,b\,d\,s$, $\Theta = \min\{2,1,3\} = 1$. Tok 3.
+          4. $z$: $b, c$; $b$: $e$; $c$: $d$; $e$: proti směru $a$ ($x_{ae} = 1 > 0$); $d$: $s$.
+             Polocesta $z\,c\,d\,s$, $\Theta = \min\{1,2,2\} = 1$. Tok 4.
+          5. $z$: jen $b$; $b$: $e$; $e$: $a$ (proti směru); $a$: nic ($(a,d)$ nasycená).
+             Seznam se vyprázdní, $s$ neoznačen → tok je maximální.
+
+          Výsledek: $x_{za} = 2$, $x_{zb} = 1$, $x_{zc} = 1$, $x_{ad} = 1$, $x_{ae} = 1$,
+          $x_{bd} = 1$, $x_{be} = 0$, $x_{cd} = 1$, $x_{ce} = 0$, $x_{ds} = 3$, $x_{es} = 1$,
+          velikost 4. Označené uzly $R = \{z, a, b, e\}$ dávají stejný minimální řez
+          $\{(a,d), (b,d), (z,c), (e,s)\}$ jako ve skriptech, i když tok je jiný.
+          Všechny použité polocesty měly délku 3 (nejkratší možnou).
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: a, x: 3, y: 2 }
+            - { id: b, x: 3, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: d, x: 7, y: 3 }
+            - { id: e, x: 7, y: 7 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: a, w: 2, x: 2 }
+            - { from: z, to: b, w: 2, x: 1 }
+            - { from: z, to: c, w: 1, x: 1 }
+            - { from: a, to: d, w: 1, x: 1 }
+            - { from: a, to: e, w: 2, x: 1 }
+            - { from: b, to: d, w: 1, x: 1 }
+            - { from: b, to: e, w: 2, x: 0 }
+            - { from: c, to: d, w: 2, x: 1 }
+            - { from: c, to: e, w: 1, x: 0 }
+            - { from: d, to: s, w: 4, x: 3 }
+            - { from: e, to: s, w: 1, x: 1 }
+    visualization: max-flow
+    related: [alg-ford-fulkerson, thm-edmonds-karp-slozitost, rem-ff-zavislost-na-propustnostech, def-rezervni-polocesta]
+    source: "skripta str. 11; přednáška 4, fólie 4"
+
+  - id: thm-edmonds-karp-slozitost
+    kind: theorem
+    section: "2.5"
+    title: Počet iterací Edmonds–Karpova algoritmu
+    terms: [složitost Edmonds–Karpova algoritmu, O(nm^2), počet iterací, kritická hrana, monotonie vzdáleností]
+    statement: |
+      Volí-li Ford–Fulkersonův algoritmus vždy nejkratší rezervní polocestu ze $z$ do $s$,
+      provede nejvýše $nm$ úprav toku (kde $n = |U(\vec{G})|$, $m = |H(\vec{G})|$), a to pro
+      libovolné kladné reálné propustnosti. Celková časová složitost je $O(nm^2)$.
+    intuition: |
+      Ve skriptech je jen konstatováno („dá se ukázat“). Klíčové jsou dvě myšlenky:
+      (1) vzdálenost každého uzlu od $z$ po rezervních polocestách během algoritmu nikdy neklesne;
+      (2) hrana, která při úpravě „omezí“ rezervu (nasytí se nebo vynuluje), se může stát znovu
+      omezující jen tehdy, když se vzdálenost jejího počátku zvětší aspoň o 2. Vzdálenosti jsou
+      nejvýš $n-1$, takže každá hrana omezí rezervu nejvýš asi $n/2$-krát.
+    proof: |
+      *Důkaz ve skriptech není, doplněno.*
+
+      **Reziduální graf.** Pro tok $x$ sestrojme orientovaný graf $\vec{G}_x$ na uzlech sítě:
+      pro každou hranu $(i,j)$ s $x_{ij} < r_{ij}$ obsahuje oblouk $i \to j$ a pro každou hranu
+      $(i,j)$ s $x_{ij} > 0$ oblouk $j \to i$. Rezervní polocesty ze $z$ odpovídají přesně
+      orientovaným cestám v $\vec{G}_x$. Označme $\delta_x(v)$ délku (počet hran) nejkratší cesty
+      ze $z$ do $v$ v $\vec{G}_x$ ($\infty$, pokud neexistuje). Na nejkratší cestě $P$ platí pro
+      každý její oblouk $u \to v$: $\delta_x(v) = \delta_x(u) + 1$.
+
+      **Lemma 1 (monotonie).** Nechť $x'$ vznikne z $x$ úpravou podél nejkratší polocesty $P$.
+      Pak $\delta_{x'}(v) \ge \delta_x(v)$ pro všechny uzly $v$.
+      Úprava odstraní z reziduálního grafu aspoň jeden oblouk $P$ (ten, který určil rezervu) a může
+      přidat jen oblouky $v \to u$ opačné k obloukům $u \to v$ cesty $P$. Předpokládejme pro spor,
+      že existuje uzel s $\delta_{x'}(v) < \delta_x(v)$, a vezměme takový s nejmenším $\delta_{x'}(v)$.
+      Nechť $u$ je předchůdce $v$ na nejkratší cestě v $\vec{G}_{x'}$; pak
+      $\delta_{x'}(u) = \delta_{x'}(v) - 1$ a z minimality $\delta_{x'}(u) \ge \delta_x(u)$.
+      Byl-li oblouk $u \to v$ už v $\vec{G}_x$, je $\delta_x(v) \le \delta_x(u) + 1 \le \delta_{x'}(u) + 1
+      = \delta_{x'}(v)$ – spor. Jinak je $u \to v$ nový, tedy $v \to u$ ležel na $P$ a
+      $\delta_x(v) = \delta_x(u) - 1 \le \delta_{x'}(u) - 1 = \delta_{x'}(v) - 2$ – opět spor.
+
+      **Lemma 2 (kritické oblouky).** Oblouk $u \to v$ nazveme kritickým při úpravě, pokud jeho
+      rezerva určila $\Theta$ (po úpravě z reziduálního grafu zmizí). Tehdy
+      $\delta_x(v) = \delta_x(u) + 1$. Aby se $u \to v$ stal znovu kritickým, musí se nejprve
+      znovu objevit, tj. musí se upravovat podél nejkratší cesty obsahující $v \to u$; v tom
+      okamžiku (tok $y$) je $\delta_y(u) = \delta_y(v) + 1 \ge \delta_x(v) + 1 = \delta_x(u) + 2$
+      (Lemma 1). Mezi dvěma kritickými výskyty tedy $\delta(u)$ vzroste aspoň o 2. Protože
+      $\delta(u) \le n - 2$ pro uzel $u \ne s$ na cestě do $s$, může být oblouk kritický nejvýše
+      $n/2$-krát.
+
+      **Závěr.** Každá úprava má aspoň jeden kritický oblouk a možných oblouků reziduálního
+      grafu je nejvýše $2m$ (dva pro každou hranu), takže úprav je nejvýše
+      $2m \cdot n/2 = nm$. Jedna iterace (BFS a úprava toku) stojí $O(m)$, celkem $O(nm^2)$.
+    proof_steps:
+      - Zavedeme reziduální graf $\vec{G}_x$, v němž rezervní polocesty odpovídají orientovaným cestám, a vzdálenosti $\delta_x(v)$ od $z$.
+      - Úprava podél nejkratší cesty jen odebírá oblouky cesty a přidává oblouky k nim opačné, které vedou „o vrstvu zpět“.
+      - Z toho sporem plyne, že vzdálenost $\delta_x(v)$ žádného uzlu během algoritmu neklesne (Lemma 1).
+      - Oblouk, který určil rezervu, zmizí; znovu se objeví jen po úpravě přes opačný oblouk, a tím vzdálenost jeho počátku vzroste alespoň o 2.
+      - Protože vzdálenosti jsou nejvýše $n$, je každý z nejvýše $2m$ oblouků kritický nejvýše $n/2$-krát.
+      - Každá úprava má kritický oblouk, takže úprav je nejvýše $nm$; s cenou $O(m)$ za BFS dostaneme $O(nm^2)$.
+    complexity: "$O(nm^2)$; počet iterací nejvýše $nm$"
+    related: [alg-edmonds-karp, alg-ford-fulkerson, rem-ff-zavislost-na-propustnostech]
+    source: "skripta str. 11 (tvrzení zmíněno bez důkazu)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 2.6
+  - id: rem-fiktivni-zdroj-stok
+    kind: remark
+    section: "2.6"
+    title: Převod sítě s více zdroji a stoky na síť s jedním zdrojem a stokem
+    terms: [fiktivní zdroj, fiktivní stok, superzdroj, superstok, super source, super sink, více zdrojů a stoků, rozhodnutí existence toku]
+    statement: |
+      Je-li $\vec{G}$ síť s více zdroji a stoky, sestrojíme síť $\vec{G}'$ s jedním zdrojem a
+      jedním stokem: přidáme nový („fiktivní“) zdroj $z$ a nový stok $s$ a pro
+      $i = 1, \dots, |U(\vec{G})|$:
+      * je-li $a_i > 0$, přidáme hranu $(z,i)$ s propustností $a_i$ a uzlu $i$ dáme intenzitu $0$,
+      * je-li $a_i < 0$, přidáme hranu $(i,s)$ s propustností $-a_i$ a uzlu $i$ dáme intenzitu $0$,
+      * je-li $a_i = 0$, neděláme nic.
+
+      V $\vec{G}$ existuje tok, právě když $a(U(\vec{G})) = 0$ a maximální tok v $\vec{G}'$ má velikost
+      $\sum_{a_i > 0} a_i$, tj. nasytí všechny nové hrany; restrikce takového toku na $\vec{G}$ je
+      hledaný tok.
+    intuition: |
+      Tento trik dokončuje důkaz [věty 2.1](#thm-existence-toku) a zároveň dává **polynomiální
+      algoritmus** pro rozhodnutí existence toku (místo ověřování $2^n$ nerovností
+      $a(A) \le r(A,\bar{A})$ stačí jeden běh [Edmonds–Karpova algoritmu](#alg-edmonds-karp)).
+      Stejnou konstrukci použijeme pro [největší párování v bigrafu](#alg-parovani-max-tok).
+    examples:
+      - title: Schéma konstrukce
+        body: |
+          Fiktivní zdroj $z$ je spojen se všemi zdroji původní sítě, všechny stoky jsou spojeny
+          s fiktivním stokem $s$. Na obrázku původní síť se zdroji $u_1, u_2$ a stoky $v_1, v_2$
+          (vnitřní hrany sítě vynechány).
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 5 }
+            - { id: u1, x: 3, y: 3, a: 2 }
+            - { id: u2, x: 3, y: 7, a: 3 }
+            - { id: v1, x: 7, y: 3, a: -4 }
+            - { id: v2, x: 7, y: 7, a: -1 }
+            - { id: s, x: 10, y: 5 }
+          edges:
+            - { from: z, to: u1, w: 2 }
+            - { from: z, to: u2, w: 3 }
+            - { from: v1, to: s, w: 4 }
+            - { from: v2, to: s, w: 1 }
+    related: [thm-existence-toku, thm-ford-fulkerson, alg-edmonds-karp, alg-parovani-max-tok]
+    illustrations:
+      - title: Když maximální tok nové hrany nenasytí
+        graph:
+          directed: true
+          nodes:
+            - { id: z, x: 0, y: 6 }
+            - { id: L, x: 2.5, y: 8 }
+            - { id: H, x: 5, y: 2 }
+            - { id: P, x: 7.5, y: 8 }
+            - { id: s, x: 10, y: 6 }
+          edges:
+            - { from: L, to: H, w: 2 }
+            - { from: H, to: P, w: 1 }
+            - { from: L, to: P, w: 1 }
+        steps:
+          - caption: |
+              Původní síť: zdroj $L$ ($a = 3$), stok $P$ ($a = -3$), neutrální $H$. Existuje v ní tok? Místo
+              zkoušení všech množin $A$ přidáme fiktivní zdroj $z$ a stok $s$ (zatím nepřipojené).
+            nodes: { L: source, P: sink }
+            labels: { L: "a=3", H: "a=0", P: "a=−3" }
+          - caption: |
+              Hrana $(z,L)$ dostane propustnost $a_L = 3$, hrana $(P,s)$ propustnost $-a_P = 3$; všechny původní uzly
+              mají teď intenzitu $0$. Tok v původní síti existuje, právě když maximální tok má velikost $a^+ = 3$.
+            add: [[z, L, 3], [P, s, 3]]
+            nodes: { z: source, s: sink }
+            edges: { z-L: active, P-s: active }
+            labels: { L: "a=0", H: "a=0", P: "a=0" }
+          - caption: |
+              Maximální tok má ale velikost jen $2$ (u hran $x/r$): hrany $(z,L)$ a $(P,s)$ zůstanou **nenasycené**,
+              takže tok v původní síti **neexistuje**.
+            edges: { z-L: active, P-s: active }
+            edge_labels: { z-L: "2/3", L-H: "1/2", H-P: "1/1", L-P: "1/1", P-s: "2/3" }
+          - caption: |
+              Minimální řez to vysvětlí: $R = \{z, L, H\}$, řez $\{(H,P), (L,P)\}$ má propustnost $2$. Bez fiktivního
+              zdroje je to množina $A = \{L, H\}$ z věty 2.1 s $a(A) = 3 > r(A,\bar{A}) = 2$.
+            nodes: { z: visited, L: visited, H: visited }
+            edges: { H-P: cut, L-P: cut }
+            edge_labels: { z-L: "2/3", L-H: "1/2", H-P: "1/1", L-P: "1/1", P-s: "2/3" }
+    source: "skripta str. 11 (odd. 2.6)"
+
+quiz:
+  - id: q-toky-01
+    question: |
+      Která podmínka **není** součástí definice toku v síti?
+    options:
+      - '$0 \le x_{ij} \le r_{ij}$ pro každou hranu'
+      - Zákon zachování v každém uzlu (odtok − přítok = intenzita)
+      - '$x_{ij} = x_{ji}$ pro každou dvojici uzlů'
+      - Nezápornost toku na hranách
+    correct: 2
+    explanation: |
+      Tok je orientovaný; po $(i,j)$ a $(j,i)$ mohou téct různá množství a hrana $(j,i)$ vůbec nemusí existovat.
+      Definice obsahuje jen zákon zachování a podmínku $0 \le x_{ij} \le r_{ij}$ (která zahrnuje nezápornost).
+    related: [def-tok]
+
+  - id: q-toky-02
+    question: |
+      Síť má uzly s intenzitami $3$, $0$, $-2$ a velké propustnosti všech hran. Existuje v ní tok?
+    options:
+      - Ano, protože propustnosti jsou velké
+      - Ne, protože součet intenzit není nulový
+      - Ano, pokud je graf silně souvislý
+      - Nelze rozhodnout bez znalosti hran
+    correct: 1
+    explanation: |
+      Věta 2.1 vyžaduje $a(U(\vec{G})) = 0$ (plyne z tvrzení 2.1 pro $A = U(\vec{G})$). Zde je součet $1$,
+      přebytek jedné jednotky nemá kam odtéct, takže tok neexistuje bez ohledu na hrany.
+    related: [thm-existence-toku, prop-bilance-mnoziny]
+
+  - id: q-toky-03
+    question: |
+      Proč Ford–Fulkersonův algoritmus pracuje s **polocestami**, a ne jen s orientovanými cestami?
+    options:
+      - Polocesty jsou kratší, takže algoritmus běží rychleji
+      - Hledání orientovaných cest je NP-úplné
+      - Nesouhlasné hrany umožní snížit tok na dříve nevhodně použité hraně; po orientovaných cestách lze uvíznout v nemaximálním toku
+      - Orientované cesty nemusí začínat ve zdroji
+    correct: 2
+    explanation: |
+      V síti se svislou hranou (všechny propustnosti 1) vede nešťastná volba cesty $z\,p\,q\,s$ k toku 1,
+      ze kterého už žádná orientovaná cesta s rezervou nevede. Polocesta $z\,q\,p\,s$ projde svislou hranu
+      proti směru, tok na ní vynuluje a velikost toku zvýší na maximum 2.
+    related: [rem-naivni-orientovane-cesty, def-polocesta]
+
+  - id: q-toky-04
+    question: |
+      Polocesta ze $z$ do $s$ má souhlasné hrany s $(x_{ij}, r_{ij}) = (1,4)$ a $(0,5)$ a jednu nesouhlasnou hranu
+      s tokem $x = 2$ a propustností $3$. Jaká je její rezerva $\Theta$?
+    options:
+      - "1"
+      - "2"
+      - "3"
+      - "5"
+    correct: 1
+    explanation: |
+      Souhlasné hrany: $4 - 1 = 3$ a $5 - 0 = 5$, tedy $\Theta_s = 3$. Nesouhlasná hrana: lze ubrat
+      nejvýše tok $2$ (propustnost zde nehraje roli), $\Theta_n = 2$. $\Theta = \min\{3, 2\} = 2$.
+    related: [def-rezervni-polocesta]
+
+  - id: q-toky-05
+    question: |
+      Jaká je časová složitost Edmonds–Karpova algoritmu ($n$ uzlů, $m$ hran)?
+    options:
+      - '$O(m \cdot |x^*|)$, kde $|x^*|$ je velikost maximálního toku'
+      - '$O(nm^2)$'
+      - '$O(2^n)$'
+      - '$O(n + m)$'
+    correct: 1
+    explanation: |
+      Iterací je $O(nm)$ (nezávisle na propustnostech) a jedna iterace (BFS + úprava) stojí $O(m)$.
+      $O(m \cdot |x^*|)$ je pseudopolynomiální odhad obecného F–F algoritmu s celočíselnými propustnostmi.
+    related: [alg-edmonds-karp, thm-edmonds-karp-slozitost]
+
+  - id: q-toky-06
+    question: |
+      V síti s hranami $(z,p), (z,q), (p,s), (q,s)$ propustnosti $Q$ a hranou $(p,q)$ propustnosti 1 může
+      F–F algoritmus potřebovat $2Q$ kroků. Co to říká o jeho složitosti?
+    options:
+      - Je lineární, protože $2Q$ je lineární funkce
+      - Není polynomiální vzhledem k velikosti vstupu, protože $Q$ se zapíše jen pomocí $\log Q$ bitů
+      - Je exponenciální v počtu uzlů
+      - Nic, protože pro celočíselné propustnosti je vždy konečný
+    correct: 1
+    explanation: |
+      Počet kroků závisí na velikosti čísel, ne jen na velikosti grafu: síť má 4 uzly a 5 hran, ale $2Q$ kroků je
+      exponenciálně mnoho vůči délce zápisu $Q$. Algoritmus je pseudopolynomiální; Edmonds–Karp by zde skončil po 2 krocích.
+    related: [rem-ff-zavislost-na-propustnostech, alg-edmonds-karp]
+
+  - id: q-toky-07
+    question: |
+      F–F algoritmus skončil s tokem $x$. Jak najdeme minimální řez?
+    options:
+      - Vezmeme všechny nasycené hrany
+      - "$A$ = množina uzlů dosažitelných ze $z$ po rezervních polocestách; řez je $(A, \\bar{A})$"
+      - Vezmeme hrany s nejmenší propustností na každé cestě ze $z$ do $s$
+      - "$A = \\{z\\}$, protože řez u zdroje je vždy minimální"
+    correct: 1
+    explanation: |
+      Z důkazu Fordovy–Fulkersonovy věty: hrany z $R$ ven jsou nasycené a hrany dovnitř nulové, takže
+      $r(R,\bar{R}) = |x|$. Množina všech nasycených hran obecně řezem být nemusí (nebo není minimální).
+    related: [thm-ford-fulkerson, cor-charakterizace-max-toku]
+
+  - id: q-toky-08
+    question: |
+      Co platí o F–F algoritmu pro **iracionální** propustnosti?
+    options:
+      - Skončí vždy, ale pomaleji
+      - Nemusí skončit po konečném počtu kroků
+      - Nelze ho vůbec spustit
+      - Skončí vždy po nejvýše $nm$ krocích
+    correct: 1
+    explanation: |
+      Tvrzení 2.4 zaručuje konečnost jen pro celočíselné (a převodem i racionální) propustnosti. Pro reálné existují
+      sítě, kde se tok zvětšuje o stále menší kousky donekonečna. Edmonds–Karpova volba nejkratší polocesty
+      tento problém odstraňuje.
+    related: [rem-ff-zavislost-na-propustnostech, prop-konecnost-ff]
+
+  - id: q-toky-09
+    question: |
+      Našli jsme tok velikosti 7 a řez oddělující $z$ a $s$ s propustností 7. Co z toho plyne?
+    options:
+      - Nic, musíme ještě spustit algoritmus
+      - Tok je maximální a řez minimální
+      - Tok je maximální, ale řez nemusí být minimální
+      - Síť obsahuje rezervní polocestu
+    correct: 1
+    explanation: |
+      Podle tvrzení 2.2 (ii) je každý tok $\le$ každý řez. Žádný tok tedy nepřesáhne 7 a žádný řez nebude menší než 7 –
+      oba jsou optimální. Řez je „certifikát“ maximality toku.
+    related: [prop-tok-a-rez, thm-ford-fulkerson]
+
+  - id: q-toky-10
+    question: |
+      Proč má v síti s celočíselnými propustnostmi vždy existovat **celočíselný** maximální tok?
+    options:
+      - Protože každý maximální tok je celočíselný
+      - Protože F–F algoritmus začíná nulovým tokem a mění ho vždy o celé číslo $\Theta \ge 1$, a skončí v maximálním toku
+      - Protože podle věty 2.1 jsou intenzity celá čísla
+      - Neplatí to, celočíselný maximální tok existovat nemusí
+    correct: 1
+    explanation: |
+      Z důkazu tvrzení 2.4: všechny mezivýsledky F–F algoritmu jsou celočíselné a algoritmus končí maximálním tokem.
+      Neplatí ale, že každý maximální tok je celočíselný (např. lze tok rozdělit napůl mezi dvě paralelní cesty).
+    related: [prop-konecnost-ff, alg-parovani-max-tok]
+
+  - id: q-toky-11
+    question: |
+      Při BFS v Edmonds–Karpově algoritmu zpracováváme uzel $v$. Kterého souseda $w$ označíme?
+    options:
+      - Každého souseda, do něhož vede hrana $(v,w)$
+      - "Neoznačeného $w$, pro nějž $(v,w)$ je nenasycená hrana nebo $(w,v)$ je nenulová hrana"
+      - "Neoznačeného $w$, pro nějž $(v,w)$ je nasycená hrana"
+      - Jen souseda s největší propustností hrany
+    correct: 1
+    explanation: |
+      Po směru hrany lze pokračovat, je-li $x_{vw} < r_{vw}$; proti směru, je-li $x_{wv} > 0$. Tak vznikají
+      právě rezervní polocesty; strom BFS dává nejkratší z nich.
+    related: [alg-edmonds-karp]
+
+  - id: q-toky-12
+    question: |
+      Pro tok $x$ v síti a množinu $A$ platí $x(A,\bar{A}) = 9$ a $x(\bar{A},A) = 4$. Čemu se rovná $a(A)$?
+    options:
+      - "13"
+      - "9"
+      - "5"
+      - "−5"
+    correct: 2
+    explanation: |
+      Tvrzení 2.1: $a(A) = x(A,\bar{A}) - x(\bar{A},A) = 9 - 4 = 5$. Čistý přebytek množiny $A$ je roven čistému odtoku z ní.
+    related: [prop-bilance-mnoziny]
+
+  - id: q-toky-13
+    question: |
+      Jak se dokazuje, že podmínky věty 2.1 jsou **postačující** pro existenci toku?
+    options:
+      - Indukcí podle počtu uzlů
+      - Přidáním fiktivního zdroje a stoku a použitím Fordovy–Fulkersonovy věty na minimální řez $(\{z\}, \overline{\{z\}})$
+      - Ověřením všech $2^n$ podmnožin uzlů algoritmem
+      - Postačitelnost neplatí, podmínky jsou jen nutné
+    correct: 1
+    explanation: |
+      Z $a(A) \le r(A,\bar{A})$ se odvodí, že řez u fiktivního zdroje je minimální; maximální tok proto nasytí
+      všechny nové hrany a jeho zúžení na původní síť je hledaný tok (skripta odd. 2.6).
+    related: [thm-existence-toku, rem-fiktivni-zdroj-stok]
+
+  - id: q-toky-14
+    question: |
+      Které tvrzení o maximálním toku a minimálním řezu v síti s jedním zdrojem a stokem je **pravdivé**?
+    options:
+      - Maximální tok je vždy jednoznačný
+      - Minimální řez vždy obsahuje všechny nasycené hrany
+      - Velikost maximálního toku je jednoznačná, ale maximálních toků může být více
+      - Do propustnosti řezu se odečítají propustnosti hran vedoucích z $\bar{A}$ do $A$
+    correct: 2
+    explanation: |
+      Např. Edmonds–Karp a postup ve skriptech dají na stejné síti různé maximální toky velikosti 4. Propustnost řezu
+      sčítá jen hrany z $A$ do $\bar{A}$; hrany opačného směru se v ní neobjevují (jen v toku přes řez se odečítají).
+    related: [def-maximalni-tok, def-minimalni-rez, alg-edmonds-karp]

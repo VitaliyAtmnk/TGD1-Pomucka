@@ -1,0 +1,3 @@
+FROM postgres:16-alpine
+# Extra initialisation SQL (runs only when the data volume is created for the first time).
+COPY init/ /docker-entrypoint-initdb.d/

@@ -1,0 +1,2412 @@
+id: nezavislost-jadro
+number: 7
+title: Nezávislost, dominance, klikovost a jádro grafu
+source: "TGD1 skripta kap. 6 (str. 36–44); přednáška TGD1-08 (folie 1–5)"
+exam_questions: [11, 12]
+summary: |
+  Kapitola zkoumá množiny uzlů s extremálními vlastnostmi: nezávislé množiny
+  a nezávislost $\alpha(G)$, uzlová pokrytí a pokrývací číslo $\beta(G)$, kliky
+  a klikovost $\omega(G)$, dominantní množiny a číslo dominance $\gamma(G)$.
+  Ukážeme vztahy $\alpha(G)+\beta(G)=|U(G)|$, $\alpha(G)=\omega(\bar G)$ a
+  $\gamma(G)\le\alpha(G)$. Zásadní je rozdíl mezi *maximální* množinou (nelze ji
+  rozšířit – najdeme hladově v polynomiálním čase) a *největší* množinou
+  (NP-těžká úloha). Druhá část je věnována jádru – nezávislé a zároveň
+  dominantní (absorbující) množině: v neorientovaném grafu existuje vždy,
+  v orientovaném ne (lichý cyklus), ale acyklické grafy a grafy bez lichých
+  cyklů jádro mají a umíme ho efektivně najít (Grundyho funkce).
+sections:
+  - number: "6.1"
+    title: Neorientované grafy
+  - number: "6.2"
+    title: Jádro orientovaného grafu
+items:
+  # ------------------------------------------------------------------ 6.1
+  - id: def-nezavisla-mnozina
+    kind: definition
+    label: "Definice 6.1"
+    section: "6.1"
+    title: Nezávislá množina
+    terms: [nezávislá množina, vnitřně stabilní množina, stabilní množina, independent set, stable set, antiklika]
+    statement: |
+      Množina $A \subset U(G)$ se nazývá **nezávislá množina** grafu $G$
+      (někdy též *vnitřně stabilní*), jestliže žádné dva uzly množiny $A$
+      nejsou spojeny hranou.
+    intuition: |
+      Nezávislá množina je skupina uzlů, které si navzájem „nepřekážejí" –
+      mezi žádnými dvěma z nich nevede hrana. Prázdná množina i každá
+      jednoprvková množina jsou nezávislé triviálně.
+
+      Vlastnost je **dědičná směrem dolů**: odebereme-li z nezávislé množiny
+      libovolné uzly, zůstane nezávislá. Proto nemá smysl hledat malé nezávislé
+      množiny, ale naopak co **největší** (viz [nezávislost grafu](#def-nezavislost-grafu)).
+
+      Typická aplikace – *úloha o vysílačích*: uzly jsou televizní vysílače,
+      hrana spojuje dva vysílače, které by se při vysílání na stejném kanálu
+      rušily. Nezávislá množina = vysílače, které mohou sdílet jeden kanál;
+      chceme jich na jeden kanál dostat co nejvíc.
+    examples:
+      - title: Nezávislé množiny v kružnici $C_6$
+        body: |
+          Uzly kružnice $C_6$ označme $1,2,\dots,6$ (hrany $\{i,i+1\}$ a $\{6,1\}$).
+          Množiny $\{1,3,5\}$ a $\{2,4,6\}$ jsou nezávislé, množina $\{1,4\}$
+          také. Množina $\{1,2,4\}$ nezávislá není, protože obsahuje hranu $\{1,2\}$.
+        graph:
+          directed: false
+          nodes:
+            - { id: "1", x: 5, y: 9, color: 1 }
+            - { id: "2", x: 8.5, y: 7 }
+            - { id: "3", x: 8.5, y: 3, color: 1 }
+            - { id: "4", x: 5, y: 1 }
+            - { id: "5", x: 1.5, y: 3, color: 1 }
+            - { id: "6", x: 1.5, y: 7 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "2", to: "3" }
+            - { from: "3", to: "4" }
+            - { from: "4", to: "5" }
+            - { from: "5", to: "6" }
+            - { from: "6", to: "1" }
+    related: [def-nezavislost-grafu, def-pokryti, def-klika, def-nezavisla-mnozina-orientovaneho-grafu]
+    illustrations:
+      - title: Nezávislé a závislé množiny v kružnici $C_6$
+        for: statement
+        property: independent-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9, y: 7.25 }
+            - { id: c, x: 9, y: 2.75 }
+            - { id: d, x: 5, y: 0.5 }
+            - { id: e, x: 1, y: 2.75 }
+            - { id: f, x: 1, y: 7.25 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: a }
+        steps:
+          - caption: |
+              Vybereme každý druhý uzel kružnice: $\{a, c, e\}$. Mezi vybranými uzly nevede žádná hrana, množina je **nezávislá**.
+            set: [a, c, e]
+          - caption: |
+              Množina $\{a, b, d\}$ nezávislá **není** – stačí jediná hrana $ab$ mezi dvěma vybranými uzly.
+            set: [a, b, d]
+          - caption: |
+              Nezávislá je i dvojice protilehlých uzlů $\{a, d\}$. Nezávislých množin je obvykle mnoho a mají různé velikosti.
+            set: [a, d]
+          - caption: |
+              Přidáme do grafu tětivu $ac$. Množina $\{a, c, e\}$ teď obsahuje hranu, takže přestala být nezávislá.
+            add: [[a, c]]
+            set: [a, c, e]
+          - caption: |
+              Odebereme z množiny uzel $a$: $\{c, e\}$ je opět nezávislá. Vlastnost je **dědičná směrem dolů** – podmnožina nezávislé množiny je nezávislá.
+            set: [c, e]
+    source: "skripta str. 36, Definice 6.1 + příklad a poznámka; folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: def-nezavislost-grafu
+    kind: definition
+    label: "Definice 6.2"
+    section: "6.1"
+    title: Nezávislost grafu
+    terms: [nezávislost grafu, číslo nezávislosti, nezávislostní číslo, "α(G)", alfa, independence number, největší nezávislá množina, maximum independent set]
+    statement: |
+      **Nezávislost** grafu $G$, značíme $\alpha(G)$, je největší počet prvků
+      nezávislé množiny grafu $G$.
+    intuition: |
+      $\alpha(G)$ odpovídá na otázku „kolik nejvíce uzlů mohu vybrat tak, aby
+      žádné dva nesousedily". Několik základních hodnot:
+      $\alpha(K_n)=1$, $\alpha(C_n)=\lfloor n/2\rfloor$,
+      $\alpha(K_{m,n})=\max\{m,n\}$, pro graf bez hran $\alpha=|U(G)|$.
+
+      Pozor na rozdíl *největší* × *maximální* – viz
+      [poznámku](#rem-maximalni-vs-nejvetsi). Výpočet $\alpha(G)$ je NP-těžký
+      (rozhodovací verze je NP-úplná, [viz kap. 9](#thm-ind-npc)).
+    examples:
+      - title: Trojúhelníková mřížka s $\alpha(G)=4$
+        body: |
+          Graf má tři řady uzlů: horní $t_1,t_2,t_3$, prostřední $m_1,\dots,m_4$
+          a dolní $b_1,b_2,b_3$; uzly tvoří trojúhelníkovou síť (10 trojúhelníků).
+          Množina $\{t_1,t_3,b_1,b_3\}$ (barva 1) je nezávislá, tedy $\alpha(G)\ge 4$.
+
+          Horní odhad: uzly lze rozdělit do čtyř úplných podgrafů
+          $\{t_1,m_1,m_2\}$, $\{t_2,t_3,m_3\}$, $\{m_4,b_3\}$, $\{b_1,b_2\}$.
+          Nezávislá množina může z každého úplného podgrafu obsahovat nejvýše
+          jeden uzel, proto $\alpha(G)\le 4$. Celkem $\alpha(G)=4$.
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 3, y: 8, color: 1 }
+            - { id: t2, x: 5, y: 8 }
+            - { id: t3, x: 7, y: 8, color: 1 }
+            - { id: m1, x: 2, y: 5 }
+            - { id: m2, x: 4, y: 5 }
+            - { id: m3, x: 6, y: 5 }
+            - { id: m4, x: 8, y: 5 }
+            - { id: b1, x: 3, y: 2, color: 1 }
+            - { id: b2, x: 5, y: 2 }
+            - { id: b3, x: 7, y: 2, color: 1 }
+          edges: &mrizka
+            - { from: t1, to: t2 }
+            - { from: t2, to: t3 }
+            - { from: m1, to: m2 }
+            - { from: m2, to: m3 }
+            - { from: m3, to: m4 }
+            - { from: b1, to: b2 }
+            - { from: b2, to: b3 }
+            - { from: t1, to: m1 }
+            - { from: t1, to: m2 }
+            - { from: t2, to: m2 }
+            - { from: t2, to: m3 }
+            - { from: t3, to: m3 }
+            - { from: t3, to: m4 }
+            - { from: b1, to: m1 }
+            - { from: b1, to: m2 }
+            - { from: b2, to: m2 }
+            - { from: b2, to: m3 }
+            - { from: b3, to: m3 }
+            - { from: b3, to: m4 }
+    related: [def-nezavisla-mnozina, rem-maximalni-vs-nejvetsi, cor-6-1-alfa-plus-beta, thm-6-4-alfa-omega-doplnku, thm-ind-npc]
+    source: "skripta str. 36–37, Definice 6.2 + příklad; folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: rem-maximalni-vs-nejvetsi
+    kind: remark
+    section: "6.1"
+    title: Maximální × největší nezávislá množina
+    terms: [maximální nezávislá množina, největší nezávislá množina, maximal independent set, maximum independent set, maximal vs maximum, inkluzně maximální]
+    statement: |
+      Je třeba přísně rozlišovat:
+
+      - **maximální** nezávislá množina = nezávislá množina, kterou už nelze
+        rozšířit o žádný další uzel (je maximální vzhledem k inkluzi);
+      - **největší** nezávislá množina = nezávislá množina s největším možným
+        počtem prvků, tj. s $\alpha(G)$ prvky.
+
+      Každá největší nezávislá množina je maximální, opak obecně neplatí.
+      V anglické literatuře se rozlišuje *maximal* × *maximum*
+      („největší nezávislá množina" = *a maximum independent set*).
+      Totéž rozlišení platí pro kliky (maximální = klika, největší má
+      $\omega(G)$ uzlů), pro pokrytí a dominantní množiny (minimální × nejmenší).
+    intuition: |
+      Maximální množina je „lokální optimum": z ní už nevede žádný krok
+      přidáním uzlu. Největší je „globální optimum". Hladový postup se vždy
+      zastaví v nějakém lokálním optimu, ale nemusí to být globální optimum –
+      v tom je celý rozdíl mezi polynomiální a NP-těžkou úlohou.
+    examples:
+      - title: Tři maximální nezávislé množiny různé velikosti
+        body: |
+          V trojúhelníkové mřížce z [Definice 6.2](#def-nezavislost-grafu)
+          jsou maximální například množiny
+
+          - $\{m_1,m_3\}$ (2 prvky) – každý další uzel sousedí s $m_1$ nebo $m_3$,
+          - $\{m_2,t_3,b_3\}$ (3 prvky),
+          - $\{t_1,t_3,b_1,b_3\}$ (4 prvky) – jediná z nich je největší.
+
+          Na obrázku je vyznačena maximální, ale ne největší množina $\{m_1,m_3\}$.
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 3, y: 8 }
+            - { id: t2, x: 5, y: 8 }
+            - { id: t3, x: 7, y: 8 }
+            - { id: m1, x: 2, y: 5, color: 1 }
+            - { id: m2, x: 4, y: 5 }
+            - { id: m3, x: 6, y: 5, color: 1 }
+            - { id: m4, x: 8, y: 5 }
+            - { id: b1, x: 3, y: 2 }
+            - { id: b2, x: 5, y: 2 }
+            - { id: b3, x: 7, y: 2 }
+          edges: *mrizka
+    related: [def-nezavislost-grafu, rem-slozitost-nezavisle-mnoziny, thm-6-5-maximalni-nezavisla-je-dominantni]
+    illustrations:
+      - title: Nerozšiřitelná neznamená největší
+        for: statement
+        property: independent-set
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 3, y: 8 }
+            - { id: t2, x: 5, y: 8 }
+            - { id: t3, x: 7, y: 8 }
+            - { id: m1, x: 2, y: 5 }
+            - { id: m2, x: 4, y: 5 }
+            - { id: m3, x: 6, y: 5 }
+            - { id: m4, x: 8, y: 5 }
+            - { id: b1, x: 3, y: 2 }
+            - { id: b2, x: 5, y: 2 }
+            - { id: b3, x: 7, y: 2 }
+          edges: *mrizka
+        steps:
+          - caption: |
+              $\{m_1, m_3\}$ je nezávislá a **maximální**: každý další uzel sousedí s $m_1$ nebo s $m_3$, takže ji nelze rozšířit. Má ale jen 2 prvky.
+            set: [m1, m3]
+          - caption: |
+              Zkusíme přidat třeba $t_3$ – hned vznikne hrana uvnitř množiny. Stejně dopadne každý jiný uzel; „lokální optimum“ je dosaženo.
+            set: [m1, m3, t3]
+          - caption: |
+              Jiná maximální množina $\{m_2, t_3, b_3\}$ má už 3 prvky. Hladový postup skončí v té či oné podle toho, které uzly vybere dřív.
+            set: [m2, t3, b3]
+          - caption: |
+              $\{t_1, t_3, b_1, b_3\}$ je **největší** nezávislá množina, $\alpha(G) = 4$. Najít ji obecně znamená prozkoumat exponenciálně mnoho možností.
+            set: [t1, t3, b1, b3]
+    source: "skripta str. 37, poznámky a příklad za Definicí 6.2"
+    supplemented: false
+
+  - id: rem-slozitost-nezavisle-mnoziny
+    kind: remark
+    section: "6.1"
+    title: Složitost hledání největší a maximální nezávislé množiny
+    terms: [složitost nezávislé množiny, NP-těžký problém, hrubá síla, hladový algoritmus, maximum independent set complexity]
+    statement: |
+      Algoritmicky je mezi největší a maximální nezávislou množinou zásadní rozdíl:
+
+      - nalezení **největší** nezávislé množiny (tj. výpočet $\alpha(G)$) je
+        **NP-těžký** problém; známe jen postupy typu „hrubá síla" se
+        složitostí řádu $O(2^n)$ (krát polynom);
+      - nalezení **maximální** nezávislé množiny je **polynomiální** problém,
+        řešitelný jednoduchým [hladovým algoritmem](#alg-maximalni-nezavisla-mnozina).
+    intuition: |
+      Pro maximální množinu stačí přidávat uzly, dokud to jde – nikdy se
+      nemusíme vracet. Pro největší množinu ale „špatná" raná volba (třeba
+      uzel s mnoha sousedy) zablokuje mnoho jiných uzlů a nic lepšího než
+      prozkoumat (v nejhorším případě) exponenciálně mnoho možností neznáme.
+    related: [rem-maximalni-vs-nejvetsi, alg-maximalni-nezavisla-mnozina, alg-nejvetsi-nezavisla-mnozina-hrubou-silou, thm-ind-npc]
+    source: "skripta str. 37, poznámka o algoritmické složitosti"
+    supplemented: false
+
+  - id: def-pokryti
+    kind: definition
+    label: "Definice 6.3"
+    section: "6.1"
+    title: Uzlové pokrytí
+    terms: [pokrytí, uzlové pokrytí, vrcholové pokrytí, pokrytí hran uzly, vertex cover, node cover]
+    statement: |
+      Množina $B \subset U(G)$ se nazývá (**uzlové**) **pokrytí** grafu $G$,
+      jestliže pro každou hranu $\{x,y\} \in H(G)$ je $x \in B$ nebo $y \in B$
+      (mohou být i oba).
+    intuition: |
+      Pokrytí „hlídá" všechny hrany: každá hrana musí mít aspoň jeden konec
+      v $B$. Vlastnost je **dědičná směrem nahoru** – přidáme-li k pokrytí
+      další uzly, zůstane pokrytím (celá $U(G)$ je vždy pokrytí). Proto má
+      smysl hledat co **nejmenší** pokrytí.
+
+      Příklad z dopravy: na křižovatky (uzly) chceme rozmístit co nejméně
+      policistů tak, aby každá ulice (hrana) byla hlídaná z některého svého konce.
+    related: [def-pokryvaci-cislo, thm-6-1-nezavisla-doplnek-pokryti, def-nezavisla-mnozina, thm-cov-npc]
+    illustrations:
+      - title: Minimální × nejmenší pokrytí
+        for: statement
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 5, y: 5 }
+            - { id: a, x: 2, y: 8.5 }
+            - { id: b, x: 8, y: 8.5 }
+            - { id: c, x: 8, y: 1.5 }
+            - { id: d, x: 2, y: 1.5 }
+          edges:
+            - { from: s, to: a }
+            - { from: s, to: b }
+            - { from: s, to: c }
+            - { from: s, to: d }
+            - { from: a, to: b }
+        steps:
+          - caption: |
+              Střed $s$ hlídá všechny čtyři „paprsky“, ale hrana $ab$ nemá konec v $\{s\}$ – samotné $s$ pokrytím **není**.
+            set: [s]
+          - caption: |
+              Přidáme $a$: teď má každá hrana aspoň jeden konec v $\{s, a\}$. Menší pokrytí neexistuje, proto $\beta(G) = 2$.
+            set: [s, a]
+          - caption: |
+              Přidáme-li další uzel, pokrytí zůstane pokrytím – vlastnost je **dědičná směrem nahoru**. Proto hledáme co nejmenší pokrytí.
+            set: [s, a, c]
+          - caption: |
+              $\{a, b, c, d\}$ je také pokrytí a je **minimální**: po odebrání libovolného uzlu $x$ zůstane hrana $sx$ nepokrytá. Nejmenší ale není – má 4 prvky místo 2.
+            set: [a, b, c, d]
+          - caption: |
+              Opravdu: bez uzlu $a$ zůstane hrana $sa$ bez hlídače.
+            set: [b, c, d]
+    source: "skripta str. 37, Definice 6.3 + poznámka; folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: def-pokryvaci-cislo
+    kind: definition
+    label: "Definice 6.4"
+    section: "6.1"
+    title: Pokrývací číslo
+    terms: [pokrývací číslo, "β(G)", beta, vertex cover number, nejmenší pokrytí, minimum vertex cover]
+    statement: |
+      **Pokrývací číslo** grafu $G$, značíme $\beta(G)$, je počet prvků
+      nejmenšího pokrytí grafu $G$.
+    intuition: |
+      $\beta(G)$ = minimální počet „hlídačů" hran. Například
+      $\beta(K_n)=n-1$, $\beta(C_n)=\lceil n/2\rceil$, $\beta(K_{1,n})=1$
+      (stačí střed hvězdy). Díky [Důsledku 6.1](#cor-6-1-alfa-plus-beta) je
+      $\beta(G)=|U(G)|-\alpha(G)$, takže výpočet $\beta$ je stejně těžký
+      jako výpočet $\alpha$.
+    examples:
+      - title: Doplňky nezávislých množin jsou pokrytí
+        body: |
+          V trojúhelníkové mřížce s 10 uzly (viz [Definice 6.2](#def-nezavislost-grafu))
+          je $\{t_1,t_3,b_1,b_3\}$ největší nezávislá množina, takže její doplněk
+          $\{t_2,m_1,m_2,m_3,m_4,b_2\}$ je nejmenší pokrytí a $\beta(G)=10-4=6$.
+          Doplněk maximální množiny $\{m_1,m_3\}$ je pokrytí s 8 prvky, které
+          je minimální (nelze z něj nic odebrat), ale ne nejmenší.
+    related: [def-pokryti, cor-6-1-alfa-plus-beta, thm-cov-npc]
+    source: "skripta str. 37, Definice 6.4 + příklad; folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: thm-6-1-nezavisla-doplnek-pokryti
+    kind: theorem
+    label: "Věta 6.1"
+    section: "6.1"
+    title: Nezávislá množina a pokrytí jsou doplňky
+    terms: [nezávislá množina a pokrytí, doplněk nezávislé množiny, complement of independent set is vertex cover]
+    statement: |
+      Množina $A \subset U(G)$ je nezávislá právě když $B = U(G) \setminus A$
+      je pokrytí grafu $G$.
+    intuition: |
+      Hrana „porušuje" nezávislost $A$, právě když má oba konce v $A$ – tedy
+      právě když nemá žádný konec v doplňku $B$, tj. když ji $B$ nepokrývá.
+      Obě vlastnosti tedy hlídají totéž, jen z opačné strany.
+    proof: |
+      Pro libovolnou hranu $\{x,y\}\in H(G)$ platí: „oba konce leží v $A$"
+      je totéž jako „žádný konec neleží v $B=U(G)\setminus A$". Proto:
+
+      $A$ je nezávislá
+      $\iff$ žádná hrana nemá oba konce v $A$
+      $\iff$ každá hrana má alespoň jeden konec v $B$
+      $\iff$ $B$ je pokrytí. $\square$
+    proof_steps:
+      - 'Pro hranu {x,y} je tvrzení „oba konce jsou v A" ekvivalentní s „žádný konec není v B = U(G) \ A".'
+      - 'A je nezávislá právě tehdy, když žádná hrana nemá oba konce v A.'
+      - 'To nastává právě tehdy, když každá hrana má alespoň jeden konec v B.'
+      - 'To je přesně definice pokrytí, tedy B je pokrytí.'
+    related: [def-nezavisla-mnozina, def-pokryti, cor-6-1-alfa-plus-beta]
+    illustrations:
+      - title: Nezávislá množina $A$
+        for: statement
+        property: independent-set
+        graph:
+          directed: false
+          nodes: &zebrik-uzly
+            - { id: a, x: 1, y: 8 }
+            - { id: b, x: 5, y: 8 }
+            - { id: c, x: 9, y: 8 }
+            - { id: d, x: 1, y: 2 }
+            - { id: e, x: 5, y: 2 }
+            - { id: f, x: 9, y: 2 }
+          edges: &zebrik-hrany
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: a, to: d }
+            - { from: b, to: e }
+            - { from: c, to: f }
+            - { from: d, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              $A = \{a, c, e\}$ je nezávislá. Ve vedlejší ilustraci je na stejném grafu vybrán její doplněk $B = \{b, d, f\}$ – a ten je pokrytím.
+            set: [a, c, e]
+          - caption: |
+              Přidáme do $A$ uzel $f$. Hrany $cf$ a $ef$ mají teď **oba** konce v $A$ – tedy žádný konec v doplňku $\{b, d\}$. Nezávislost $A$ i pokrytí doplňkem se rozbijí současně.
+            set: [a, c, e, f]
+          - caption: |
+              Role lze prohodit: i $\{b, d, f\}$ je nezávislá, a proto je její doplněk $\{a, c, e\}$ pokrytí.
+            set: [b, d, f]
+      - title: Doplněk $B = U(G) \setminus A$ je pokrytí
+        for: proof
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes: *zebrik-uzly
+          edges: *zebrik-hrany
+        steps:
+          - caption: |
+              $B = \{b, d, f\}$ je doplněk nezávislé množiny $\{a, c, e\}$. Hrana by nebyla pokrytá, jen kdyby měla oba konce v $A$ – a takovou nezávislost zakazuje. $B$ **je** pokrytí.
+            set: [b, d, f]
+          - caption: |
+              Doplněk množiny $\{a, c, e, f\}$, která nezávislá není, je $\{b, d\}$. Přesně „vadné“ hrany $cf$ a $ef$ s oběma konci v $A$ zůstanou nepokryté.
+            set: [b, d]
+          - caption: |
+              A naopak: $\{a, c, e\}$ je pokrytí, protože doplněk $\{b, d, f\}$ je nezávislý. Obě velikosti dávají dohromady $|U(G)| = 6$.
+            set: [a, c, e]
+    source: "skripta str. 37, Věta 6.1 s důkazem; folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: cor-6-1-alfa-plus-beta
+    kind: corollary
+    label: "Důsledek 6.1"
+    section: "6.1"
+    title: "α(G) + β(G) = |U(G)|"
+    terms: [alfa plus beta, vztah nezávislosti a pokrývacího čísla, Gallaiova identita]
+    statement: |
+      Pro každý graf $G$ platí
+      $$
+      \alpha(G) + \beta(G) = |U(G)|.
+      $$
+    intuition: |
+      Podle [Věty 6.1](#thm-6-1-nezavisla-doplnek-pokryti) se nezávislé množiny
+      a pokrytí přesně „párují" doplňkem. Čím větší nezávislá množina, tím
+      menší její doplňkové pokrytí – největší nezávislá množina tedy odpovídá
+      nejmenšímu pokrytí. Prakticky: kdo umí spočítat $\alpha$, umí spočítat
+      i $\beta$ a naopak.
+    proof: |
+      Označme $n=|U(G)|$.
+
+      - Je-li $A$ největší nezávislá množina ($|A|=\alpha(G)$), pak podle
+        Věty 6.1 je $U(G)\setminus A$ pokrytí s $n-\alpha(G)$ prvky, tedy
+        $\beta(G)\le n-\alpha(G)$.
+      - Je-li $B$ nejmenší pokrytí ($|B|=\beta(G)$), pak podle Věty 6.1 je
+        $U(G)\setminus B$ nezávislá množina s $n-\beta(G)$ prvky, tedy
+        $\alpha(G)\ge n-\beta(G)$, neboli $\alpha(G)+\beta(G)\ge n$.
+
+      Obě nerovnosti dohromady dávají $\alpha(G)+\beta(G)=n$; zároveň vidíme,
+      že doplněk největší nezávislé množiny je nejmenší pokrytí. $\square$
+    proof_steps:
+      - 'Vezmeme největší nezávislou množinu A; její doplněk je podle Věty 6.1 pokrytí, proto β(G) ≤ n − α(G).'
+      - 'Vezmeme nejmenší pokrytí B; jeho doplněk je podle Věty 6.1 nezávislá množina, proto α(G) ≥ n − β(G).'
+      - 'Spojením obou nerovností dostaneme α(G) + β(G) = n.'
+    examples:
+      - title: Rychlý výpočet
+        body: |
+          Graf má 10 uzlů a $\alpha(G)=4$. Pak $\beta(G)=10-4=6$ bez dalšího
+          počítání. Pro hvězdu $K_{1,n}$ je $\alpha=n$, a tedy $\beta=1$.
+    related: [thm-6-1-nezavisla-doplnek-pokryti, def-nezavislost-grafu, def-pokryvaci-cislo]
+    source: "skripta str. 37, Důsledek 6.1 (důkaz ve skriptech jednořádkový, zde rozepsán); folie TGD1-08 s. 1"
+    supplemented: false
+
+  - id: thm-chvatal-erdos
+    kind: theorem
+    label: "Věta 6.2 (Chvátal, Erdős)"
+    section: "6.1"
+    title: Chvátalova–Erdősova věta
+    terms: [Chvátal, Erdős, Chvátalova-Erdősova věta, hamiltonovský graf a nezávislost, k-souvislost a nezávislost, Chvátal–Erdős theorem]
+    statement: |
+      Nechť $G$ je $k$-souvislý graf ($k \ge 2$) s $\alpha(G) \le k$.
+      Pak je $G$ hamiltonovský.
+    intuition: |
+      Vysoká souvislost znamená, že se k libovolné kružnici dá „dostat" mnoha
+      disjunktními cestami. Malá nezávislost znamená, že graf je „hustý" –
+      nelze v něm najít mnoho navzájem nesousedních uzlů. Kdyby nejdelší
+      kružnice nebyla hamiltonovská, umíme z ní a z $k$ cest k ní vyrobit
+      $k+1$ nezávislých uzlů – a to je víc, než dovoluje $\alpha(G)\le k$.
+
+      Mez je těsná: $K_{k,k+1}$ je $k$-souvislý, má $\alpha=k+1$ a hamiltonovský
+      není (bipartitní graf s nestejně velkými partitami nemá hamiltonovskou
+      kružnici).
+    proof: |
+      Postupujeme sporem jako ve skriptech, jen cesty k nejdelší kružnici vedeme
+      z jediného uzlu (tzv. vějíř), což argumentaci zjednoduší.
+
+      Nechť $G$ není hamiltonovský. Protože je $2$-souvislý, obsahuje kružnici;
+      zvolme **nejdelší kružnici** $C$ a pevně zvolme směr jejího oběhu.
+
+      *Délka $C$.* V $k$-souvislém grafu má každý uzel stupeň aspoň $k$.
+      Vezmeme-li nejdelší cestu $v_0v_1\dots v_r$, leží všichni sousedé $v_0$
+      na ní (jinak by šla prodloužit); nejvzdálenější soused $v_j$ má $j\ge k$
+      a úsek $v_0\dots v_j$ s hranou $v_jv_0$ je kružnice s aspoň $k+1$ uzly.
+      Tedy $|U(C)|\ge k+1$.
+
+      *Vějíř.* Protože $C$ není hamiltonovská, existuje uzel $v\notin U(C)$.
+      Podle zobecněné (vějířové) Mengerovy věty existuje $k$ cest
+      $P_1,\dots,P_k$ z $v$ do $C$, které mají společný jen uzel $v$ a každá
+      má s $C$ společný jen svůj koncový uzel $y_i$; uzly $y_1,\dots,y_k$ jsou
+      navzájem různé. Označme $z_i$ následníka uzlu $y_i$ na $C$ (při zvoleném
+      směru oběhu). Uzly $z_1,\dots,z_k$ jsou různé a různé od $v$.
+
+      *Tvrzení:* $M=\{v,z_1,\dots,z_k\}$ je nezávislá množina.
+
+      - Kdyby $\{v,z_i\}\in H(G)$, nahradíme na $C$ hranu $y_iz_i$ cestou
+        $y_i \xrightarrow{P_i} v \to z_i$. Vznikne kružnice obsahující všechny
+        uzly $C$ a navíc $v$ – delší než $C$, spor.
+      - Kdyby $\{z_i,z_j\}\in H(G)$ pro $i\ne j$, sestrojíme kružnici:
+        z $y_i$ po $P_i$ do $v$, po $P_j$ do $y_j$, pak po $C$ **proti** směru
+        oběhu z $y_j$ do $z_i$, hranou $z_iz_j$ a po $C$ **po** směru z $z_j$
+        zpět do $y_i$. Ta prochází všemi uzly $C$ a navíc uzlem $v$ – opět
+        delší než $C$, spor.
+
+      $M$ je tedy nezávislá množina s $k+1$ prvky, což je ve sporu
+      s předpokladem $\alpha(G)\le k$. Proto je $G$ hamiltonovský. $\square$
+    proof_steps:
+      - 'Sporem: G není hamiltonovský; zvolíme nejdelší kružnici C a pevný směr jejího oběhu.'
+      - 'Protože minimální stupeň je aspoň k, má nejdelší kružnice aspoň k + 1 uzlů.'
+      - 'Zvolíme uzel v mimo C a podle Mengerovy věty (vějíř) k cest z v do C s různými koncovými uzly y_1, …, y_k, disjunktních mimo v.'
+      - 'Označíme z_i následníka y_i na C a uvažujeme množinu M = {v, z_1, …, z_k}.'
+      - 'Hrana v z_i by umožnila nahradit hranu y_i z_i cestou přes v, a tím prodloužit C – spor.'
+      - 'Hrana z_i z_j by dala kružnici přes P_i, P_j a oba oblouky C, která obsahuje celé C a navíc v – spor.'
+      - 'M je tedy nezávislá s k + 1 prvky, což odporuje α(G) ≤ k.'
+    examples:
+      - title: Těsnost meze
+        body: |
+          - $K_n$ ($n\ge3$): je $(n-1)$-souvislý a $\alpha=1$, věta dává hamiltonovskost.
+          - $K_{k,k}$: je $k$-souvislý a $\alpha=k$ – hamiltonovský.
+          - $K_{k,k+1}$: je $k$-souvislý, ale $\alpha=k+1>k$, a hamiltonovský není.
+            Předpoklad $\alpha(G)\le k$ tedy nelze zeslabit na $\alpha(G)\le k+1$.
+    related: [thm-dirac-kruznice-pres-k-uzlu, def-nezavislost-grafu]
+    source: "skripta str. 38, Věta 6.2 s důkazem (zde mírně upraven); folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: thm-dirac-kruznice-pres-k-uzlu
+    kind: theorem
+    label: "Věta 6.3 (Dirac)"
+    section: "6.1"
+    title: Kružnice přes libovolných k uzlů
+    terms: [Dirac, Diracova věta o kružnicích, k-souvislý graf kružnice, kružnice procházející danými uzly, Dirac theorem k-connected cycle]
+    statement: |
+      Nechť $G$ je $k$-souvislý graf ($k \ge 2$). Pak pro každou množinu
+      $M \subset U(G)$, $|M| \le k$, existuje v grafu $G$ kružnice $C$ taková,
+      že $M \subset U(C)$.
+    intuition: |
+      Zobecnění známého faktu, že ve $2$-souvislém grafu leží každé dva uzly
+      na společné kružnici. Čím vyšší souvislost, tím víc předepsaných uzlů
+      dokážeme „navléknout" na jednu kružnici. Technika důkazu je stejná jako
+      u [Chvátalovy–Erdősovy věty](#thm-chvatal-erdos): vezmeme extremální
+      kružnici a vějíř cest k ní.
+    proof: |
+      Ve skriptech je důkaz jen naznačen; zde ho provádíme úplně, s vějířem
+      cest z chybějícího uzlu (tím je zaručeno, že nová kružnice tento uzel
+      opravdu obsahuje).
+
+      $G$ je $2$-souvislý, takže kružnice existují. Zvolme kružnici $C$, která
+      obsahuje **co nejvíce** uzlů množiny $M$, a předpokládejme sporem, že
+      existuje $z\in M\setminus U(C)$. Pak $s=|M\cap U(C)|\le k-1$.
+
+      Podle vějířové verze Mengerovy věty existuje $r=\min\{k,|U(C)|\}$ cest
+      $P_1,\dots,P_r$ ze $z$ do $C$, které mají společný jen uzel $z$ a s $C$
+      mají společný jen svůj koncový uzel $y_i$ (uzly $y_i$ jsou různé).
+
+      Najdeme dva koncové uzly $y_i\ne y_j$ a oblouk kružnice $C$ mezi nimi,
+      v jehož **vnitřku** neleží žádný uzel z $M$:
+
+      - Je-li $r=|U(C)|$, končí cesty ve všech uzlech $C$; zvolíme dva
+        sousední uzly kružnice – oblouk mezi nimi nemá žádné vnitřní uzly.
+      - Je-li $r=k$, rozdělí uzly z $M\cap U(C)$ kružnici na $s\le k-1$
+        polootevřených oblouků (od jednoho uzlu z $M$, bez něj, po další
+        uzel z $M$ včetně; pro $s=0$ je celá $C$ jedním obloukem). Koncových
+        uzlů je $k>s$, podle Dirichletova principu tedy dva z nich, $y_i$
+        a $y_j$, leží ve stejném oblouku a úsek $C$ mezi nimi uvnitř tohoto
+        oblouku nemá ve vnitřku žádný uzel z $M$.
+
+      Nahradíme tento úsek cestou $y_i \xrightarrow{P_i} z \xrightarrow{P_j} y_j$.
+      Vzniklá kružnice $C'$ obsahuje všechny uzly z $M\cap U(C)$ (žádný jsme
+      neodstranili) a navíc uzel $z$, tedy
+      $(U(C)\cap M)\cup\{z\}\subset U(C')$ – spor s volbou $C$. $\square$
+    proof_steps:
+      - 'Zvolíme kružnici C obsahující co nejvíce uzlů z M a sporem předpokládáme, že nějaký z ∈ M na ní neleží; pak |M ∩ U(C)| ≤ k − 1.'
+      - 'Podle vějířové Mengerovy věty vedeme ze z do C min{k, |U(C)|} cest, disjunktních mimo z, s různými koncovými uzly na C.'
+      - 'Uzly M ∩ U(C) dělí C na nejvýše k − 1 oblouků; podle Dirichletova principu (nebo volbou dvou sousedních uzlů C) najdeme dva koncové uzly y_i, y_j, mezi nimiž není uvnitř oblouku žádný uzel z M.'
+      - 'Úsek C mezi y_i a y_j nahradíme cestou y_i → z → y_j složenou z P_i a P_j.'
+      - 'Nová kružnice obsahuje všechny původní uzly z M a navíc z, což je spor s volbou C.'
+    related: [thm-chvatal-erdos]
+    source: "skripta str. 38, Věta 6.3 s náznakem důkazu (zde doplněn); folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: def-klika
+    kind: definition
+    label: "Definice 6.5"
+    section: "6.1"
+    title: Klika
+    terms: [klika, maximální úplný podgraf, clique, maximal clique, úplný podgraf]
+    statement: |
+      Podgraf $K \subset G$ se nazývá **klika** grafu $G$, jestliže
+
+      a) $K$ je úplný podgraf,
+
+      b) jestliže $K \subset K' \subset G$ a $K'$ je úplný podgraf, pak $K = K'$.
+
+      Jinak řečeno, klika je **maximální** (vzhledem k inkluzi) úplný podgraf.
+    intuition: |
+      Klika je „parta, kde se zná každý s každým" a ke které už nelze přibrat
+      nikoho dalšího, kdo by znal všechny. Je to v jistém smyslu opak nezávislé
+      množiny: tam nesmí být žádná hrana, tady musí být všechny.
+
+      Pozor: v části literatury (a v úloze CLIQUE) se klikou rozumí libovolný
+      úplný podgraf; v TGD1 je klika vždy *maximální* úplný podgraf.
+      Klika nemusí být největší – viz příklad.
+    examples:
+      - title: Klika, která není největší
+        body: |
+          Graf tvoří úplný graf na uzlech $a,b,c,d$, uzel $e$ spojený s $c$
+          a $d$ a uzel $f$ spojený jen s $e$.
+
+          - $\{a,b,c,d\}$ je klika ($K_4$, největší).
+          - $\{c,d,e\}$ je klika: je úplná a nelze ji rozšířit ($a,b$ nesousedí s $e$).
+          - $\{e,f\}$ je klika ($K_2$).
+          - $\{a,b,c\}$ klika **není** – je to úplný podgraf, ale lze ho rozšířit o $d$.
+
+          Tedy $\omega(G)=4$.
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 8, color: 1 }
+            - { id: b, x: 1, y: 2, color: 1 }
+            - { id: c, x: 4.5, y: 8, color: 1 }
+            - { id: d, x: 4.5, y: 2, color: 1 }
+            - { id: e, x: 7, y: 5 }
+            - { id: f, x: 9.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+            - { from: e, to: f }
+    related: [def-klikovost, thm-6-4-alfa-omega-doplnku, def-nezavisla-mnozina, thm-clique-npc]
+    illustrations:
+      - title: Kliky různých velikostí
+        for: statement
+        property: clique
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 8 }
+            - { id: b, x: 1, y: 2 }
+            - { id: c, x: 4.5, y: 8 }
+            - { id: d, x: 4.5, y: 2 }
+            - { id: e, x: 7, y: 5 }
+            - { id: f, x: 9.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: b, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              $\{a, b, c, d\}$ je úplný podgraf $K_4$ – každý se zná s každým. Je to největší klika, $\omega(G) = 4$.
+            set: [a, b, c, d]
+          - caption: |
+              $\{c, d, e\}$ je také úplný podgraf. Klikou (v TGD1 = maximálním úplným podgrafem) je proto, že ho nelze rozšířit – viz další krok.
+            set: [c, d, e]
+          - caption: |
+              Pokus přibrat $a$ selže: $a$ a $e$ nesousedí (stejně tak $b$ a $e$). Klika $\{c, d, e\}$ je tedy maximální, i když není největší.
+            set: [a, c, d, e]
+          - caption: |
+              I dvojice $\{e, f\}$ je klika: $f$ nemá jiného souseda než $e$, takže ji nelze zvětšit.
+            set: [e, f]
+          - caption: |
+              Malá změna: přidáme hranu $be$. Z $\{c, d, e\}$ se stane druhá čtyřprvková klika $\{b, c, d, e\}$; $K_5$ ale nevznikne, protože $a$ a $e$ stále nesousedí.
+            add: [[b, e]]
+            set: [b, c, d, e]
+    source: "skripta str. 38, Definice 6.5 + příklad; folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: def-klikovost
+    kind: definition
+    label: "Definice 6.6"
+    section: "6.1"
+    title: Klikovost grafu
+    terms: [klikovost, klikové číslo, "ω(G)", omega, clique number, největší klika, maximum clique]
+    statement: |
+      **Klikovost** grafu $G$, značíme $\omega(G)$, je největší počet uzlů
+      kliky grafu $G$.
+    intuition: |
+      $\omega(G)$ je velikost největšího úplného podgrafu (největší úplný
+      podgraf je automaticky klikou). Platí $\omega(K_n)=n$, $\omega(C_n)=2$
+      pro $n\ge4$, $\omega(C_3)=3$, pro bipartitní graf s aspoň jednou hranou
+      $\omega=2$. Klikovost je dolní mez chromatického čísla:
+      $\chi(G)\ge\omega(G)$ (viz [Tvrzení 7.1](#prop-7-1-klika-dolni-odhad)).
+    related: [def-klika, thm-6-4-alfa-omega-doplnku, prop-7-1-klika-dolni-odhad, thm-clique-npc]
+    source: "skripta str. 38–39, Definice 6.6 + příklad ($\\omega(G)=4$); folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: def-doplnek-grafu
+    kind: definition
+    label: "Definice 6.7"
+    section: "6.1"
+    title: Doplněk grafu
+    terms: [doplněk grafu, komplement grafu, complement graph, "Ḡ", doplňkový graf]
+    statement: |
+      Nechť $G$ je graf. Potom graf
+      $$
+      \bar G = \left(U(G),\ \binom{U(G)}{2} \setminus H(G)\right)
+      $$
+      se nazývá **doplněk** grafu $G$.
+      (Zde $\binom{U(G)}{2}$ je množina všech dvouprvkových podmnožin $U(G)$.)
+    intuition: |
+      Doplněk má stejné uzly a hrany přesně tam, kde je v $G$ **nemá**.
+      $G$ a $\bar G$ dohromady dají úplný graf $K_n$. Doplněk převádí
+      „nesousedí" na „sousedí", a proto převádí nezávislé množiny na kliky
+      ([Věta 6.4](#thm-6-4-alfa-omega-doplnku)).
+    examples:
+      - title: Doplňky malých grafů
+        body: |
+          (Ve skriptech značí $P_k$ cestu délky $k$, tj. s $k$ hranami.)
+
+          1. „Domeček" na 5 uzlech (čtverec $a,b,d,c$ se střechou $t$, hrany
+             $ta,tb,ab,ac,bd,cd$) má 6 hran; jeho doplněk má $10-6=4$ hrany
+             $tc,td,ad,bc$ a je to cesta $b\,c\,t\,d\,a$, tj. $P_4$.
+          2. Doplněk cesty se 3 hranami na 4 uzlech je opět cesta se 3 hranami
+             – graf je izomorfní se svým doplňkem.
+          3. Doplněk kružnice $C_5$ je opět $C_5$ (pentagram).
+    related: [thm-6-4-alfa-omega-doplnku, rem-autokomplementarni-graf]
+    source: "skripta str. 39, Definice 6.7 + příklady; folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: rem-autokomplementarni-graf
+    kind: remark
+    section: "6.1"
+    title: Autokomplementární graf
+    terms: [autokomplementární graf, samodoplňkový graf, self-complementary graph]
+    statement: |
+      Je-li graf izomorfní se svým doplňkem, hovoříme o **autokomplementárním**
+      grafu (např. cesta se 3 hranami, $C_5$). Na šesti uzlech žádný
+      autokomplementární graf neexistuje: graf na šesti uzlech má spolu se svým
+      doplňkem $\binom{6}{2}=15$ hran, což je liché číslo, a nemůže se tedy
+      rozdělit na dvě stejně velké poloviny.
+    intuition: |
+      Izomorfní grafy mají stejný počet hran, takže autokomplementární graf
+      na $n$ uzlech má přesně $\frac12\binom n2$ hran. To vyžaduje, aby
+      $\binom n2$ bylo sudé, tj. $n\equiv 0$ nebo $1 \pmod 4$
+      (obecnější podmínka – doplněno).
+    related: [def-doplnek-grafu]
+    source: "skripta str. 39, poznámka za Definicí 6.7"
+    supplemented: false
+
+  - id: thm-6-4-alfa-omega-doplnku
+    kind: theorem
+    label: "Věta 6.4"
+    section: "6.1"
+    title: "α(G) = ω(Ḡ)"
+    terms: [nezávislost a klikovost doplňku, alfa rovná se omega doplňku, independent set clique complement]
+    statement: |
+      Nechť $G$ je graf. Pak
+      $$
+      \alpha(G) = \omega(\bar G).
+      $$
+    intuition: |
+      Přechod k doplňku vymění hrany za „nehrany". Množina bez vnitřních hran
+      v $G$ je tedy množina se všemi vnitřními hranami v $\bar G$. Důsledek
+      pro algoritmy: úlohy o největší nezávislé množině a o největší klice jsou
+      stejně těžké – jednu převedeme na druhou sestrojením doplňku v čase
+      $O(n^2)$. Spolu s [Důsledkem 6.1](#cor-6-1-alfa-plus-beta) dostáváme
+      i $\beta(G)=|U(G)|-\omega(\bar G)$.
+    proof: |
+      Nechť $A\subset U(G)$. Množina $A$ je nezávislá v $G$, právě když žádné
+      dva její uzly nejsou v $G$ spojeny hranou, tj. právě když jsou každé dva
+      její uzly spojeny hranou v $\bar G$ – neboli právě když $A$ indukuje
+      v $\bar G$ úplný podgraf.
+
+      Velikosti nezávislých množin v $G$ jsou tedy přesně velikosti úplných
+      podgrafů v $\bar G$. Největší úplný podgraf nelze rozšířit, je to tedy
+      klika; naopak každá klika je úplný podgraf. Proto největší nezávislá
+      množina v $G$ má stejně prvků jako největší klika v $\bar G$, tj.
+      $\alpha(G)=\omega(\bar G)$. $\square$
+    proof_steps:
+      - 'Množina A je nezávislá v G, právě když žádné dva její uzly nejsou v G sousední.'
+      - 'To je totéž, jako že každé dva uzly A jsou sousední v doplňku Ḡ, tj. A indukuje v Ḡ úplný podgraf.'
+      - 'Velikosti nezávislých množin v G jsou proto přesně velikosti úplných podgrafů v Ḡ.'
+      - 'Největší úplný podgraf je nerozšiřitelný, tedy je to klika; proto α(G) = ω(Ḡ).'
+    examples:
+      - title: Graf s $\omega(G)=4$ a jeho doplněk
+        body: |
+          Pro graf z [příkladu ke klice](#def-klika) ($K_4$ na $a,b,c,d$, $e$
+          spojené s $c,d$, $f$ spojené s $e$) je $\omega(G)=4$. V doplňku $\bar G$
+          tvoří $\{a,b,c,d\}$ nezávislou množinu a $\alpha(\bar G)=4$
+          (větší nezávislá množina v $\bar G$ by byla klikou v $G$ s více než 4 uzly).
+    related: [def-nezavislost-grafu, def-klikovost, def-doplnek-grafu, thm-clique-npc]
+    illustrations:
+      - title: Nezávislé množiny v $G$
+        for: statement
+        property: independent-set
+        graph:
+          directed: false
+          nodes: &sestiuhelnik-uzly
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9, y: 7.25 }
+            - { id: c, x: 9, y: 2.75 }
+            - { id: d, x: 5, y: 0.5 }
+            - { id: e, x: 1, y: 2.75 }
+            - { id: f, x: 1, y: 7.25 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: a }
+            - { from: b, to: e }
+        steps:
+          - caption: |
+              Graf $G$ je kružnice $C_6$ s tětivou $be$. Množina $\{a, c, e\}$ je nezávislá – ve vedlejší ilustraci (doplněk $\bar G$) tvoří tytéž uzly trojúhelník.
+            set: [a, c, e]
+          - caption: |
+              Čtyřprvková nezávislá množina neexistuje, třeba přidání $b$ vytvoří hranu $ab$. Proto $\alpha(G) = 3$.
+            set: [a, b, c, e]
+          - caption: |
+              Druhá největší nezávislá množina $\{b, d, f\}$ – v $\bar G$ je to druhý trojúhelník.
+            set: [b, d, f]
+          - caption: |
+              Dvojice $\{b, e\}$ nezávislá není kvůli tětivě $be$ – a právě proto v $\bar G$ hrana $be$ chybí.
+            set: [b, e]
+      - title: Kliky v doplňku $\bar G$
+        for: proof
+        property: clique
+        graph:
+          directed: false
+          nodes: *sestiuhelnik-uzly
+          edges:
+            - { from: a, to: c }
+            - { from: c, to: e }
+            - { from: e, to: a }
+            - { from: b, to: d }
+            - { from: d, to: f }
+            - { from: f, to: b }
+            - { from: a, to: d }
+            - { from: c, to: f }
+        steps:
+          - caption: |
+              Doplněk $\bar G$ má hranu přesně tam, kde ji $G$ nemá. Nezávislá množina $\{a, c, e\}$ z $G$ je v $\bar G$ **klika** – „nesousedí“ se změnilo na „sousedí“.
+            set: [a, c, e]
+          - caption: |
+              Totéž pro $\{b, d, f\}$: nezávislá v $G$, úplná v $\bar G$.
+            set: [b, d, f]
+          - caption: |
+              Rozšíření o $d$ selže, protože $cd$ je hrana v $G$, a tedy v $\bar G$ chybí. Větší klika v $\bar G$ by byla větší nezávislou množinou v $G$ – proto $\omega(\bar G) = \alpha(G) = 3$.
+            set: [a, c, d, e]
+          - caption: |
+              Dvojice $\{b, e\}$ v $\bar G$ úplná není – v $G$ je $be$ hrana. Zkus v režimu *Vyzkoušej sám* najít další dvojice.
+            set: [b, e]
+    source: "skripta str. 39, Věta 6.4 s důkazem + příklad; folie TGD1-08 s. 2"
+    supplemented: false
+
+  - id: def-dominantni-mnozina
+    kind: definition
+    label: "Definice 6.8"
+    section: "6.1"
+    title: Dominantní množina
+    terms: [dominantní množina, dominující množina, vnějškově stabilní množina, dominating set, externally stable set]
+    statement: |
+      Množina $B \subset U(G)$ se nazývá **dominantní množina** (též
+      *vnějškově stabilní*) grafu $G$, jestliže pro každý uzel $x \notin B$
+      existuje uzel $y \in B$ takový, že $\{x,y\} \in H(G)$.
+
+      Jinak řečeno, $B$ je dominantní, jestliže každý uzel leží v $B$, nebo
+      v ní má souseda.
+    intuition: |
+      Dominantní množina „dohlíží" na všechny uzly: každý uzel je buď sám
+      v $B$, nebo sousedí s někým z $B$ (srovnej s [pokrytím](#def-pokryti),
+      které dohlíží na *hrany*). Příklad: rozmístění hasičských stanic do
+      obcí tak, aby každá obec měla stanici u sebe nebo v sousední obci.
+
+      Vlastnost je **dědičná směrem nahoru** (nadmnožina dominantní množiny je
+      dominantní), proto se ptáme na **minimální** (nelze nic odebrat)
+      a **nejmenší** (nejméně prvků) dominantní množinu.
+    related: [def-cislo-dominance, thm-6-5-maximalni-nezavisla-je-dominantni, def-jadro-neorientovaneho-grafu]
+    illustrations:
+      - title: Kdo na koho dohlíží
+        for: statement
+        property: dominating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 5 }
+            - { id: b, x: 2.75, y: 5 }
+            - { id: c, x: 5, y: 5 }
+            - { id: d, x: 7.25, y: 5 }
+            - { id: e, x: 9.5, y: 5 }
+            - { id: f, x: 2.75, y: 8.5 }
+            - { id: g, x: 7.25, y: 1.5 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: f }
+            - { from: d, to: g }
+        steps:
+          - caption: |
+              Hasičské stanice v $b$ a $d$: $b$ dohlíží na $a, c, f$, $d$ na $c, e, g$. Každý uzel je ve množině nebo má v ní souseda – $\{b, d\}$ **je** dominantní.
+            set: [b, d]
+          - caption: |
+              Samotné $b$ nestačí: uzly $d$, $e$, $g$ nemají souseda v množině.
+            set: [b]
+          - caption: |
+              Přidáním uzlu dominance nezmizí (dědičnost **nahoru**), ale $e$ je tu zbytečné. Proto se ptáme na co nejmenší dominantní množiny.
+            set: [b, d, e]
+          - caption: |
+              $\{a, c, e, f, g\}$ je dominantní a nelze z ní nic odebrat (odebraný uzel by neměl souseda v množině) – je **minimální**. Nejmenší ale není, $\gamma(G) = 2$.
+            set: [a, c, e, f, g]
+    source: "skripta str. 39–40, Definice 6.8 + poznámka; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: def-cislo-dominance
+    kind: definition
+    label: "Definice 6.9"
+    section: "6.1"
+    title: Číslo dominance
+    terms: [číslo dominance, dominance grafu, "γ(G)", gama, domination number, nejmenší dominantní množina, minimální dominantní množina, minimum dominating set]
+    statement: |
+      Počet prvků nejmenší dominantní množiny grafu $G$ se nazývá
+      **číslo dominance** grafu $G$ a značí se $\gamma(G)$.
+    intuition: |
+      Opět je nutné důsledně rozlišovat *minimální* (nelze odebrat žádný uzel)
+      a *nejmenší* (má $\gamma(G)$ prvků) dominantní množinu. Základní hodnoty:
+      $\gamma(K_n)=1$, $\gamma(K_{1,n})=1$, $\gamma(C_n)=\lceil n/3\rceil$.
+      Výpočet $\gamma(G)$ je NP-těžký, minimální dominantní množinu ale najdeme
+      snadno (začneme s $U(G)$ a odebíráme uzly, dokud množina zůstává dominantní).
+    examples:
+      - title: Minimální × nejmenší dominantní množina
+        body: |
+          Graf tvoří šestiúhelník $l,t_1,t_2,t_3,r,b_3,b_2,b_1$ se středem $c$
+          spojeným se všemi ostatními uzly a s „příčkami" $t_1t_2t_3$, $b_1b_2b_3$.
+
+          - $\{t_1,t_3,b_1,b_3\}$ je minimální dominantní množina (po odebrání
+            např. $t_1$ zůstane $t_1$ bez souseda v množině).
+          - $\{t_2,b_1,b_3\}$ je také minimální.
+          - $\{c\}$ je nejmenší dominantní množina, tedy $\gamma(G)=1$ (vyznačeno).
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 3, y: 8 }
+            - { id: t2, x: 5, y: 8 }
+            - { id: t3, x: 7, y: 8 }
+            - { id: l, x: 1, y: 5 }
+            - { id: c, x: 5, y: 5, color: 1 }
+            - { id: r, x: 9, y: 5 }
+            - { id: b1, x: 3, y: 2 }
+            - { id: b2, x: 5, y: 2 }
+            - { id: b3, x: 7, y: 2 }
+          edges:
+            - { from: t1, to: t2 }
+            - { from: t2, to: t3 }
+            - { from: b1, to: b2 }
+            - { from: b2, to: b3 }
+            - { from: l, to: t1 }
+            - { from: l, to: b1 }
+            - { from: r, to: t3 }
+            - { from: r, to: b3 }
+            - { from: c, to: t1 }
+            - { from: c, to: t2 }
+            - { from: c, to: t3 }
+            - { from: c, to: l }
+            - { from: c, to: r }
+            - { from: c, to: b1 }
+            - { from: c, to: b2 }
+            - { from: c, to: b3 }
+    related: [def-dominantni-mnozina, cor-6-2-gamma-le-alfa, thm-6-6-maximalni-nezavisla-minimalni-dominantni]
+    source: "skripta str. 40, Definice 6.9 + příklad; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: thm-6-5-maximalni-nezavisla-je-dominantni
+    kind: theorem
+    label: "Věta 6.5"
+    section: "6.1"
+    title: Maximální nezávislá množina = nezávislá dominantní množina
+    terms: [maximální nezávislá množina je dominantní, nezávislá dominantní množina, maximal independent set dominating]
+    statement: |
+      Nechť $A \subset U(G)$ je nezávislá množina grafu $G$. Pak $A$ je
+      maximální nezávislá množina právě když $A$ je dominantní.
+    intuition: |
+      Nezávislou množinu nelze rozšířit, právě když každý uzel mimo ni už má
+      v množině souseda (a jeho přidání by vytvořilo hranu). „Nelze přidat"
+      a „každý má souseda uvnitř" jsou dvě strany téže mince.
+    proof: |
+      Nechť $A$ je nezávislá.
+
+      1. Je-li $A$ dominantní, má každý uzel $x\notin A$ v $A$ souseda, takže
+         $A\cup\{x\}$ obsahuje hranu a není nezávislá. Žádný uzel tedy nelze
+         přidat a $A$ je maximální.
+      2. Je-li $A$ maximální, pak pro každý $x\notin A$ není $A\cup\{x\}$
+         nezávislá. Protože $A$ sama nezávislá je, musí „vadná" hrana obsahovat
+         uzel $x$ – tj. $x$ má souseda v $A$. Tedy $A$ je dominantní. $\square$
+    proof_steps:
+      - 'Předpokládáme, že A je nezávislá.'
+      - '(⇐) Je-li A dominantní, každý uzel x mimo A má v A souseda, takže přidáním x vznikne hrana uvnitř množiny; A tedy nelze rozšířit.'
+      - '(⇒) Je-li A maximální, pro každé x mimo A není A ∪ {x} nezávislá.'
+      - 'Protože A je nezávislá, musí hrana uvnitř A ∪ {x} obsahovat x, tedy x má souseda v A a A je dominantní.'
+    related: [thm-6-6-maximalni-nezavisla-minimalni-dominantni, def-jadro-neorientovaneho-grafu, rem-maximalni-vs-nejvetsi, def-dominantni-mnozina]
+    illustrations:
+      - title: Nedominovaný uzel = uzel, který lze přidat
+        for: proof
+        property: dominating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0.5, y: 3 }
+            - { id: b, x: 2.3, y: 7 }
+            - { id: c, x: 4.1, y: 3 }
+            - { id: d, x: 5.9, y: 7 }
+            - { id: e, x: 7.7, y: 3 }
+            - { id: f, x: 9.5, y: 7 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              $A = \{a, d\}$ je nezávislá, ale ne dominantní: $f$ nemá souseda v $A$. Právě proto ho lze do $A$ přidat, aniž vznikne hrana – $A$ **není maximální**.
+            set: [a, d]
+          - caption: |
+              Po přidání $f$ má každý uzel mimo $A$ souseda v $A$. Teď by každý přidaný uzel vytvořil hranu: $\{a, d, f\}$ je maximální nezávislá **a** dominantní.
+            set: [a, d, f]
+          - caption: |
+              Menší maximální nezávislá množina $\{b, e\}$ je také dominantní – věta platí pro každou maximální, nejen pro největší.
+            set: [b, e]
+          - caption: |
+              Předpoklad nezávislosti je podstatný: $\{b, c, e\}$ je dominantní, ale obsahuje hranu $bc$, takže maximální nezávislou množinou není.
+            set: [b, c, e]
+    source: "skripta str. 40, Věta 6.5 s důkazem; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: thm-6-6-maximalni-nezavisla-minimalni-dominantni
+    kind: theorem
+    label: "Věta 6.6"
+    section: "6.1"
+    title: Maximální nezávislá množina je minimální dominantní
+    terms: [maximální nezávislá je minimální dominantní, minimal dominating set, maximal independent set]
+    statement: |
+      Každá maximální nezávislá množina je minimální dominantní množina
+      grafu $G$.
+    intuition: |
+      Maximální nezávislá množina dominuje (Věta 6.5). Nelze z ní nic ubrat,
+      protože odebraný uzel by musel mít souseda ve zbytku množiny – a to
+      nezávislost zakazuje. Opačná implikace neplatí:
+      [minimální dominantní množina nemusí být nezávislá](#rem-minimalni-dominantni-nemusi-byt-nezavisla).
+    proof: |
+      Nechť $A$ je maximální nezávislá množina. Podle
+      [Věty 6.5](#thm-6-5-maximalni-nezavisla-je-dominantni) je dominantní.
+
+      Minimalita: předpokládejme sporem, že pro nějaké $x\in A$ je
+      $A\setminus\{x\}$ dominantní. Uzel $x$ do ní nepatří, musí tedy mít
+      souseda v $A\setminus\{x\}\subset A$. Pak ale $A$ obsahuje hranu, což
+      je spor s nezávislostí.
+
+      Odebrání jednoho uzlu tedy vždy poruší dominanci. Protože nadmnožina
+      dominantní množiny je dominantní, nemůže být dominantní ani žádná jiná
+      vlastní podmnožina $B\subsetneq A$ (byla by obsažena v nějakém
+      $A\setminus\{x\}$). $A$ je tedy minimální dominantní množina. $\square$
+    proof_steps:
+      - 'Maximální nezávislá množina A je podle Věty 6.5 dominantní.'
+      - 'Sporem předpokládáme, že A \ {x} je dominantní pro nějaké x ∈ A.'
+      - 'Pak x musí mít souseda v A \ {x}, takže A obsahuje hranu – spor s nezávislostí.'
+      - 'Protože nadmnožina dominantní množiny je dominantní, není dominantní žádná vlastní podmnožina A, tedy A je minimální dominantní.'
+    related: [thm-6-5-maximalni-nezavisla-je-dominantni, rem-minimalni-dominantni-nemusi-byt-nezavisla, cor-6-2-gamma-le-alfa]
+    illustrations:
+      - title: Z maximální nezávislé nelze nic ubrat
+        for: proof
+        property: dominating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 5, y: 9.5 }
+            - { id: b, x: 9, y: 7.25 }
+            - { id: c, x: 9, y: 2.75 }
+            - { id: d, x: 5, y: 0.5 }
+            - { id: e, x: 1, y: 2.75 }
+            - { id: f, x: 1, y: 7.25 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: e, to: f }
+            - { from: f, to: a }
+        steps:
+          - caption: |
+              $A = \{a, d\}$ je maximální nezávislá množina kružnice $C_6$, podle Věty 6.5 je tedy dominantní.
+            set: [a, d]
+          - caption: |
+              Odebereme $a$. Aby $\{d\}$ zůstala dominantní, musel by mít $a$ souseda v $\{d\}$ – to by ale byla hrana uvnitř $A$. Dominance se proto rozbije přímo na uzlu $a$.
+            set: [d]
+          - caption: |
+              Totéž pro jinou maximální nezávislou množinu $\{a, c, e\}$ – je dominantní …
+            set: [a, c, e]
+          - caption: |
+              … a po odebrání $e$ zůstane nedominovaný právě uzel $e$: jeho sousedé $d, f$ v $A$ nebyli. $A$ je tedy **minimální** dominantní množina.
+            set: [a, c]
+    source: "skripta str. 40, Věta 6.6 s důkazem; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: rem-minimalni-dominantni-nemusi-byt-nezavisla
+    kind: remark
+    section: "6.1"
+    title: Implikaci ve Větě 6.6 nelze obrátit
+    terms: [minimální dominantní množina není nezávislá, protipříklad dominance]
+    statement: |
+      Implikaci ve [Větě 6.6](#thm-6-6-maximalni-nezavisla-minimalni-dominantni)
+      nelze obrátit: minimální dominantní množina nemusí být nezávislá.
+    intuition: |
+      Ve čtvercové mřížce $3\times 3$ je prostřední řada $\{s_1,s_2,s_3\}$
+      dominantní (každý horní i dolní uzel má pod/nad sebou uzel z řady)
+      a je minimální (po odebrání $s_i$ zůstane uzel nad $s_i$ bez souseda
+      v množině). Přitom obsahuje hrany $s_1s_2$ a $s_2s_3$, takže není nezávislá.
+    examples:
+      - title: Mřížka 3 × 3
+        body: |
+          Vyznačená prostřední řada je minimální dominantní množina, ale není
+          nezávislá.
+        graph:
+          directed: false
+          nodes:
+            - { id: a1, x: 2, y: 8 }
+            - { id: a2, x: 5, y: 8 }
+            - { id: a3, x: 8, y: 8 }
+            - { id: s1, x: 2, y: 5, color: 1 }
+            - { id: s2, x: 5, y: 5, color: 1 }
+            - { id: s3, x: 8, y: 5, color: 1 }
+            - { id: d1, x: 2, y: 2 }
+            - { id: d2, x: 5, y: 2 }
+            - { id: d3, x: 8, y: 2 }
+          edges:
+            - { from: a1, to: a2 }
+            - { from: a2, to: a3 }
+            - { from: s1, to: s2 }
+            - { from: s2, to: s3 }
+            - { from: d1, to: d2 }
+            - { from: d2, to: d3 }
+            - { from: a1, to: s1 }
+            - { from: s1, to: d1 }
+            - { from: a2, to: s2 }
+            - { from: s2, to: d2 }
+            - { from: a3, to: s3 }
+            - { from: s3, to: d3 }
+    related: [thm-6-6-maximalni-nezavisla-minimalni-dominantni, def-dominantni-mnozina]
+    illustrations:
+      - title: Minimální dominantní, a přesto ne nezávislá
+        for: statement
+        property: dominating-set
+        graph:
+          directed: false
+          nodes:
+            - { id: a1, x: 2, y: 8 }
+            - { id: a2, x: 5, y: 8 }
+            - { id: a3, x: 8, y: 8 }
+            - { id: s1, x: 2, y: 5 }
+            - { id: s2, x: 5, y: 5 }
+            - { id: s3, x: 8, y: 5 }
+            - { id: d1, x: 2, y: 2 }
+            - { id: d2, x: 5, y: 2 }
+            - { id: d3, x: 8, y: 2 }
+          edges:
+            - { from: a1, to: a2 }
+            - { from: a2, to: a3 }
+            - { from: s1, to: s2 }
+            - { from: s2, to: s3 }
+            - { from: d1, to: d2 }
+            - { from: d2, to: d3 }
+            - { from: a1, to: s1 }
+            - { from: s1, to: d1 }
+            - { from: a2, to: s2 }
+            - { from: s2, to: d2 }
+            - { from: a3, to: s3 }
+            - { from: s3, to: d3 }
+        steps:
+          - caption: |
+              Prostřední řada $\{s_1, s_2, s_3\}$ je dominantní: každý horní i dolní uzel má souseda přímo pod/nad sebou. Přitom obsahuje hrany $s_1s_2$ a $s_2s_3$ – nezávislá **není**.
+            set: [s1, s2, s3]
+          - caption: |
+              Je i minimální: bez $s_2$ zůstanou $a_2$ a $d_2$ bez souseda v množině.
+            set: [s1, s3]
+          - caption: |
+              Bez $s_3$ zůstanou nedominované $a_3$ a $d_3$ (a symetricky bez $s_1$). Minimální dominantní množina tedy nezávislá být nemusí.
+            set: [s1, s2]
+          - caption: |
+              Pro srovnání $\{a_2, s_1, s_3, d_2\}$: nezávislá a dominantní, tedy maximální nezávislá – to je situace z Věty 6.6, která platí jen tímto směrem.
+            set: [a2, s1, s3, d2]
+    source: "skripta str. 40, poznámka za Větou 6.6"
+    supplemented: false
+
+  - id: cor-6-2-gamma-le-alfa
+    kind: corollary
+    label: "Důsledek 6.2"
+    section: "6.1"
+    title: "γ(G) ≤ α(G)"
+    terms: [gama menší než alfa, číslo dominance a nezávislost, domination number independence number]
+    statement: |
+      Pro každý graf $G$ platí $\gamma(G) \le \alpha(G)$.
+    intuition: |
+      Největší nezávislá množina je zároveň dominantní, takže nejmenší
+      dominantní množina nemůže být větší. Nerovnost může být rovností
+      ($C_5$) i hodně ostrá (hvězda: $\gamma=1$, $\alpha=n$).
+    proof: |
+      Nechť $A$ je největší nezávislá množina, $|A|=\alpha(G)$. Největší
+      nezávislá množina je zřejmě i maximální, a proto je podle
+      [Věty 6.5](#thm-6-5-maximalni-nezavisla-je-dominantni) dominantní.
+      Nejmenší dominantní množina má tedy nejvýše $|A|$ prvků:
+      $\gamma(G)\le|A|=\alpha(G)$. $\square$
+    proof_steps:
+      - 'Vezmeme největší nezávislou množinu A, |A| = α(G).'
+      - 'A je i maximální nezávislá, a tedy podle Věty 6.5 dominantní.'
+      - 'Nejmenší dominantní množina nemá více prvků než A, proto γ(G) ≤ α(G).'
+    examples:
+      - title: Rovnost i ostrá nerovnost
+        body: |
+          1. $C_5$: $\alpha=\gamma=2$ (např. dva nesousední uzly dominují vše).
+          2. $C_6$: $\alpha=3$ (každý druhý uzel), ale $\gamma=2$ (dva protilehlé uzly).
+          3. Hvězda $K_{1,n}$: $\alpha=n$ (všechny listy), $\gamma=1$ (střed).
+    related: [thm-6-5-maximalni-nezavisla-je-dominantni, def-cislo-dominance, def-nezavislost-grafu]
+    source: "skripta str. 40–41, Důsledek 6.2 + příklady; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: def-jadro-neorientovaneho-grafu
+    kind: definition
+    label: "Definice 6.10"
+    section: "6.1"
+    title: Jádro (neorientovaného) grafu
+    terms: [jádro grafu, jádro neorientovaného grafu, kernel, nezávislá dominantní množina, independent dominating set]
+    statement: |
+      Množina uzlů $C \subset U(G)$, která je současně nezávislá i dominantní,
+      se nazývá **jádro** grafu $G$.
+    intuition: |
+      Jádro spojuje dvě protichůdné požadavky: uzlů nesmí být „moc"
+      (nezávislost – žádné dva nesousedí) ani „málo" (dominance – každý
+      ostatní má souseda v jádru). Podle
+      [Věty 6.5](#thm-6-5-maximalni-nezavisla-je-dominantni) jsou jádra
+      neorientovaného grafu **přesně maximální nezávislé množiny**. Jádro
+      obvykle není jediné (např. v $C_6$ je jádrem $\{1,3,5\}$ i $\{1,4\}$).
+    related: [thm-6-7-kazdy-neorientovany-graf-ma-jadro, thm-6-5-maximalni-nezavisla-je-dominantni, def-jadro-orientovaneho-grafu]
+    illustrations:
+      - title: Ani moc, ani málo
+        for: statement
+        property: kernel
+        graph:
+          directed: false
+          nodes:
+            - { id: t, x: 5, y: 9.5 }
+            - { id: a, x: 2, y: 6.5 }
+            - { id: b, x: 8, y: 6.5 }
+            - { id: c, x: 2, y: 1 }
+            - { id: d, x: 8, y: 1 }
+          edges:
+            - { from: t, to: a }
+            - { from: t, to: b }
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              V „domečku“ je $\{t, c\}$ nezávislá ($t$ a $c$ nesousedí) i dominantní ($t$ hlídá $a, b$, uzel $c$ hlídá $d$) – je to **jádro**.
+            set: [t, c]
+          - caption: |
+              Jádro není jediné: $\{a, d\}$ je také nezávislá a dominantní. Jádra neorientovaného grafu jsou přesně jeho maximální nezávislé množiny.
+            set: [a, d]
+          - caption: |
+              Uzlů je **málo**: samotné $\{t\}$ je nezávislé, ale $c$ ani $d$ nemají souseda v množině.
+            set: [t]
+          - caption: |
+              Uzlů je **moc**: $\{t, c, d\}$ už dominuje všem, ale hrana $cd$ porušuje nezávislost.
+            set: [t, c, d]
+    source: "skripta str. 41, Definice 6.10; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: thm-6-7-kazdy-neorientovany-graf-ma-jadro
+    kind: theorem
+    label: "Věta 6.7"
+    section: "6.1"
+    title: Každý neorientovaný graf má jádro
+    terms: [existence jádra neorientovaného grafu, každý graf má jádro]
+    statement: |
+      Každý neorientovaný graf má jádro.
+    intuition: |
+      Stačí vzít libovolnou maximální nezávislou množinu – ta vždy existuje
+      (hladově přidáváme uzly, dokud to jde) a je automaticky dominantní.
+      U orientovaných grafů to tak snadné není – orientace hran rozbije
+      symetrii a [lichý cyklus jádro nemá](#prop-lichy-cyklus-nema-jadro).
+    proof: |
+      Prázdná množina je nezávislá a graf je konečný, takže ji lze rozšiřovat
+      o další uzly, dokud to jde; postup skončí v nějaké maximální nezávislé
+      množině $A$ (prakticky ji najde
+      [hladový algoritmus](#alg-maximalni-nezavisla-mnozina)). Podle
+      [Věty 6.6](#thm-6-6-maximalni-nezavisla-minimalni-dominantni)
+      (resp. 6.5) je $A$ dominantní. $A$ je tedy nezávislá i dominantní, tj.
+      jádro. $\square$
+    proof_steps:
+      - 'Začneme prázdnou (nezávislou) množinou a přidáváme uzly, dokud zůstává nezávislá.'
+      - 'Graf je konečný, proto skončíme u maximální nezávislé množiny A.'
+      - 'Podle Věty 6.5/6.6 je A dominantní.'
+      - 'A je nezávislá i dominantní, tedy jádro.'
+    related: [def-jadro-neorientovaneho-grafu, alg-maximalni-nezavisla-mnozina, thm-6-6-maximalni-nezavisla-minimalni-dominantni]
+    source: "skripta str. 41, Věta 6.7 s důkazem; folie TGD1-08 s. 3"
+    supplemented: false
+
+  - id: alg-maximalni-nezavisla-mnozina
+    kind: algorithm
+    label: "Algoritmus (maximální nezávislá množina)"
+    section: "6.1"
+    title: Hladový algoritmus pro maximální nezávislou množinu (jádro)
+    terms: [hladový algoritmus nezávislá množina, maximální nezávislá množina algoritmus, nalezení jádra neorientovaného grafu, greedy maximal independent set, heuristika pro alfa]
+    statement: |
+      Vstup: neorientovaný graf $G$. Výstup: maximální nezávislá množina $X$
+      (tj. jádro grafu $G$).
+    pseudocode: |
+      1. $X := \emptyset$, $Y := U(G)$.
+      2. Dokud je $Y \ne \emptyset$, prováděj krok 3.
+      3. Zvol $x \in Y$, polož $X := X \cup \{x\}$ a z $Y$ vynech $x$ a všechny
+         uzly s ním sousední.
+      4. Vrať $X$.
+    complexity: "$O(n+m)$ při reprezentaci seznamy sousedů ($O(n^2)$ s maticí sousednosti)"
+    intuition: |
+      $Y$ jsou uzly, které lze ještě přidat bez porušení nezávislosti. Po výběru
+      $x$ vyřadíme jeho sousedy – ti už do $X$ nesmí. Na konci byl každý uzel
+      mimo $X$ vyřazen jako soused nějakého vybraného uzlu, takže $X$ je
+      dominantní, a podle Věty 6.5 tedy maximální nezávislá (jádro).
+
+      **Korektnost:** invariant „$X$ je nezávislá a žádný uzel z $Y$ nesousedí
+      s $X$" platí na začátku a krok 3 ho zachovává.
+
+      **Složitost:** každý uzel je z $Y$ vyřazen právě jednou; při výběru $x$
+      projdeme jeho seznam sousedů, takže každá hrana se zpracuje $O(1)$-krát.
+      Celkem $O(n+m)$.
+
+      **Jako heuristika** pro $\alpha(G)$ dává dolní odhad $\alpha(G)\ge|X|$;
+      výsledek ale silně závisí na volbě $x$. Osvědčená varianta (doplněno):
+      volit uzel s nejmenším stupněm v aktuálním zbytku grafu – vyřadí nejméně
+      dalších kandidátů.
+    examples:
+      - title: Dva běhy na trojúhelníkové mřížce
+        body: |
+          Graf je trojúhelníková mřížka z [Definice 6.2](#def-nezavislost-grafu).
+
+          *Běh 1:* zvolíme $m_1$ → vyřadíme $m_1,m_2,t_1,b_1$. Zvolíme $m_3$
+          → vyřadíme $m_3,m_4,t_2,t_3,b_2,b_3$. $Y=\emptyset$, výsledek
+          $X=\{m_1,m_3\}$ – maximální, ale jen 2 prvky.
+
+          *Běh 2:* zvolíme $t_1$ (stupeň 3) → vyřadíme $t_1,t_2,m_1,m_2$.
+          Zvolíme $t_3$ → vyřadíme $t_3,m_3,m_4$. Zvolíme $b_1$ → vyřadíme
+          $b_1,b_2$. Zvolíme $b_3$. Výsledek $X=\{t_1,t_3,b_1,b_3\}$ –
+          největší, $|X|=\alpha(G)=4$ (vyznačeno).
+        graph:
+          directed: false
+          nodes:
+            - { id: t1, x: 3, y: 8, color: 1 }
+            - { id: t2, x: 5, y: 8 }
+            - { id: t3, x: 7, y: 8, color: 1 }
+            - { id: m1, x: 2, y: 5 }
+            - { id: m2, x: 4, y: 5 }
+            - { id: m3, x: 6, y: 5 }
+            - { id: m4, x: 8, y: 5 }
+            - { id: b1, x: 3, y: 2, color: 1 }
+            - { id: b2, x: 5, y: 2 }
+            - { id: b3, x: 7, y: 2, color: 1 }
+          edges: *mrizka
+    visualization: independent-set
+    related: [thm-6-7-kazdy-neorientovany-graf-ma-jadro, thm-6-5-maximalni-nezavisla-je-dominantni, rem-np-uplnost-nezavislosti, alg-nejvetsi-nezavisla-mnozina-hrubou-silou]
+    source: "folie TGD1-08 s. 4 (algoritmus); skripta str. 41, poznámka za Větou 6.7"
+    supplemented: false
+
+  - id: rem-np-uplnost-nezavislosti
+    kind: remark
+    section: "6.1"
+    title: NP-úplnost nezávislosti, klikovosti, pokrytí a dominance
+    terms: [NP-úplnost nezávislé množiny, IND, CLIQUE, vertex cover NP, dominance NP-těžká, heuristika]
+    statement: |
+      Rozhodnout, zda v daném grafu $G$ existuje nezávislá množina předepsané
+      velikosti, je klasický **NP-úplný** problém (podrobně v kapitole 9,
+      [NP-úplnost IND](#thm-ind-npc)); nejsou proto známy efektivní algoritmy
+      pro výpočet $\alpha(G)$. Naproti tomu nalezení **maximální** nezávislé
+      množiny je snadné [hladovým algoritmem](#alg-maximalni-nezavisla-mnozina).
+      Ten je zároveň polynomiálním algoritmem pro nalezení jádra
+      neorientovaného grafu a heuristikou dávající dolní odhad $\alpha(G)$.
+
+      Obdobná je situace s klikovostí, dominancí a pokrývacím číslem: vždy lze
+      snadno v polynomiálním čase najít maximální (klika), resp. minimální
+      (pokrytí, dominantní množina) množinu, zatímco příslušná otázka pro
+      největší, resp. nejmenší množinu je NP-těžká.
+    intuition: |
+      Polynomiální „lokální" postupy (doplněno):
+
+      - *maximální klika*: hladově přidávej uzel sousedící se všemi dosud
+        vybranými (= hladový algoritmus pro nezávislou množinu v $\bar G$);
+      - *minimální pokrytí*: začni s $U(G)$ a odebírej uzly, dokud zbytek
+        pokrývá všechny hrany (= doplněk maximální nezávislé množiny);
+      - *minimální dominantní množina*: začni s $U(G)$ a odebírej uzly, dokud
+        zůstává dominantní.
+
+      Všechny běží v čase $O(n\cdot(n+m))$ nebo lépe. Pro bipartitní grafy je
+      dokonce $\beta(G)$ (a tedy i $\alpha(G)$) polynomiální – podle Kőnigovy
+      věty se rovná velikosti největšího párování (doplněno).
+    related: [thm-ind-npc, thm-clique-npc, thm-cov-npc, alg-maximalni-nezavisla-mnozina, rem-slozitost-nezavisle-mnoziny]
+    source: "skripta str. 41, poznámka za Větou 6.7; folie TGD1-08 s. 4"
+    supplemented: false
+
+  - id: alg-nejvetsi-nezavisla-mnozina-hrubou-silou
+    kind: algorithm
+    section: "6.1"
+    title: Výpočet α(G) hrubou silou a větvením
+    terms: [největší nezávislá množina algoritmus, výpočet alfa, hrubá síla, exponenciální algoritmus, maximum independent set exact algorithm, větvení]
+    statement: |
+      Vstup: graf $G$ s $n$ uzly. Výstup: největší nezávislá množina, tedy
+      $\alpha(G)$; z ní pak $\beta(G)=n-\alpha(G)$ a $\omega(G)=\alpha(\bar G)$.
+    pseudocode: |
+      **Varianta A – hrubá síla:**
+
+      1. Pro $k = n, n-1, \dots, 1$:
+      2. &nbsp;&nbsp;pro každou $k$-prvkovou množinu $A\subset U(G)$ ověř, zda je
+         nezávislá (projdi všechny dvojice, $O(k^2)$);
+      3. &nbsp;&nbsp;první nalezená nezávislá $A$ je největší → vrať $A$ ($\alpha(G)=k$).
+
+      **Varianta B – větvení podle uzlu:**
+
+      1. Je-li $H(G)=\emptyset$, vrať $U(G)$.
+      2. Zvol uzel $v$ s aspoň jedním sousedem.
+      3. Rekurzivně spočti $A_1$ pro $G-v$ (uzel $v$ do množiny nedáme)
+         a $A_2=\{v\}\cup$ výsledek pro $G-N[v]$ ($v$ dáme, jeho uzavřené
+         okolí $N[v]$ odstraníme).
+      4. Vrať větší z $A_1$, $A_2$.
+    complexity: "$O(2^n\\cdot n^2)$ (exponenciální); polynomiální algoritmus není znám (NP-těžké)"
+    intuition: |
+      Varianta A zkouší všech $2^n$ podmnožin – to je „hrubá síla", o které
+      mluví skripta. Varianta B využívá rekurenci
+      $\alpha(G)=\max\{\alpha(G-v),\ 1+\alpha(G-N[v])\}$: buď $v$ v optimu není,
+      nebo je a pak tam nesmí být žádný jeho soused. Volíme-li $v$ s velkým
+      stupněm, druhá větev odstraní mnoho uzlů a strom rekurze je výrazně menší
+      než $2^n$ – stále ale exponenciální. Jde o přirozený protějšek NP-úplnosti
+      problému IND ([kap. 9](#thm-ind-npc)).
+    related: [rem-slozitost-nezavisle-mnoziny, rem-np-uplnost-nezavislosti, cor-6-1-alfa-plus-beta, thm-6-4-alfa-omega-doplnku, thm-ind-npc]
+    source: "skripta str. 37 (poznámka o hrubé síle $O(2^n)$); pseudokód doplněn"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 6.2
+  - id: def-nezavisla-mnozina-orientovaneho-grafu
+    kind: definition
+    label: "Definice 6.11"
+    section: "6.2"
+    title: Nezávislá množina orientovaného grafu
+    terms: [nezávislá množina orientovaného grafu, independent set digraph]
+    statement: |
+      Buď $\vec G$ orientovaný graf. Říkáme, že množina $A \subset U(\vec G)$
+      je **nezávislá**, jestliže žádné dva její uzly nejsou spojeny hranou.
+    intuition: |
+      Definice je shodná pro orientované i neorientované grafy – orientace
+      hran nehraje roli, zakázána je hrana v libovolném směru.
+    related: [def-nezavisla-mnozina, def-jadro-orientovaneho-grafu]
+    source: "skripta str. 42, Definice 6.11 + poznámka; folie TGD1-08 s. 5"
+    supplemented: false
+
+  - id: def-jadro-orientovaneho-grafu
+    kind: definition
+    label: "Definice 6.12"
+    section: "6.2"
+    title: Jádro orientovaného grafu
+    terms: [jádro orientovaného grafu, kernel of a digraph, absorbující množina, stabilní řešení, von Neumann-Morgenstern]
+    statement: |
+      Buď $\vec G$ orientovaný graf, $C \subset U(\vec G)$. Množina $C$ se
+      nazývá **jádro** grafu $\vec G$, jestliže
+
+      (i) $C$ je nezávislá množina,
+
+      (ii) pro každý $x \in U(\vec G) \setminus C$ existuje $y \in C$ tak, že
+      $(x,y) \in H(\vec G)$.
+    intuition: |
+      Názorně: podmínka (ii) říká, že **z každého uzlu mimo jádro vede hrana
+      do jádra** (jádro „pohlcuje" ostatní uzly). Podmínka (i) zakazuje hrany
+      uvnitř jádra.
+
+      Důležité důsledky:
+
+      - každý uzel bez výstupních hran (*stok*) musí ležet v jádru – z něj
+        do jádra hrana vést nemůže;
+      - na směru hran záleží; v symetrickém orientovaném grafu (každá hrana
+        oběma směry) splývá pojem s [jádrem neorientovaného grafu](#def-jadro-neorientovaneho-grafu),
+        a proto symetrická orientace jádro vždy má;
+      - jádro nemusí existovat ([lichý cyklus](#prop-lichy-cyklus-nema-jadro))
+        a nemusí být jediné.
+
+      Motivace pochází z teorie her – viz [poznámku o hrách](#rem-jadro-a-teorie-her).
+    related: [def-nezavisla-mnozina-orientovaneho-grafu, prop-lichy-cyklus-nema-jadro, thm-6-8-acyklicky-graf-ma-jadro, thm-6-9-graf-bez-lichych-cyklu-ma-jadro, rem-kdy-ma-graf-jadro]
+    illustrations:
+      - title: Z každého uzlu mimo jádro vede hrana do jádra
+        for: statement
+        property: kernel
+        graph:
+          directed: true
+          nodes:
+            - { id: Z, x: 1, y: 5 }
+            - { id: c, x: 3, y: 8 }
+            - { id: b, x: 3, y: 2 }
+            - { id: a, x: 5, y: 5 }
+            - { id: d, x: 7, y: 5 }
+            - { id: K, x: 9.5, y: 5 }
+          edges:
+            - { from: Z, to: b }
+            - { from: b, to: a }
+            - { from: b, to: d }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: c, to: d }
+            - { from: c, to: Z }
+            - { from: d, to: K }
+        steps:
+          - caption: |
+              Z uzlu $K$ žádná hrana nevede (stok), takže ho nic jiného „pohltit“ nemůže – v jádru být **musí**. Samo $\{K\}$ ale nestačí: hrana do $K$ vede jen z $d$.
+            set: [K]
+          - caption: |
+              $\{b, c, K\}$ je jádro: mezi jeho uzly nevede hrana a z $Z$, $a$, $d$ vede hrana do jádra ($Z \to b$, $a \to c$, $d \to K$).
+            set: [b, c, K]
+          - caption: |
+              Jádro nemusí být jediné: $\{Z, a, K\}$ je také nezávislé a absorbující ($b \to a$, $c \to Z$, $d \to K$).
+            set: [Z, a, K]
+          - caption: |
+              Na směru záleží. $\{d, Z\}$ je nezávislá a v symetrizaci by dominovala, ale ze stoku $K$ hrana do $\{d, Z\}$ nevede – jádrem **není**.
+            set: [d, Z]
+    source: "skripta str. 42, Definice 6.12 (folie TGD1-08 s. 5 píší $y\\in U(C)$, správně $y\\in C$)"
+    supplemented: false
+
+  - id: prop-lichy-cyklus-nema-jadro
+    kind: proposition
+    label: "Příklad (skripta str. 42)"
+    section: "6.2"
+    title: Cyklus liché délky nemá jádro
+    terms: [lichý cyklus nemá jádro, graf bez jádra, odd cycle no kernel, sudý cyklus jádro]
+    statement: |
+      Je-li $\vec G$ (orientovaný) cyklus liché délky, pak $\vec G$ nemá jádro.
+      Cyklus sudé délky má právě dvě jádra.
+    intuition: |
+      V cyklu má každý uzel jediného následníka. Je-li uzel v jádru, jeho
+      následník tam být nesmí (nezávislost); není-li uzel v jádru, jeho
+      (jediný) následník tam být musí (absorpce). Příslušnost k jádru se tedy
+      po cyklu musí pravidelně střídat – a to na liché kružnici nejde,
+      „poslední uzel nelze zahrnout do jádra ani nechat mimo".
+    proof: |
+      Nechť $\vec G$ je cyklus $u_1\to u_2\to\dots\to u_{2k+1}\to u_1$ a nechť
+      $C$ je jeho jádro. $C\neq\emptyset$, jinak by podmínka (ii) neplatila
+      pro žádný uzel. Díky symetrii cyklu můžeme předpokládat $u_1\in C$.
+
+      Každý uzel $u_i$ má jediného následníka $u_{i+1}$ (indexy modulo $2k+1$).
+      Proto:
+
+      - je-li $u_i\in C$, pak $u_{i+1}\notin C$ (hrana $(u_i,u_{i+1})$ a nezávislost),
+      - je-li $u_i\notin C$, pak $u_{i+1}\in C$ (z $u_i$ musí vést hrana do $C$
+        a jiná hrana z $u_i$ nevede).
+
+      Indukcí odtud $u_i\in C$ právě pro lichá $i$, takže $u_{2k+1}\in C$.
+      Pak ale hrana $(u_{2k+1},u_1)$ spojuje dva uzly jádra – spor
+      s nezávislostí. Lichý cyklus tedy jádro nemá.
+
+      Pro cyklus sudé délky $2k$ dává stejná úvaha jedinou možnost pro každou
+      volbu „$u_1\in C$" či „$u_1\notin C$": jádry jsou právě množina uzlů
+      s lichými indexy a množina uzlů se sudými indexy. $\square$
+    proof_steps:
+      - 'Jádro C lichého cyklu u_1 → … → u_{2k+1} → u_1 je neprázdné; ze symetrie nechť u_1 ∈ C.'
+      - 'Každý uzel má jediného následníka: je-li u_i v C, následník v C být nesmí (nezávislost).'
+      - 'Není-li u_i v C, jeho jediný následník v C být musí (absorpce).'
+      - 'Indukcí leží v C právě uzly s lichým indexem, tedy i u_{2k+1}.'
+      - 'Hrana (u_{2k+1}, u_1) pak spojuje dva uzly jádra, což je spor.'
+    examples:
+      - title: Orientovaný cyklus délky 5
+        body: |
+          Zkusíme-li $C\ni u_1$, vynutí se $u_2\notin C$, $u_3\in C$,
+          $u_4\notin C$, $u_5\in C$ – ale $(u_5,u_1)$ je hrana mezi uzly jádra.
+          Jádro neexistuje.
+        graph:
+          directed: true
+          nodes:
+            - { id: u1, x: 5, y: 9.5 }
+            - { id: u2, x: 9, y: 6.5 }
+            - { id: u3, x: 7.5, y: 1.5 }
+            - { id: u4, x: 2.5, y: 1.5 }
+            - { id: u5, x: 1, y: 6.5 }
+          edges:
+            - { from: u1, to: u2 }
+            - { from: u2, to: u3 }
+            - { from: u3, to: u4 }
+            - { from: u4, to: u5 }
+            - { from: u5, to: u1 }
+    related: [def-jadro-orientovaneho-grafu, thm-6-9-graf-bez-lichych-cyklu-ma-jadro, rem-kdy-ma-graf-jadro]
+    illustrations:
+      - title: Na cyklu délky 5 každý pokus selže
+        for: proof
+        property: kernel
+        graph:
+          directed: true
+          nodes:
+            - { id: u1, x: 5, y: 9.5 }
+            - { id: u2, x: 9, y: 6.5 }
+            - { id: u3, x: 7.5, y: 1.5 }
+            - { id: u4, x: 2.5, y: 1.5 }
+            - { id: u5, x: 1, y: 6.5 }
+          edges:
+            - { from: u1, to: u2 }
+            - { from: u2, to: u3 }
+            - { from: u3, to: u4 }
+            - { from: u4, to: u5 }
+            - { from: u5, to: u1 }
+        steps:
+          - caption: |
+              Jádro $C$ by bylo neprázdné; ze symetrie nechť $u_1 \in C$. Samo $\{u_1\}$ nestačí – např. z $u_2$ vede jediná hrana, a to do $u_3 \notin C$.
+            set: [u1]
+          - caption: |
+              $u_2 \notin C$ (hrana $u_1 \to u_2$, nezávislost), takže jeho jediný následník $u_3$ v $C$ být **musí**. Pak $u_4 \notin C$ – a $u_4$ zatím nemá hranu do $C$.
+            set: [u1, u3]
+          - caption: |
+              Absorpce $u_4$ vynutí $u_5 \in C$. Jenže hrana $u_5 \to u_1$ teď spojuje dva uzly $C$ – spor s nezávislostí.
+            set: [u1, u3, u5]
+          - caption: |
+              Bez $u_1$ to nejde také: $\{u_2, u_4\}$ je nezávislá, ale $u_5$ nemá hranu do množiny. Střídání „v jádru / mimo“ se na liché délce nikdy nezavře.
+            set: [u2, u4]
+          - caption: |
+              Odstraníme hranu $u_5 \to u_1$: z cyklu je cesta, $\{u_1, u_3, u_5\}$ už je jádro. Chyba byla opravdu jen v uzavření liché kružnice.
+            remove: [[u5, u1]]
+            set: [u1, u3, u5]
+    source: "skripta str. 42, příklad za Definicí 6.12 (důkaz rozepsán)"
+    supplemented: false
+
+  - id: rem-jadro-a-teorie-her
+    kind: remark
+    section: "6.2"
+    title: Jádro a teorie her
+    terms: [teorie her, hra se zápalkami, strategie, vyhrávající strategie, graf hry, Nim, kernel game theory]
+    statement: |
+      Pozicím hry dvou hráčů přiřadíme uzly orientovaného grafu, možným tahům
+      hrany. Má-li graf hry jádro, pak hráč, který jako první táhne do jádra,
+      má strategii, která zaručuje, že neprohraje: po každém tahu soupeře
+      (který z jádra musí vést mimo jádro – vlastnost (i)) může opět táhnout
+      do jádra (vlastnost (ii)). Koncové pozice (bez tahů) leží v jádru,
+      takže soupeř nikdy nedosáhne koncové pozice jako první. Může ovšem dojít
+      k remíze – nekonečnému pohybu v cyklu.
+    intuition: |
+      Jádro = množina „dobrých" pozic, do kterých chci táhnout. Ze žádné dobré
+      pozice nelze táhnout do jiné dobré (soupeř je tedy vždy ve špatné
+      pozici) a z každé špatné pozice se lze do dobré vrátit.
+    examples:
+      - title: Deset zápalek
+        body: |
+          Na hromádce je 10 zápalek, hráči střídavě berou jednu nebo dvě;
+          vyhrává ten, kdo vezme poslední. Uzel $i$ = počet zbylých zápalek,
+          hrany $i\to i-1$ a $i\to i-2$. Jádrem je $\{0,3,6,9\}$ (násobky 3):
+          žádné dva nejsou spojeny tahem a z každé jiné pozice lze táhnout na
+          násobek tří. Začínající hráč vezme jednu zápalku (na 9) a dále vždy
+          doplní soupeřův tah na 3 – vyhraje.
+        graph:
+          directed: true
+          nodes:
+            - { id: "10", x: 0, y: 2 }
+            - { id: "9", x: 1, y: 6, color: 1 }
+            - { id: "8", x: 2, y: 2 }
+            - { id: "7", x: 3, y: 6 }
+            - { id: "6", x: 4, y: 2, color: 1 }
+            - { id: "5", x: 5, y: 6 }
+            - { id: "4", x: 6, y: 2 }
+            - { id: "3", x: 7, y: 6, color: 1 }
+            - { id: "2", x: 8, y: 2 }
+            - { id: "1", x: 9, y: 6 }
+            - { id: "0", x: 10, y: 2, color: 1 }
+          edges:
+            - { from: "10", to: "9" }
+            - { from: "10", to: "8" }
+            - { from: "9", to: "8" }
+            - { from: "9", to: "7" }
+            - { from: "8", to: "7" }
+            - { from: "8", to: "6" }
+            - { from: "7", to: "6" }
+            - { from: "7", to: "5" }
+            - { from: "6", to: "5" }
+            - { from: "6", to: "4" }
+            - { from: "5", to: "4" }
+            - { from: "5", to: "3" }
+            - { from: "4", to: "3" }
+            - { from: "4", to: "2" }
+            - { from: "3", to: "2" }
+            - { from: "3", to: "1" }
+            - { from: "2", to: "1" }
+            - { from: "2", to: "0" }
+            - { from: "1", to: "0" }
+      - title: Hra s cyklem a dvěma jádry
+        body: |
+          $Z$ je začátek, $K$ konec hry, vyhrává ten, kdo první táhne do $K$.
+          Hrany: $Z\to b$, $b\to a$, $b\to d$, $a\to c$, $a\to d$, $c\to d$,
+          $c\to Z$, $d\to K$. Jádrem je $\{b,c,K\}$ (vyznačeno).
+
+          Začínající hráč A táhne do jádra: $Z\to b$. Hráč B: táhnout na $d$
+          by znamenalo prohru (A táhne do $K$), tedy $b\to a$. A: tah na $d$
+          by prohrál, tedy $a\to c$. B: na $d$ by prohrál, tedy $c\to Z$ –
+          a hra se točí v cyklu, B si vynutil **remízu**.
+
+          Příčina: graf má i druhé jádro $\{Z,a,K\}$, takže i B má vždy tah do
+          (jiného) jádra. Jádro tedy nemusí být jediné.
+        graph:
+          directed: true
+          nodes:
+            - { id: Z, x: 1, y: 5 }
+            - { id: c, x: 3, y: 8, color: 1 }
+            - { id: b, x: 3, y: 2, color: 1 }
+            - { id: a, x: 5, y: 5 }
+            - { id: d, x: 7, y: 5 }
+            - { id: K, x: 9.5, y: 5, color: 1 }
+          edges:
+            - { from: Z, to: b }
+            - { from: b, to: a }
+            - { from: b, to: d }
+            - { from: a, to: c }
+            - { from: a, to: d }
+            - { from: c, to: d }
+            - { from: c, to: Z }
+            - { from: d, to: K }
+    related: [def-jadro-orientovaneho-grafu, def-grundyho-funkce]
+    source: "skripta str. 42–43, příklady (zápalky, hra Z–K)"
+    supplemented: false
+
+  - id: thm-6-8-acyklicky-graf-ma-jadro
+    kind: theorem
+    label: "Věta 6.8"
+    section: "6.2"
+    title: Každý acyklický graf má jádro
+    terms: [jádro acyklického grafu, acyklický graf má jádro, kernel DAG, Grundyho funkce]
+    statement: |
+      Každý acyklický (orientovaný) graf má jádro.
+    intuition: |
+      V acyklickém grafu lze o příslušnosti k jádru rozhodovat „od konce":
+      stoky do jádra patřit musí, a jakmile víme o všech následnících uzlu,
+      je jeho osud jednoznačný – patří do jádra právě tehdy, když žádný jeho
+      následník v jádru není. Grundyho funkce tento postup zobecňuje a nulové
+      hodnoty tvoří jádro. Jako vedlejší produkt (doplněno): jádro acyklického
+      grafu je **jediné**, protože v každém kroku je volba vynucená.
+    proof: |
+      Podle věty o acyklických grafech (viz [acyklický graf](#def-acyklicky-graf))
+      lze uzly očíslovat $u_1,\dots,u_n$ tak, že pro každou hranu
+      $(u_i,u_j)\in H(\vec G)$ je $i<j$. Definujme
+      [Grundyho funkci](#def-grundyho-funkce) $f:U(\vec G)\to\mathbb N_0$
+      odzadu:
+      $$
+      f(u_n)=0,\qquad f(u_i)=\min\{k\in\mathbb N_0;\ k\notin\{f(v_j);\ (u_i,v_j)\in H(\vec G)\}\},\quad i=n-1,\dots,1.
+      $$
+      Definice je korektní: všichni následníci $u_i$ mají větší index, takže
+      jejich hodnoty už známe. Položme $C=\{x\in U(\vec G);\ f(x)=0\}$.
+
+      *(i) Nezávislost.* Pro každou hranu $(x,y)$ je $f(y)$ jednou z hodnot
+      následníků uzlu $x$, kdežto $f(x)$ je číslo mezi hodnotami následníků
+      **chybějící**. Tedy $f(x)\ne f(y)$ pro každou hranu – speciálně žádná
+      hrana nespojuje dva uzly s hodnotou $0$.
+
+      *(ii) Absorpce.* Je-li $x\notin C$, je $f(x)\ge1$. Kdyby žádný následník
+      $x$ neměl hodnotu $0$, bylo by $0$ nejmenší chybějící číslo a $f(x)=0$.
+      Existuje tedy následník $y$ s $f(y)=0$, tj. hrana $(x,y)$ s $y\in C$.
+
+      $C$ je proto jádro. $\square$
+    proof_steps:
+      - 'Uzly acyklického grafu očíslujeme topologicky: každá hrana vede z menšího indexu do většího.'
+      - 'Odzadu definujeme Grundyho funkci: f(u_i) je nejmenší nezáporné celé číslo, které není hodnotou žádného následníka (f(u_n) = 0).'
+      - 'Položíme C = množina uzlů s hodnotou f = 0.'
+      - 'Pro každou hranu (x, y) je f(x) ≠ f(y), protože f(y) mezi hodnotami následníků x je, kdežto f(x) ne; proto je C nezávislá.'
+      - 'Má-li x hodnotu f(x) ≥ 1, musí mít následníka s hodnotou 0, jinak by f(x) = 0; proto z každého uzlu mimo C vede hrana do C.'
+      - 'C je nezávislá a absorbující, tedy jádro.'
+    related: [def-grundyho-funkce, alg-jadro-acyklickeho-grafu, def-acyklicky-graf, thm-6-9-graf-bez-lichych-cyklu-ma-jadro]
+    illustrations:
+      - title: Rozhodujeme od výstupních uzlů
+        for: proof
+        property: kernel
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 0.5, y: 5 }
+            - { id: b, x: 3, y: 1.5 }
+            - { id: c, x: 3, y: 8.5 }
+            - { id: d, x: 6.5, y: 1.5 }
+            - { id: e, x: 6.5, y: 8.5 }
+            - { id: f, x: 9.5, y: 5 }
+          edges:
+            - { from: a, to: b }
+            - { from: a, to: c }
+            - { from: b, to: d }
+            - { from: c, to: d }
+            - { from: c, to: e }
+            - { from: d, to: f }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Výstupní uzel $f$ nemá následníky, takže hranou do jádra být pohlcen nemůže – patří do $C$. O ostatních uzlech zatím nevíme, jádro to ještě není.
+            set: [f]
+            labels: { f: "∈ C" }
+          - caption: |
+              $d$ i $e$ mají hranu do $f \in C$: do $C$ nesmějí (nezávislost) a zároveň už jsou pohlceny.
+            set: [f]
+            labels: { f: "∈ C", d: "∉", e: "∉" }
+          - caption: |
+              Jediný následník $b$ je $d \notin C$. Kdyby $b$ zůstal mimo, nebyl by ničím pohlcen – musí tedy do $C$. Zbývá rozhodnout $c$ a $a$.
+            set: [b, f]
+            labels: { f: "∈ C", d: "∉", e: "∉", b: "∈ C" }
+          - caption: |
+              Oba následníci $c$ ($d$, $e$) leží mimo $C$, proto $c \in C$. Množina $\{b, c, f\}$ je nezávislá i absorbující.
+            set: [b, c, f]
+            labels: { f: "∈ C", d: "∉", e: "∉", b: "∈ C", c: "∈ C" }
+          - caption: |
+              Nakonec $a$ má hranu do $b \in C$, takže $a \notin C$. Jádro $\{b, c, f\}$ – a protože každé rozhodnutí bylo vynucené, je to **jediné** jádro tohoto grafu.
+            set: [b, c, f]
+            labels: { f: "∈ C", d: "∉", e: "∉", b: "∈ C", c: "∈ C", a: "∉" }
+    source: "skripta str. 43, Věta 6.8 s důkazem (ověření, že C je jádro, doplněno); folie TGD1-08 s. 5"
+    supplemented: false
+
+  - id: def-grundyho-funkce
+    kind: definition
+    label: "Grundyho funkce (důkaz Věty 6.8)"
+    section: "6.2"
+    title: Grundyho funkce
+    terms: [Grundyho funkce, Grundyho číslo, Sprague-Grundy, mex, minimum excludant, Grundy function]
+    statement: |
+      Nechť $\vec G$ je acyklický graf s uzly očíslovanými $u_1,\dots,u_n$ tak,
+      že každá hrana vede z uzlu s menším indexem do uzlu s větším indexem.
+      **Grundyho funkce** je ohodnocení $f:U(\vec G)\to\mathbb N_0$ dané
+      předpisem
+      $$
+      f(u_n)=0,\qquad f(u_i)=\min\{k\in\mathbb N_0;\ k\notin\{f(v_j);\ (u_i,v_j)\in H(\vec G)\}\},\quad i=n-1,\dots,1.
+      $$
+    intuition: |
+      Hodnota uzlu je nejmenší nezáporné celé číslo, které se **nevyskytuje**
+      mezi hodnotami jeho následníků (tzv. *mex* – minimum excludant).
+      Každý stok má hodnotu $0$ (mex prázdné množiny). Uzly s hodnotou $0$
+      tvoří jádro ([Věta 6.8](#thm-6-8-acyklicky-graf-ma-jadro)); v teorii
+      her jsou to „prohrávající pozice pro hráče na tahu". Například u hry
+      s odebíráním 1 nebo 2 zápalek je $f(i)=i \bmod 3$.
+    examples:
+      - title: Výpočet mex
+        body: |
+          Má-li uzel následníky s hodnotami $\{0,1,3\}$, je jeho hodnota $2$.
+          S hodnotami $\{1,2\}$ je hodnota $0$ (uzel patří do jádra). Bez
+          následníků je hodnota $0$.
+    related: [thm-6-8-acyklicky-graf-ma-jadro, alg-jadro-acyklickeho-grafu, rem-jadro-a-teorie-her]
+    illustrations:
+      - title: Hodnoty mex odzadu a nuly jako jádro
+        for: statement
+        property: kernel
+        graph:
+          directed: true
+          nodes:
+            - { id: u1, x: 1, y: 1 }
+            - { id: u2, x: 4, y: 3 }
+            - { id: u3, x: 2.5, y: 5.5 }
+            - { id: u4, x: 4, y: 8 }
+            - { id: u5, x: 6, y: 5.5 }
+            - { id: u6, x: 9, y: 8 }
+            - { id: u7, x: 9.5, y: 1 }
+          edges:
+            - { from: u1, to: u2 }
+            - { from: u1, to: u3 }
+            - { from: u1, to: u7 }
+            - { from: u2, to: u3 }
+            - { from: u2, to: u5 }
+            - { from: u2, to: u7 }
+            - { from: u3, to: u4 }
+            - { from: u4, to: u5 }
+            - { from: u4, to: u6 }
+            - { from: u5, to: u6 }
+            - { from: u5, to: u7 }
+            - { from: u6, to: u7 }
+        steps:
+          - caption: |
+              Uzly jsou očíslované topologicky, počítáme od konce. Stok $u_7$ nemá následníky: $f(u_7) = \operatorname{mex} \emptyset = 0$. Vybrané jsou zatím uzly s hodnotou 0 – jádro to ještě není.
+            set: [u7]
+            labels: { u7: "f=0" }
+          - caption: |
+              $u_6$ má následníka s hodnotou $0$, tedy $f(u_6) = 1$. $u_5$ vidí hodnoty $\{1, 0\}$, chybí nejmenší $2$: $f(u_5) = 2$.
+            set: [u7]
+            labels: { u7: "f=0", u6: "f=1", u5: "f=2" }
+          - caption: |
+              $u_4$ vidí $\{2, 1\}$ – nula chybí, takže $f(u_4) = 0$. Uzel $u_3$ pak vidí $\{0\}$ a dostane $1$. Nuly $\{u_4, u_7\}$ už tvoří jádro.
+            set: [u4, u7]
+            labels: { u7: "f=0", u6: "f=1", u5: "f=2", u4: "f=0", u3: "f=1" }
+          - caption: |
+              $f(u_2) = \operatorname{mex}\{1, 2, 0\} = 3$ a $f(u_1) = \operatorname{mex}\{3, 1, 0\} = 2$. Na koncích každé hrany jsou různé hodnoty, a uzel s $f \ge 1$ má vždy následníka s nulou – proto nuly tvoří jádro.
+            set: [u4, u7]
+            labels: { u7: "f=0", u6: "f=1", u5: "f=2", u4: "f=0", u3: "f=1", u2: "f=3", u1: "f=2" }
+    source: "skripta str. 43, důkaz Věty 6.8"
+    supplemented: false
+
+  - id: alg-jadro-acyklickeho-grafu
+    kind: algorithm
+    section: "6.2"
+    title: Nalezení jádra acyklického grafu (Grundyho funkce)
+    terms: [algoritmus jádro acyklického grafu, výpočet Grundyho funkce, kernel DAG algorithm, topologické uspořádání]
+    statement: |
+      Vstup: acyklický orientovaný graf $\vec G$. Výstup: jeho (jediné) jádro $C$.
+    pseudocode: |
+      1. Najdi topologické očíslování $u_1,\dots,u_n$ (každá hrana vede
+         z menšího indexu do většího), např. postupným odebíráním uzlů bez
+         vstupních hran nebo pomocí DFS.
+      2. Pro $i = n, n-1, \dots, 1$:
+         - označ hodnoty $f(v)$ všech následníků $v$ uzlu $u_i$
+           (pomocné pole příznaků velikosti $\deg^+(u_i)+1$),
+         - $f(u_i) :=$ nejmenší neoznačené číslo $k\in\{0,1,\dots\}$.
+      3. Vrať $C := \{u_i;\ f(u_i)=0\}$.
+
+      *Zjednodušená varianta (stačí pro jádro):* procházej uzly v pořadí
+      $u_n,\dots,u_1$ a dej $u_i$ do $C$, právě když žádný jeho následník
+      v $C$ není.
+    complexity: "$O(n+m)$"
+    intuition: |
+      Topologické uspořádání trvá $O(n+m)$. Výpočet $f(u_i)$ stojí
+      $O(\deg^+(u_i)+1)$ – hodnota $f(u_i)$ je nejvýše $\deg^+(u_i)$, takže
+      stačí pole příznaků této velikosti. Součet přes všechny uzly je $O(n+m)$.
+
+      Korektnost plyne z [Věty 6.8](#thm-6-8-acyklicky-graf-ma-jadro).
+      Zjednodušená varianta počítá přesně indikátor „$f(u_i)=0$".
+    examples:
+      - title: Grundyho funkce na grafu se 7 uzly
+        body: |
+          Uzly jsou očíslovány topologicky $1,\dots,7$, hrany:
+          $1\to2$, $1\to3$, $1\to7$, $2\to3$, $2\to5$, $2\to7$, $3\to4$,
+          $4\to5$, $4\to6$, $5\to6$, $5\to7$, $6\to7$.
+
+          | uzel | následníci (hodnoty) | $f$ |
+          |---|---|---|
+          | 7 | – | 0 |
+          | 6 | 7 (0) | 1 |
+          | 5 | 6 (1), 7 (0) | 2 |
+          | 4 | 5 (2), 6 (1) | 0 |
+          | 3 | 4 (0) | 1 |
+          | 2 | 3 (1), 5 (2), 7 (0) | 3 |
+          | 1 | 2 (3), 3 (1), 7 (0) | 2 |
+
+          Jádro $C=\{4,7\}$: mezi 4 a 7 hrana nevede a z uzlů $1,2,3,5,6$ vede
+          hrana do 4 nebo 7. (Atribut `grundy` udává hodnotu $f$.)
+        graph:
+          directed: true
+          nodes:
+            - { id: "1", x: 1, y: 1, grundy: 2 }
+            - { id: "2", x: 4, y: 3, grundy: 3 }
+            - { id: "3", x: 2.5, y: 5.5, grundy: 1 }
+            - { id: "4", x: 4, y: 8, grundy: 0, color: 1 }
+            - { id: "5", x: 6, y: 5.5, grundy: 2 }
+            - { id: "6", x: 9, y: 8, grundy: 1 }
+            - { id: "7", x: 9.5, y: 1, grundy: 0, color: 1 }
+          edges:
+            - { from: "1", to: "2" }
+            - { from: "1", to: "3" }
+            - { from: "1", to: "7" }
+            - { from: "2", to: "3" }
+            - { from: "2", to: "5" }
+            - { from: "2", to: "7" }
+            - { from: "3", to: "4" }
+            - { from: "4", to: "5" }
+            - { from: "4", to: "6" }
+            - { from: "5", to: "6" }
+            - { from: "5", to: "7" }
+            - { from: "6", to: "7" }
+    visualization: kernel
+    related: [thm-6-8-acyklicky-graf-ma-jadro, def-grundyho-funkce, def-acyklicky-graf]
+    source: "skripta str. 43–44 (důkaz Věty 6.8, příklad, poznámka „myšlenky důkazů dávají algoritmy“); pseudokód a složitost doplněny"
+    supplemented: false
+
+  - id: thm-6-9-graf-bez-lichych-cyklu-ma-jadro
+    kind: theorem
+    label: "Věta 6.9"
+    section: "6.2"
+    title: Graf bez cyklů liché délky má jádro
+    terms: [jádro grafu bez lichých cyklů, Richardsonova věta, orientovaný graf bez lichých cyklů, kernel no odd cycles]
+    statement: |
+      Každý orientovaný graf bez cyklů liché délky má jádro.
+    intuition: |
+      Zobecnění [Věty 6.8](#thm-6-8-acyklicky-graf-ma-jadro) (acyklický graf
+      nemá žádné cykly, tím méně liché). Uvnitř silně souvislé části bez
+      lichých cyklů má každý uzel jednoznačnou „paritu vzdálenosti" k pevně
+      zvolenému uzlu $x$ – sudé uzly tvoří jádro této části (střídání jako
+      na sudé kružnici). Části pak zpracováváme od „konce" kondenzace, tj. od
+      výstupních kvazikomponent, podobně jako u acyklických grafů.
+      Překážka z [lichého cyklu](#prop-lichy-cyklus-nema-jadro) je tedy
+      v jistém smyslu jediná, kterou tato metoda musí obejít.
+    proof: |
+      Ve skriptech je uvedena jen myšlenka (postup); zde ji doplníme
+      o zdůvodnění.
+
+      **Lemma (parita).** Nechť $\vec D$ je silně souvislý graf bez lichých
+      cyklů a $x\in U(\vec D)$. Pak pro každý uzel $y$ mají všechny sledy
+      z $y$ do $x$ stejnou paritu délky.
+
+      *Důkaz lemmatu.* Uzavřený sled liché délky obsahuje cyklus liché délky
+      (není-li sám cyklem, opakuje se v něm uzel a rozpadne se na dva kratší
+      uzavřené sledy, z nichž jeden má lichou délku; indukce). Kdyby z $y$
+      do $x$ vedl sled sudé délky $W_1$ i liché délky $W_2$, zvolíme sled $Q$
+      z $x$ do $y$ (silná souvislost); uzavřené sledy $W_1Q$ a $W_2Q$ mají
+      délky různé parity, jeden je lichý a obsahuje lichý cyklus – spor.
+
+      **Krok 1.** Nechť $\vec G_0$ je výstupní
+      [kvazikomponenta](#def-kvazikomponenta) grafu $\vec G$ (odpovídá
+      výstupnímu uzlu kondenzace, tj. **z ní nevede žádná hrana ven**).
+      Zvolme $x\in U(\vec G_0)$ a položme
+      $$
+      S_0=\{y\in U(\vec G_0);\ z\ y\ \text{do}\ x\ \text{existuje orientovaný sled sudé délky}\}
+      $$
+      (sled nulové délky je sudý, tedy $x\in S_0$). $S_0$ je jádro $\vec G_0$:
+
+      - *nezávislost:* kdyby $(y,z)\in H$ pro $y,z\in S_0$, pak hrana $(y,z)$
+        následovaná sudým sledem ze $z$ do $x$ je lichý sled z $y$ do $x$, ale
+        z $y$ vede i sudý sled – spor s lemmatem (smyčka $y=z$ by byla lichý
+        cyklus délky 1);
+      - *absorpce:* pro $y\in U(\vec G_0)\setminus S_0$ existuje (silná
+        souvislost) sled z $y$ do $x$; ten je lichý, tedy má délku $\ge1$.
+        Jeho první hrana $(y,z)$ vede do uzlu $z$, ze kterého zbytek sledu má
+        sudou délku, tj. $z\in S_0$.
+
+      **Krok 2.** Označme $R_0=S_0\cup\{y\in U(\vec G);\ \exists z\in S_0:\ (y,z)\in H(\vec G)\}$
+      (jádro $S_0$ a všichni jeho předchůdci). Podle kroku 1 je
+      $U(\vec G_0)\subset R_0$. Graf $\vec G_1=\vec G-R_0$ nemá liché cykly
+      (je podgrafem $\vec G$), takže (indukcí podle počtu uzlů) má jádro $S'$
+      (pro prázdný graf $S'=\emptyset$).
+
+      **Krok 3.** $S=S_0\cup S'$ je jádro $\vec G$:
+
+      - *nezávislost:* hrana $(t,s)$ s $t\in S'$, $s\in S_0$ by z $t$ dělala
+        předchůdce $S_0$, tedy $t\in R_0$ – ale $t\in U(\vec G_1)$. Hrana
+        $(s,t)$ by vedla z $\vec G_0$ ven, což u výstupní kvazikomponenty
+        nenastává;
+      - *absorpce:* uzel z $R_0\setminus S_0$ má hranu do $S_0$ z definice
+        $R_0$; uzel z $U(\vec G_1)\setminus S'$ má hranu do $S'$, protože $S'$
+        je jádro $\vec G_1$.
+
+      Rozvinutím indukce dostáváme postup ze skript: opakujeme krok 1 pro
+      $\vec G_1,\vec G_2,\dots$ a skončí-li postup po $k$ krocích, je jádrem
+      $S=S_0\cup S_1\cup\dots\cup S_k$. $\square$
+    proof_steps:
+      - 'Lemma: v silně souvislém grafu bez lichých cyklů mají všechny sledy z y do x stejnou paritu (jinak by vznikl lichý uzavřený sled, a tedy lichý cyklus).'
+      - 'Zvolíme výstupní kvazikomponentu G_0 (nevede z ní hrana ven), uzel x v ní a S_0 = uzly G_0 se sudým sledem do x.'
+      - 'S_0 je nezávislá: hrana uvnitř S_0 by dala z jednoho uzlu sudý i lichý sled do x.'
+      - 'S_0 pohlcuje G_0: z uzlu mimo S_0 vede lichý sled do x a jeho první hrana končí v S_0.'
+      - 'Odstraníme S_0 i všechny předchůdce S_0 (tím celou G_0); zbylý graf G_1 nemá liché cykly a indukcí má jádro S''.'
+      - 'S_0 ∪ S'' je nezávislá: hrana do S_0 by vedla z odstraněného předchůdce a z G_0 ven žádná hrana nevede.'
+      - 'S_0 ∪ S'' je absorbující: odstranění předchůdci mají hranu do S_0, ostatní uzly hranu do S''; jde tedy o jádro.'
+    related: [alg-jadro-grafu-bez-lichych-cyklu, thm-6-8-acyklicky-graf-ma-jadro, prop-lichy-cyklus-nema-jadro, def-kvazikomponenta]
+    source: "skripta str. 43, Věta 6.9 s myšlenkou důkazu (zdůvodnění doplněno); folie TGD1-08 s. 5"
+    supplemented: false
+
+  - id: alg-jadro-grafu-bez-lichych-cyklu
+    kind: algorithm
+    section: "6.2"
+    title: Nalezení jádra grafu bez lichých cyklů
+    terms: [algoritmus jádro bez lichých cyklů, kvazikomponenty, kondenzace, výstupní kvazikomponenta, kernel algorithm]
+    statement: |
+      Vstup: orientovaný graf $\vec G$ bez cyklů liché délky.
+      Výstup: jádro $S$ grafu $\vec G$.
+    pseudocode: |
+      1. $S := \emptyset$.
+      2. Dokud $\vec G$ není prázdný:
+         1. Najdi kvazikomponenty a kondenzaci $\vec G$; vyber výstupní
+            kvazikomponentu $\vec G_0$ (výstupní uzel kondenzace).
+         2. Zvol $x\in U(\vec G_0)$ a prohledáváním do šířky po **obrácených**
+            hranách uvnitř $\vec G_0$ spočti vzdálenosti $d(y,x)$;
+            polož $S_0 := \{y\in U(\vec G_0);\ d(y,x)\ \text{je sudé}\}$.
+         3. $S := S\cup S_0$.
+         4. Odstraň z $\vec G$ všechny uzly $S_0$ a všechny uzly $y$, z nichž
+            vede hrana do $S_0$.
+      3. Vrať $S$.
+    complexity: "$O(n\\cdot(n+m))$ – nejvýše $n$ iterací, každá v čase $O(n+m)$"
+    intuition: |
+      Krok 2.2: díky lemmatu o paritě z důkazu
+      [Věty 6.9](#thm-6-9-graf-bez-lichych-cyklu-ma-jadro) mají všechny sledy
+      z $y$ do $x$ stejnou paritu, takže stačí parita *nejkratší* vzdálenosti,
+      kterou spočítá BFS po obrácených hranách.
+
+      Složitost: kvazikomponenty (např. Tarjanův algoritmus nebo dvojí DFS)
+      i BFS trvají $O(n+m)$. V každé iteraci odstraníme aspoň uzel $x$, takže
+      iterací je nejvýše $n$; celkem $O(n(n+m))$, tedy polynomiálně.
+
+      Pro acyklický graf je každá kvazikomponenta jednouzlová a algoritmus
+      přejde ve zjednodušenou variantu
+      [algoritmu pro acyklické grafy](#alg-jadro-acyklickeho-grafu).
+    examples:
+      - title: Sudý cyklus s přívěsky
+        body: |
+          Hrany: $a\to b\to c\to d\to a$ (cyklus délky 4), $e\to a$, $f\to e$,
+          $g\to f$, $g\to b$.
+
+          *Iterace 1:* výstupní kvazikomponenta je $\{a,b,c,d\}$ (z ní nevede
+          hrana ven). Zvolíme $x=a$: $d(a,a)=0$, $d(d,a)=1$, $d(c,a)=2$,
+          $d(b,a)=3$, tedy $S_0=\{a,c\}$. Odstraníme $a,c$ a jejich předchůdce
+          $d,e$ (do $a$) a $b$ (do $c$); $g$ odstraněno není ($g\to b$, ale
+          $b\notin S_0$).
+
+          *Iterace 2:* zbývá $f$, $g$ s hranou $g\to f$. Výstupní kvazikomponenta
+          je $\{f\}$, $S_1=\{f\}$; odstraníme $f$ a jeho předchůdce $g$.
+
+          Jádro $S=\{a,c,f\}$: je nezávislé a $b\to c$, $d\to a$, $e\to a$,
+          $g\to f$.
+        graph:
+          directed: true
+          nodes:
+            - { id: a, x: 5, y: 8, color: 1 }
+            - { id: b, x: 8, y: 5 }
+            - { id: c, x: 5, y: 2, color: 1 }
+            - { id: d, x: 2, y: 5 }
+            - { id: e, x: 1, y: 9 }
+            - { id: f, x: 0, y: 6, color: 1 }
+            - { id: g, x: 5, y: 0 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: a }
+            - { from: e, to: a }
+            - { from: f, to: e }
+            - { from: g, to: f }
+            - { from: g, to: b }
+    visualization: kernel
+    related: [thm-6-9-graf-bez-lichych-cyklu-ma-jadro, alg-jadro-acyklickeho-grafu, def-kvazikomponenta]
+    source: "skripta str. 43–44 (postup z důkazu Věty 6.9 a poznámka o algoritmech); BFS-implementace a složitost doplněny"
+    supplemented: false
+
+  - id: rem-kdy-ma-graf-jadro
+    kind: remark
+    section: "6.2"
+    title: Kdy má orientovaný graf jádro?
+    terms: [existence jádra, charakterizace grafů s jádrem, jádro NP-úplné, symetrická orientace, kernel existence NP-complete]
+    statement: |
+      Lichý cyklus jádro nemá, zatímco každá symetrická orientace
+      neorientovaného grafu jádro má. Postačující podmínky dávají Věty 6.8
+      (acyklické grafy) a 6.9 (grafy bez lichých cyklů) a myšlenky jejich
+      důkazů zároveň poskytují algoritmy pro nalezení jádra v těchto
+      speciálních případech.
+
+      **Charakterizační věta orientovaných grafů s jádrem není známa** a otázka
+      existence jádra v obecném orientovaném grafu je **NP-úplný** problém.
+    intuition: |
+      Shrnutí pro zkoušku:
+
+      | graf | jádro | algoritmus |
+      |---|---|---|
+      | neorientovaný | vždy existuje (max. nezávislá množina) | hladový, $O(n+m)$ |
+      | acyklický | vždy, jediné | Grundyho funkce, $O(n+m)$ |
+      | bez lichých cyklů | vždy | kvazikomponenty + parita, $O(n(n+m))$ |
+      | obecný orientovaný | nemusí existovat | rozhodnutí NP-úplné |
+
+      Pozor: graf, který liché cykly obsahuje, jádro mít může – přidáme-li
+      k lichému cyklu nový uzel $s$ a hrany ze všech uzlů cyklu do $s$, je
+      $\{s\}$ jádro. Věta 6.9 je tedy jen postačující podmínka.
+    related: [def-jadro-orientovaneho-grafu, prop-lichy-cyklus-nema-jadro, thm-6-8-acyklicky-graf-ma-jadro, thm-6-9-graf-bez-lichych-cyklu-ma-jadro]
+    source: "skripta str. 43 (Otázka) a str. 44 (poznámka); tabulka shrnutí doplněna"
+    supplemented: false
+
+quiz:
+  - id: q-nezavislost-01
+    question: |
+      Které tvrzení o nezávislých množinách je pravdivé?
+    options:
+      - 'Každá maximální nezávislá množina je největší.'
+      - 'Každá největší nezávislá množina je maximální, ale ne naopak.'
+      - 'Maximální a největší nezávislá množina jsou synonyma.'
+      - 'Největší nezávislá množina nemusí být maximální.'
+    correct: 1
+    explanation: |
+      Největší množinu (s $\alpha(G)$ prvky) nelze rozšířit, je tedy maximální.
+      Maximální ale může být i malá – např. $\{m_1,m_3\}$ v trojúhelníkové
+      mřížce s $\alpha=4$. Anglicky *maximal* × *maximum*.
+    related: [rem-maximalni-vs-nejvetsi]
+
+  - id: q-nezavislost-02
+    question: |
+      Jakou časovou složitost má hladový algoritmus pro nalezení maximální
+      nezávislé množiny (při reprezentaci seznamy sousedů)?
+    options:
+      - '$O(n+m)$'
+      - '$O(2^n)$'
+      - '$O(n^3)$'
+      - 'Úloha je NP-těžká, polynomiální algoritmus není znám.'
+    correct: 0
+    explanation: |
+      Každý uzel je z množiny kandidátů $Y$ vyřazen jednou a každá hrana se
+      projde $O(1)$-krát. NP-těžké je hledání *největší* nezávislé množiny,
+      ne maximální.
+    related: [alg-maximalni-nezavisla-mnozina, rem-slozitost-nezavisle-mnoziny]
+
+  - id: q-nezavislost-03
+    question: |
+      Graf $G$ má 12 uzlů a jeho nejmenší uzlové pokrytí má 7 uzlů. Kolik je $\alpha(G)$?
+    options:
+      - '7'
+      - '5'
+      - '12'
+      - 'Nelze určit bez znalosti hran.'
+    correct: 1
+    explanation: |
+      Podle Důsledku 6.1 je $\alpha(G)+\beta(G)=|U(G)|$, tedy $\alpha(G)=12-7=5$.
+      Doplněk nejmenšího pokrytí je největší nezávislá množina.
+    related: [cor-6-1-alfa-plus-beta, thm-6-1-nezavisla-doplnek-pokryti]
+
+  - id: q-nezavislost-04
+    question: |
+      Víme, že doplněk $\bar G$ grafu $G$ obsahuje úplný podgraf $K_5$, ale
+      žádný $K_6$. Co z toho plyne?
+    options:
+      - '$\omega(G)=5$'
+      - '$\alpha(G)=5$'
+      - '$\gamma(G)=5$'
+      - '$\beta(G)=5$'
+    correct: 1
+    explanation: |
+      $\omega(\bar G)=5$ a podle Věty 6.4 je $\alpha(G)=\omega(\bar G)=5$:
+      nezávislá množina v $G$ je úplný podgraf v $\bar G$.
+    related: [thm-6-4-alfa-omega-doplnku]
+
+  - id: q-nezavislost-05
+    question: |
+      Které množiny jsou přesně jádry neorientovaného grafu?
+    options:
+      - 'Největší nezávislé množiny.'
+      - 'Nejmenší dominantní množiny.'
+      - 'Maximální nezávislé množiny.'
+      - 'Minimální dominantní množiny.'
+    correct: 2
+    explanation: |
+      Jádro je nezávislá a dominantní množina; podle Věty 6.5 je nezávislá
+      množina dominantní právě když je maximální. Minimální dominantní množina
+      nemusí být nezávislá (mřížka $3\times3$), největší nezávislá je jen
+      speciální případ.
+    related: [def-jadro-neorientovaneho-grafu, thm-6-5-maximalni-nezavisla-je-dominantni]
+
+  - id: q-nezavislost-06
+    question: |
+      Pro hvězdu $K_{1,n}$ ($n\ge2$) platí:
+    options:
+      - '$\gamma=1$, $\alpha=n$'
+      - '$\gamma=n$, $\alpha=1$'
+      - '$\gamma=\alpha=1$'
+      - '$\gamma=\alpha=n$'
+    correct: 0
+    explanation: |
+      Střed sám dominuje všem listům ($\gamma=1$), všechny listy tvoří největší
+      nezávislou množinu ($\alpha=n$). Ukazuje to, že nerovnost
+      $\gamma(G)\le\alpha(G)$ může být libovolně ostrá.
+    related: [cor-6-2-gamma-le-alfa]
+
+  - id: q-nezavislost-07
+    question: |
+      Který z následujících orientovaných grafů **nemá** jádro?
+    options:
+      - 'Orientovaný cyklus délky 4.'
+      - 'Libovolný acyklický graf.'
+      - 'Orientovaný cyklus délky 3.'
+      - 'Symetrická orientace kružnice $C_5$.'
+    correct: 2
+    explanation: |
+      Na cyklu se příslušnost k jádru musí střídat, což na liché délce nejde.
+      Sudý cyklus má dvě jádra, acyklický graf má jádro (Věta 6.8) a symetrická
+      orientace se chová jako neorientovaný graf, který jádro má vždy.
+    related: [prop-lichy-cyklus-nema-jadro, rem-kdy-ma-graf-jadro]
+
+  - id: q-nezavislost-08
+    question: |
+      Uzel acyklického grafu má následníky s hodnotami Grundyho funkce
+      $\{0, 1, 3, 4\}$. Jaká je jeho hodnota a patří do jádra?
+    options:
+      - '5, nepatří'
+      - '0, patří'
+      - '2, nepatří'
+      - '2, patří'
+    correct: 2
+    explanation: |
+      Hodnota je nejmenší nezáporné celé číslo, které mezi hodnotami následníků
+      chybí (mex), tj. 2. Do jádra patří jen uzly s hodnotou 0; tento uzel má
+      následníka s hodnotou 0, tedy hranu do jádra.
+    related: [def-grundyho-funkce, thm-6-8-acyklicky-graf-ma-jadro]
+
+  - id: q-nezavislost-09
+    question: |
+      Jakou složitost má nalezení jádra acyklického grafu pomocí Grundyho funkce?
+    options:
+      - '$O(n+m)$'
+      - '$O(n^2 m)$'
+      - '$O(2^n)$'
+      - 'Úloha je NP-úplná.'
+    correct: 0
+    explanation: |
+      Topologické uspořádání trvá $O(n+m)$ a hodnotu $f(u)$ spočteme
+      v čase $O(\deg^+(u)+1)$ pomocí pole příznaků. NP-úplná je jen otázka
+      existence jádra v *obecném* orientovaném grafu.
+    related: [alg-jadro-acyklickeho-grafu]
+
+  - id: q-nezavislost-10
+    question: |
+      Proč musí každý uzel bez výstupních hran (stok) ležet v jádru
+      orientovaného grafu?
+    options:
+      - 'Protože jádro musí být největší nezávislá množina.'
+      - 'Protože z uzlu mimo jádro musí vést hrana do jádra, a ze stoku žádná hrana nevede.'
+      - 'Protože do stoku vede hrana z každého uzlu jádra.'
+      - 'Neplatí to, stok v jádru být nemusí.'
+    correct: 1
+    explanation: |
+      Podmínka (ii) Definice 6.12 vyžaduje pro každý uzel mimo jádro hranu
+      *do* jádra. Stok žádnou výstupní hranu nemá, proto mimo jádro být nemůže.
+      Proto např. koncové pozice hry leží v jádru.
+    related: [def-jadro-orientovaneho-grafu, rem-jadro-a-teorie-her]
+
+  - id: q-nezavislost-11
+    question: |
+      Graf $K_{k,k+1}$ je $k$-souvislý a není hamiltonovský. Co tento příklad
+      ukazuje o Chvátalově–Erdősově větě?
+    options:
+      - 'Že věta neplatí pro bipartitní grafy.'
+      - 'Že předpoklad α(G) ≤ k nelze zeslabit na α(G) ≤ k + 1.'
+      - 'Že předpoklad k ≥ 2 je zbytečný.'
+      - 'Že k-souvislost implikuje hamiltonovskost.'
+    correct: 1
+    explanation: |
+      $\alpha(K_{k,k+1})=k+1$, tedy o jedna víc, než věta dovoluje, a graf
+      hamiltonovský není (nestejně velké partity). Mez $\alpha\le k$ je těsná.
+    related: [thm-chvatal-erdos]
+
+  - id: q-nezavislost-12
+    question: |
+      Které tvrzení o složitosti je správné?
+    options:
+      - 'Najít minimální dominantní množinu je NP-těžké.'
+      - 'Najít maximální kliku je NP-těžké.'
+      - 'Rozhodnout, zda existuje nezávislá množina s aspoň k prvky, je NP-úplné.'
+      - 'Spočítat β(G) lze v čase O(n + m) pro každý graf.'
+    correct: 2
+    explanation: |
+      Úloha IND je NP-úplná (kap. 9). Maximální kliku a minimální dominantní
+      množinu najdeme hladově polynomiálně; $\beta(G)=n-\alpha(G)$ je NP-těžké
+      obecně (polynomiální je např. pro bipartitní grafy).
+    related: [rem-np-uplnost-nezavislosti, thm-ind-npc]
+
+  - id: q-nezavislost-13
+    question: |
+      V algoritmu pro jádro grafu bez lichých cyklů volíme v každém kroku
+      **výstupní** kvazikomponentu $\vec G_0$. Proč?
+    options:
+      - 'Protože je vždy nejmenší.'
+      - 'Protože z ní nevede žádná hrana ven, takže její jádro S_0 nemůže mít hranu do později vybraných uzlů jádra.'
+      - 'Protože jen výstupní kvazikomponenta neobsahuje cykly.'
+      - 'Protože do ní nevede žádná hrana zvenku.'
+    correct: 1
+    explanation: |
+      Hrany mezi $S_0$ a pozdějšími částmi jádra jsou vyloučeny ve dvou směrech:
+      hrany *do* $S_0$ vedou z předchůdců, které odstraníme, a hrany *ze* $S_0$
+      ven neexistují, protože $\vec G_0$ je výstupní.
+    related: [thm-6-9-graf-bez-lichych-cyklu-ma-jadro, alg-jadro-grafu-bez-lichych-cyklu]
+
+  - id: q-nezavislost-14
+    question: |
+      Kolik jader má orientovaný cyklus délky 6?
+    options:
+      - 'Žádné'
+      - 'Jedno'
+      - 'Dvě'
+      - 'Šest'
+    correct: 2
+    explanation: |
+      Příslušnost k jádru se po cyklu střídá; zvolíme-li, zda $u_1$ do jádra
+      patří, je zbytek určen. Jádra jsou uzly s lichými indexy a uzly se sudými
+      indexy.
+    related: [prop-lichy-cyklus-nema-jadro]
+
+  - id: q-nezavislost-15
+    question: |
+      Hladový algoritmus pro maximální nezávislou množinu vrátil množinu
+      s 6 prvky. Co lze s jistotou říci o $\alpha(G)$?
+    options:
+      - '$\alpha(G)=6$'
+      - '$\alpha(G)\ge 6$'
+      - '$\alpha(G)\le 6$'
+      - 'Nic, výsledek nemusí být ani nezávislý.'
+    correct: 1
+    explanation: |
+      Výsledek je nezávislá (a maximální) množina, tedy dolní odhad nezávislosti.
+      Největší nezávislá množina může být větší – výsledek hladového algoritmu
+      závisí na pořadí volby uzlů.
+    related: [alg-maximalni-nezavisla-mnozina]

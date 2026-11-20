@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/*.db
+**/.venv
+.git
+prednasky
+*.pdf
+vitaliy*
+*_key
+*.pem
+.env

@@ -1,0 +1,54 @@
+name: tgd1
+
+services:
+  database:
+    build: ./Database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tgd}
+      POSTGRES_USER: ${POSTGRES_USER:-tgd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tgd}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Backend/dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-tgd}:${POSTGRES_PASSWORD:-tgd}@database:5432/${POSTGRES_DB:-tgd}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CORS_ORIGINS: '["${PUBLIC_URL:-http://localhost:8080}"]'
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build: ./FrontEnd
+    restart: unless-stopped
+    # bound to localhost only – on a server the host nginx proxies to it
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Tests + strict content validation:  docker compose --profile test run --rm backend-test
+  backend-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Backend/dockerfile
+      target: test
+    environment:
+      DATABASE_URL: sqlite:///./test.db
+
+volumes:
+  db-data:

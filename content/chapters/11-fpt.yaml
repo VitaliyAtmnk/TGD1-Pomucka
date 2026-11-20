@@ -1,0 +1,1003 @@
+id: fpt
+number: 11
+title: FPT algoritmy (parametrizovaná složitost)
+source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms; Downey–Fellows, Fundamentals of Parameterized Complexity)"
+exam_questions: [20]
+summary: |
+  NP-úplnost říká, že problém (pravděpodobně) nemá polynomiální algoritmus – v čase
+  měřeném jen velikostí vstupu $n$. Parametrizovaná složitost měří čas pomocí $n$ **a**
+  dalšího parametru $k$ (typicky velikosti hledaného řešení) a hledá algoritmy s časem
+  $f(k) \cdot n^{O(1)}$, kde exponenciální „výbuch" závisí jen na $k$. Ukážeme třídy
+  **FPT** a **XP**, klasický příklad **vrcholového pokrytí** (omezený strom hledání,
+  vylepšené větvení, **kernelizace** podle Busse) a hranice metody (W[1]-těžkost kliky a
+  nezávislé množiny). *Tato látka není ve skriptech ani ve foliích TGD1 – je doplněna
+  ze standardní literatury.*
+sections:
+  - number: "11.1"
+    title: Parametrizované problémy, třídy FPT a XP
+  - number: "11.2"
+    title: Vrcholové pokrytí – omezený strom hledání
+  - number: "11.3"
+    title: Kernelizace
+  - number: "11.4"
+    title: Další techniky a hranice FPT
+items:
+  # ------------------------------------------------------------------ 11.1
+  - id: rem-fpt-motivace
+    kind: remark
+    section: "11.1"
+    title: Motivace – exponenciála jen v parametru
+    terms: [motivace FPT, parametrizovaná složitost, parameterized complexity, n na k, pevný parametr]
+    statement: |
+      Z kapitoly o NP-úplnosti víme, že $\text{IND}_k \in \mathrm{P}$ pro každé pevné $k$
+      ([Tvrzení 9.2](#prop-ind-k-p)): hrubá síla projde $\binom{n}{k} = O(n^k)$ podmnožin.
+      Takový algoritmus je ale prakticky nepoužitelný už pro malá $k$ – pro $n = 1000$ a
+      $k = 10$ je $n^k = 10^{30}$. Exponent polynomu roste s parametrem.
+
+      Pro vrcholové pokrytí (COV, také NP-úplné – [Věta 9.9](#thm-cov-npc)) však existuje
+      algoritmus s časem $O(2^k \cdot (n + m))$: pro $n = 1000$, $m = 5000$ a $k = 10$ je to
+      zhruba $6 \cdot 10^6$ operací. Exponenciální část závisí **jen na $k$**, závislost na
+      velikosti vstupu je lineární.
+
+      **Parametrizovaná složitost** zkoumá právě tento rozdíl: které NP-těžké problémy lze
+      řešit v čase $f(k) \cdot n^{c}$ s konstantou $c$ nezávislou na $k$ (třída
+      [FPT](#def-fpt)), a které „jen" v čase $n^{g(k)}$ (třída [XP](#def-xp)).
+    intuition: |
+      V praxi bývá hledané řešení malé (malé pokrytí, krátká cesta, …), zatímco graf je
+      obrovský. Algoritmus $2^k \cdot n$ je pro takové instance rychlý, i když je problém
+      NP-úplný – NP-úplnost se týká nejhoršího případu přes všechna $k$.
+    related: [prop-ind-k-p, thm-cov-npc, def-fpt, def-xp]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms)"
+    supplemented: true
+
+  - id: def-parametrizovany-problem
+    kind: definition
+    section: "11.1"
+    title: Parametrizovaný problém
+    terms: [parametrizovaný problém, parametr, parameterized problem, instance s parametrem, "(x, k)"]
+    statement: |
+      **Parametrizovaný problém** je jazyk $L \subseteq \Sigma^* \times \mathbb{N}$, kde
+      $\Sigma$ je konečná abeceda. V instanci $(x, k) \in \Sigma^* \times \mathbb{N}$ se $k$
+      nazývá **parametr**. Velikostí instance rozumíme $|x|$ (příp. $|x| + k$), obvykle ji
+      značíme $n$.
+
+      Příklady (rozhodovací problémy z kapitoly 10 s vyznačeným parametrem):
+
+      * **$k$-COV** – graf $G$, parametr $k$; existuje pokrytí velikosti nejvýše $k$?
+      * **$k$-IND**, **$k$-CLIQUE** – graf $G$, parametr $k$; existuje nezávislá množina
+        (klika) velikosti alespoň $k$?
+      * **$k$-PATH** – graf $G$, parametr $k$; existuje cesta s $k$ uzly?
+      * **COL parametrizovaný počtem barev** – graf $G$, parametr $k$; je $G$
+        $k$-obarvitelný?
+    intuition: |
+      Parametr je „druhé číslo", které popisuje strukturu instance – nejčastěji velikost
+      hledaného řešení, ale může to být třeba stromová šířka grafu nebo počet barev.
+      Stejný problém může mít různé parametrizace s velmi odlišnou složitostí.
+    related: [def-fpt, def-xp, def-k-cov]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms)"
+    supplemented: true
+
+  - id: def-fpt
+    kind: definition
+    section: "11.1"
+    title: Třída FPT
+    terms: [FPT, fixed-parameter tractable, řešitelný s pevným parametrem, třída FPT, FPT algoritmus, "f(k)·n^c"]
+    statement: |
+      Parametrizovaný problém $L$ je **řešitelný s pevným parametrem** (*fixed-parameter
+      tractable*), jestliže existuje algoritmus, vyčíslitelná funkce
+      $f : \mathbb{N} \to \mathbb{N}$ a konstanta $c$ takové, že algoritmus pro každou
+      instanci $(x, k)$ rozhodne, zda $(x, k) \in L$, v čase
+      $$f(k) \cdot |x|^{c}.$$
+      Takový algoritmus se nazývá **FPT algoritmus**; třída všech takových problémů je
+      **FPT**.
+    intuition: |
+      Funkce $f$ smí být libovolně rychle rostoucí ($2^k$, $k!$, $2^{2^k}$), ale **exponent
+      u $n$ nesmí záviset na $k$**. Čas $O(2^k n)$ je FPT, čas $O(n^k)$ není.
+
+      Ekvivalentně lze požadovat čas $f(k) + |x|^{c}$: z $ab \le \max(a,b)^2 \le a^2 + b^2$
+      plyne $f(k) \cdot n^c \le f(k)^2 + n^{2c}$, a naopak $f(k) + n^c \le f(k) \cdot n^c$
+      pro $f(k), n \ge 1$.
+    related: [def-parametrizovany-problem, def-xp, prop-fpt-v-xp, thm-cov-fpt, thm-kernel-fpt]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 1)"
+    supplemented: true
+
+  - id: def-xp
+    kind: definition
+    section: "11.1"
+    title: Třída XP
+    terms: [XP, slice-wise polynomial, po vrstvách polynomiální, "n^g(k)"]
+    statement: |
+      Parametrizovaný problém $L$ patří do třídy **XP** (*slice-wise polynomial*), jestliže
+      existuje algoritmus a vyčíslitelné funkce $f, g$ takové, že algoritmus rozhodne
+      instanci $(x, k)$ v čase
+      $$f(k) \cdot |x|^{g(k)}.$$
+    intuition: |
+      XP znamená: pro každé **pevné** $k$ je problém polynomiální, ale stupeň polynomu
+      roste s $k$. Přesně to říká [Tvrzení 9.2](#prop-ind-k-p) o $\text{IND}_k$ – tedy
+      $k$-IND $\in$ XP (a stejně $k$-CLIQUE a $k$-COV hrubou silou v čase $O(n^k \cdot k^2)$).
+      Naopak COL parametrizovaný počtem barev v XP není (pokud $\mathrm{P} \ne \mathrm{NP}$),
+      protože už pro $k = 3$ je NP-úplný.
+    related: [def-fpt, prop-fpt-v-xp, prop-ind-k-p, rem-hranice-parametrizace]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 1)"
+    supplemented: true
+
+  - id: prop-fpt-v-xp
+    kind: proposition
+    section: "11.1"
+    title: FPT ⊆ XP
+    terms: [FPT ⊆ XP, vztah FPT a XP]
+    statement: |
+      $\mathrm{FPT} \subseteq \mathrm{XP}$.
+    intuition: |
+      FPT je silnější požadavek: exponent u $n$ musí být konstantní, kdežto XP dovoluje
+      exponent závislý na $k$. Zda je inkluze ostrá, souvisí s hypotézou
+      $\mathrm{FPT} \ne \mathrm{W}[1]$ – $k$-CLIQUE je v XP, ale pravděpodobně ne ve FPT.
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      Je-li $L \in \mathrm{FPT}$, existuje algoritmus s časem $f(k) \cdot |x|^{c}$ pro
+      konstantu $c$. Položíme-li $g(k) = c$ (konstantní funkce), je tento čas tvaru
+      $f(k) \cdot |x|^{g(k)}$, a tedy $L \in \mathrm{XP}$. $\square$
+    proof_steps:
+      - "Nechť $L \\in \\mathrm{FPT}$ s algoritmem v čase $f(k) \\cdot |x|^c$, kde $c$ je konstanta."
+      - "Zvolíme konstantní funkci $g(k) = c$."
+      - "Čas $f(k) \\cdot |x|^{g(k)}$ splňuje definici XP, tedy $L \\in \\mathrm{XP}$."
+    related: [def-fpt, def-xp]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 11.2
+  - id: def-k-cov
+    kind: definition
+    section: "11.2"
+    title: Parametrizované vrcholové pokrytí k-COV
+    terms: [k-COV, vertex cover, parametrizované vrcholové pokrytí, uzlové pokrytí s parametrem, p-Vertex-Cover]
+    statement: |
+      **$k$-COV** (parametrizované vrcholové pokrytí)
+
+      **Vstup:** neorientovaný graf $G$ s $n$ uzly a $m$ hranami a přirozené číslo $k$.
+
+      **Parametr:** $k$.
+
+      **Úkol:** zjistit, zda v $G$ existuje [pokrytí](#def-pokryti) $C \subseteq U(G)$
+      velikosti nejvýše $k$ (tj. každá hrana má alespoň jeden konec v $C$).
+    intuition: |
+      Je to tentýž problém jako [COV](#def-cov) z kapitoly 10, jen u něj sledujeme čas i
+      jako funkci $k$. Vrcholové pokrytí je „modelový organismus" parametrizované
+      složitosti – ukazují se na něm všechny základní techniky.
+    related: [def-cov, def-pokryti, thm-cov-npc, alg-cov-strom-hledani, thm-buss-jadro]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms)"
+    supplemented: true
+
+  - id: lemma-cov-hrana
+    kind: lemma
+    section: "11.2"
+    title: Každé pokrytí obsahuje konec každé hrany
+    terms: [pravidlo větvení, větvení podle hrany, branching rule]
+    statement: |
+      Nechť $\{u, v\} \in H(G)$. Pak $G$ má pokrytí velikosti nejvýše $k$ právě když
+      $G - u$ má pokrytí velikosti nejvýše $k - 1$ nebo $G - v$ má pokrytí velikosti
+      nejvýše $k - 1$.
+
+      Obecněji pro uzel $v$: $G$ má pokrytí velikosti nejvýše $k$ právě když $G - v$ má
+      pokrytí velikosti nejvýše $k - 1$ nebo $G - N[v]$ má pokrytí velikosti nejvýše
+      $k - \deg(v)$ (kde $N[v]$ je $v$ spolu se sousedy).
+    intuition: |
+      Hrana $uv$ musí být pokryta, takže do řešení patří $u$ nebo $v$ – stačí vyzkoušet obě
+      možnosti. Pokud $v$ v pokrytí není, musí tam být všichni jeho sousedé (jinak by
+      některá hrana z $v$ zůstala nepokrytá).
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      **Hrana.** „$\Rightarrow$": Nechť $C$ je pokrytí $G$, $|C| \le k$. Hrana $\{u, v\}$ je
+      pokryta, tedy (BÚNO) $u \in C$. Množina $C \setminus \{u\}$ pokrývá všechny hrany
+      $G - u$ (ty neobsahují $u$, takže je pokrývá jiný uzel z $C$) a má velikost nejvýše
+      $k - 1$. „$\Leftarrow$": Je-li $C'$ pokrytí $G - u$ velikosti nejvýše $k - 1$, pak
+      $C' \cup \{u\}$ pokrývá všechny hrany $G$ (hrany obsahující $u$ pokrývá $u$, ostatní
+      $C'$) a má velikost nejvýše $k$. Stejně pro $v$.
+
+      **Uzel.** Buď $v \in C$ – pak jako výše $C \setminus \{v\}$ pokrývá $G - v$. Nebo
+      $v \notin C$ – pak každá hrana $\{v, w\}$ musí být pokryta uzlem $w$, tedy $N(v) \subseteq C$
+      a $C \setminus N(v)$ pokrývá $G - N[v]$ a má velikost nejvýše $k - \deg(v)$. Opačné
+      implikace: k pokrytí $G - v$ přidáme $v$, resp. k pokrytí $G - N[v]$ přidáme $N(v)$
+      (hrany z $v$ jsou pak pokryty sousedy). $\square$
+    proof_steps:
+      - "Každé pokrytí $C$ musí pokrýt hranu $\\{u,v\\}$, tedy obsahuje $u$ nebo $v$."
+      - "Je-li $u \\in C$, pak $C \\setminus \\{u\\}$ je pokrytí grafu $G - u$ velikosti nejvýše $k-1$ (a symetricky pro $v$)."
+      - "Naopak k pokrytí $G - u$ velikosti $\\le k-1$ stačí přidat $u$ a dostaneme pokrytí $G$ velikosti $\\le k$."
+      - "Pro větvení podle uzlu: není-li $v$ v pokrytí, musí v něm být všichni jeho sousedé, což sníží rozpočet o $\\deg(v)$."
+    related: [alg-cov-strom-hledani, thm-cov-fpt, alg-cov-vetveni-stupen]
+    illustrations:
+      - title: Větvení podle hrany uv
+        for: proof
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: u, x: 0.5, y: 5 }
+            - { id: v, x: 5, y: 5 }
+            - { id: a, x: 5, y: 0.5 }
+            - { id: b, x: 9.5, y: 5 }
+            - { id: c, x: 5, y: 9.5 }
+          edges:
+            - { from: u, to: v }
+            - { from: v, to: a }
+            - { from: v, to: b }
+            - { from: v, to: c }
+            - { from: b, to: c }
+        steps:
+          - caption: |
+              Hledáme pokrytí velikosti nejvýše $k = 2$. Hrana $uv$ musí být pokryta, takže každé pokrytí obsahuje $u$ nebo $v$ – stačí prozkoumat tyto dvě větve.
+          - caption: |
+              Větev $u \in C$: odebereme $u$ s jeho hranou a hledáme pokrytí $G - u$ velikosti $k - 1 = 1$. Jeden uzel ale nestačí: $v$ nepokryje $bc$ a $b$ ani $c$ nepokryjí $va$.
+            remove: [[u, v]]
+            set: [u]
+          - caption: |
+              Třeba $\{u, v\}$ nechá hranu $bc$ nepokrytou. Větev $u$ končí odpovědí NE – vzít list $u$ místo středu hvězdy byla špatná volba.
+            set: [u, v]
+          - caption: |
+              Větev $v \in C$: v grafu $G - v$ zbyla jediná hrana $bc$ a rozpočet je $k - 1 = 1$.
+            remove: [[v, a], [v, b], [v, c]]
+            set: [v]
+          - caption: |
+              Uzel $b$ ji pokryje – $G - v$ má pokrytí $C' = \{b\}$ velikosti 1.
+            set: [b]
+          - caption: |
+              Vrátíme $v$ a jeho hrany, ty všechny pokrývá $v$. $C' \cup \{v\} = \{v, b\}$ je tedy pokrytí $G$ velikosti 2. (Podle druhé části lemmatu: kdyby $v \notin C$, musely by v $C$ být všichni jeho sousedé $u, a, b, c$ – víc, než dovoluje rozpočet.)
+            add: [[u, v], [v, a], [v, b], [v, c]]
+            set: [v, b]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 3)"
+    supplemented: true
+
+  - id: alg-cov-strom-hledani
+    kind: algorithm
+    section: "11.2"
+    title: Omezený strom hledání pro vrcholové pokrytí
+    terms: [omezený strom hledání, bounded search tree, větvení, branching algorithm, FPT algoritmus pro vrcholové pokrytí]
+    statement: |
+      **Vstup:** graf $G$, číslo $k$. **Výstup:** ANO (a pokrytí velikosti $\le k$), nebo NE.
+
+      Rekurzivní procedura $\mathrm{VC}(G, k)$ vybere libovolnou nepokrytou hranu $uv$ a
+      větví se na dvě podúlohy: $u$ do pokrytí, nebo $v$ do pokrytí.
+    intuition: |
+      Je to backtracking, jehož hloubka je omezená parametrem: každé větvení sníží $k$ o 1,
+      takže strom rekurze má hloubku nejvýše $k$ a nejvýše $2^k$ listů – **nezávisle na
+      velikosti grafu**. Naivní hrubá síla by zkoušela $\binom{n}{k}$ podmnožin.
+    pseudocode: |
+      $\mathrm{VC}(G, k)$:
+
+      1. pokud $G$ nemá žádnou hranu, vrať **ANO** (pokrytí $\emptyset$)
+      2. pokud $k = 0$, vrať **NE** (hrana zbývá, ale rozpočet je vyčerpán)
+      3. vyber libovolnou hranu $\{u, v\} \in H(G)$
+      4. pokud $\mathrm{VC}(G - u, k - 1)$ = ANO, vrať **ANO** (do pokrytí přidej $u$)
+      5. pokud $\mathrm{VC}(G - v, k - 1)$ = ANO, vrať **ANO** (do pokrytí přidej $v$)
+      6. vrať **NE**
+    complexity: |
+      $O(2^k \cdot (n + m))$. Strom rekurze je binární s hloubkou nejvýše $k$, má tedy
+      nejvýše $2^{k+1} - 1$ uzlů; v každém uzlu stromu se provede práce $O(n + m)$
+      (výběr hrany, odebrání uzlu). Jde o FPT algoritmus s $f(k) = 2^k$ a lineární
+      závislostí na velikosti grafu.
+    examples:
+      - title: Strom hledání pro malý graf, k = 2
+        body: |
+          Graf: uzly $a, b, c, d, e$, hrany $ab, bc, cd, de, bd$; $k = 2$.
+
+          * Kořen ($k = 2$): vybereme hranu $ab$.
+            * Větev $a$ ($k = 1$): zbývají hrany $bc, cd, de, bd$; vybereme $bc$.
+              * Větev $b$ ($k = 0$): zbývají $cd, de$ → **NE**.
+              * Větev $c$ ($k = 0$): zbývají $de, bd$ → **NE**.
+            * Větev $b$ ($k = 1$): zbývají hrany $cd, de$; vybereme $cd$.
+              * Větev $c$ ($k = 0$): zbývá $de$ → **NE**.
+              * Větev $d$ ($k = 0$): žádná hrana → **ANO**.
+
+          Nalezené pokrytí: $\{b, d\}$. Strom má 7 uzlů ($\le 2^{3} - 1$).
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 2 }
+            - { id: b, x: 2, y: 2 }
+            - { id: c, x: 4, y: 0 }
+            - { id: d, x: 6, y: 2 }
+            - { id: e, x: 8, y: 2 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: d }
+    visualization: vertex-cover-fpt
+    related: [lemma-cov-hrana, thm-cov-fpt, alg-cov-vetveni-stupen, def-k-cov]
+    illustrations:
+      - title: Průchod stromem hledání pro k = 2
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 0, y: 6 }
+            - { id: b, x: 3, y: 6 }
+            - { id: c, x: 5, y: 2 }
+            - { id: d, x: 7, y: 6 }
+            - { id: e, x: 10, y: 6 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: c, to: d }
+            - { from: d, to: e }
+            - { from: b, to: d }
+        steps:
+          - caption: |
+              Kořen stromu hledání, $k = 2$, pokrytí zatím prázdné. Vybereme nepokrytou hranu $ab$ a větvíme se: $a \in C$, nebo $b \in C$.
+          - caption: |
+              Větev $a$ ($k = 1$): první nepokrytá hrana je $bc$, větvíme na $b$ a $c$.
+            set: [a]
+          - caption: |
+              Obě podvětve jsou listy s $k = 0$ a vrací NE: $\{a, c\}$ nechá nepokrytou $de$, $\{a, b\}$ dokonce $cd$ i $de$. Celá větev $a$ selhala.
+            set: [a, c]
+          - caption: |
+              Větev $b$ ($k = 1$): $b$ pokryje rovnou tři hrany $ab$, $bc$, $bd$, zbývá $cd$ – větvíme na $c$ a $d$.
+            set: [b]
+          - caption: |
+              List $\{b, c\}$: hrana $de$ zůstala nepokrytá a rozpočet je vyčerpán – NE.
+            set: [b, c]
+          - caption: |
+              List $\{b, d\}$: žádná nepokrytá hrana – ANO. Strom měl 7 uzlů; obecně jich je nejvýše $2^{k+1} - 1$ bez ohledu na velikost grafu.
+            set: [b, d]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 3.1)"
+    supplemented: true
+
+  - id: thm-cov-fpt
+    kind: theorem
+    section: "11.2"
+    title: Vrcholové pokrytí je FPT
+    terms: [k-COV ∈ FPT, vertex cover FPT, "O(2^k (n+m))"]
+    statement: |
+      Problém $k$-COV lze rozhodnout v čase $O(2^k \cdot (n + m))$. Tedy
+      $k\text{-COV} \in \mathrm{FPT}$.
+    intuition: |
+      Klasicky je COV NP-úplný, ale parametrizovaně je „snadný": těžkost je soustředěna do
+      parametru $k$. Kontrast s $k$-IND je poučný – klasicky jsou COV a IND ekvivalentní
+      (doplněk), parametrizovaně ne (viz [W[1]-těžkost](#rem-w1-tezkost)).
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      Použijeme [omezený strom hledání](#alg-cov-strom-hledani).
+
+      *Správnost* indukcí podle $k$. Pro $k = 0$ je odpověď ANO právě když $G$ nemá hrany –
+      to algoritmus testuje v krocích 1–2. Nechť $k \ge 1$ a $G$ má hranu $\{u, v\}$. Podle
+      [Lemmatu](#lemma-cov-hrana) má $G$ pokrytí velikosti $\le k$ právě když ho má
+      $G - u$ nebo $G - v$ s rozpočtem $k - 1$, a to algoritmus podle indukčního
+      předpokladu správně rozhodne v krocích 4–5.
+
+      *Složitost.* Každé rekurzivní volání snižuje $k$ o 1 a rekurze končí nejpozději při
+      $k = 0$, takže strom rekurze má hloubku nejvýše $k$. Každý uzel má nejvýše 2 potomky,
+      celkem je tedy nejvýše $1 + 2 + \dots + 2^k = 2^{k+1} - 1$ volání. Jedno volání
+      (bez rekurze) trvá $O(n + m)$. Celkem $O(2^k (n + m))$, což je tvar $f(k) \cdot n^{c}$
+      s $f(k) = 2^k$. $\square$
+    proof_steps:
+      - "Algoritmus: vyber nepokrytou hranu $uv$ a rekurzivně zkus $u$ do pokrytí ($G - u$, $k-1$) nebo $v$ do pokrytí ($G - v$, $k-1$)."
+      - "Správnost: každé pokrytí obsahuje $u$ nebo $v$ (Lemma), takže větvení neztratí žádné řešení; indukcí podle $k$."
+      - "Každé volání sníží $k$ o 1, strom rekurze má hloubku nejvýše $k$ a nejvýše $2^{k+1}-1$ uzlů."
+      - "Práce v jednom uzlu stromu je $O(n+m)$, celkem $O(2^k (n+m))$."
+      - "Čas je tvaru $f(k) \\cdot n^c$ s $f(k) = 2^k$ a $c = 1$, tedy $k$-COV ∈ FPT."
+    related: [alg-cov-strom-hledani, lemma-cov-hrana, def-fpt, thm-cov-npc]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 3.1)"
+    supplemented: true
+
+  - id: alg-cov-vetveni-stupen
+    kind: algorithm
+    section: "11.2"
+    title: Vylepšené větvení podle stupně uzlu
+    terms: [větvení podle stupně, vylepšený strom hledání, rekurence větvení, branching vector, "1,4656^k"]
+    statement: |
+      Místo větvení podle hrany se větvíme podle uzlu $v$ **stupně alespoň 3**: buď
+      $v \in C$, nebo $N(v) \subseteq C$. Má-li graf maximální stupeň nejvýše 2, vyřešíme ho
+      přímo v polynomiálním čase.
+    intuition: |
+      Ve druhé větvi ubude z rozpočtu nejméně 3, takže strom je mnohem „řidší". Grafy s
+      maximálním stupněm 2 jsou disjunktní sjednocení cest a kružnic, kde je optimální
+      pokrytí jasné: cesta s $p$ uzly potřebuje $\lfloor p/2 \rfloor$ uzlů, kružnice s $c$
+      uzly $\lceil c/2 \rceil$ uzlů.
+    pseudocode: |
+      $\mathrm{VC2}(G, k)$:
+
+      1. pokud $k < 0$, vrať **NE**
+      2. pokud $G$ nemá hranu, vrať **ANO**
+      3. pokud má $G$ maximální stupeň $\le 2$: spočítej optimum
+         $\sum_{\text{cesty}} \lfloor p/2 \rfloor + \sum_{\text{kružnice}} \lceil c/2 \rceil$
+         a vrať ANO právě když je $\le k$
+      4. vyber uzel $v$ s $\deg(v) \ge 3$
+      5. pokud $\mathrm{VC2}(G - v, k - 1)$ = ANO, vrať **ANO**
+      6. pokud $\mathrm{VC2}(G - N[v], k - \deg(v))$ = ANO, vrať **ANO**
+      7. vrať **NE**
+    complexity: |
+      $O(1{,}4656^k \cdot (n + m))$. Počet listů $L(k)$ stromu splňuje
+      $L(k) \le L(k-1) + L(k-3)$, odkud $L(k) = O(\lambda^k)$, kde $\lambda \approx 1{,}4656$
+      je kladný kořen rovnice $\lambda^3 = \lambda^2 + 1$. Krok 3 i větvení stojí $O(n + m)$.
+      (Nejrychlejší známé algoritmy dosahují $O(1{,}2738^k + kn)$ – Chen, Kanj, Xia 2010.)
+    examples:
+      - title: Graf z předchozího příkladu
+        body: |
+          Hrany $ab, bc, cd, de, bd$, $k = 2$. Uzel $b$ má stupeň 3. Větev $b \in C$:
+          $G - b$ má hrany $cd, de$ (cesta $c\,d\,e$ se 3 uzly) a maximální stupeň 2, optimum
+          je $\lfloor 3/2 \rfloor = 1 \le k - 1 = 1$ → **ANO**, pokrytí $\{b, d\}$. (Druhá větev
+          $N(b) = \{a, c, d\} \subseteq C$ by vyžadovala rozpočet $2 - 3 < 0$.)
+    visualization: vertex-cover-fpt
+    related: [alg-cov-strom-hledani, lemma-cov-hrana, thm-cov-zlepseny-odhad]
+    illustrations:
+      - title: Když se vyplatí vzít sousedy
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: v, x: 5, y: 4.5 }
+            - { id: a, x: 2, y: 2.5 }
+            - { id: a2, x: 0, y: 0.5 }
+            - { id: b, x: 8, y: 2.5 }
+            - { id: b2, x: 10, y: 0.5 }
+            - { id: c, x: 5, y: 7.5 }
+            - { id: c2, x: 5, y: 10 }
+          edges:
+            - { from: v, to: a }
+            - { from: v, to: b }
+            - { from: v, to: c }
+            - { from: a, to: a2 }
+            - { from: b, to: b2 }
+            - { from: c, to: c2 }
+        steps:
+          - caption: |
+              $k = 3$ a uzel $v$ má stupeň 3. Větvíme se podle něj: buď $v \in C$, nebo $N(v) = \{a, b, c\} \subseteq C$.
+          - caption: |
+              Větev $v \in C$ ($k$ klesne o 1): $G - v$ má maximální stupeň 1 – tři samostatné hrany. Optimum je $3 \cdot \lfloor 2/2 \rfloor = 3 > k - 1 = 2$, větev končí NE.
+            remove: [[v, a], [v, b], [v, c]]
+            set: [v]
+          - caption: |
+              Např. $\{v, a, b\}$ nechá hranu $c c_2$ nepokrytou – tři disjunktní hrany potřebují tři různé uzly.
+            set: [v, a, b]
+          - caption: |
+              Větev $N(v) \subseteq C$: vezmeme $a, b, c$, rozpočet klesne o $\deg(v) = 3$ na 0 a $G - N[v]$ už nemá hrany – ANO. Protože tato větev ubere aspoň 3, platí $L(k) \le L(k-1) + L(k-3)$.
+            add: [[v, a], [v, b], [v, c]]
+            set: [a, b, c]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 3)"
+    supplemented: true
+
+  - id: thm-cov-zlepseny-odhad
+    kind: theorem
+    section: "11.2"
+    title: Vrcholové pokrytí v čase O(1,4656^k (n+m))
+    terms: [zlepšený odhad vrcholového pokrytí, rekurence T(k) = T(k-1) + T(k-3)]
+    statement: |
+      Algoritmus [větvení podle stupně](#alg-cov-vetveni-stupen) rozhoduje $k$-COV správně
+      v čase $O(\lambda^k \cdot (n + m))$, kde $\lambda \approx 1{,}4656$ je kladný kořen
+      rovnice $\lambda^3 = \lambda^2 + 1$.
+    intuition: |
+      Rychlost větvícího algoritmu určuje, o kolik se v jednotlivých větvích sníží
+      parametr. Větvení $(1, 1)$ dává $2^k$, větvení $(1, 3)$ už jen $1{,}4656^k$.
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      *Správnost.* Kroky 1–2 jsou zřejmé. V kroku 3 je každá komponenta grafu cesta nebo
+      kružnice (maximální stupeň $\le 2$). Na cestě $w_1 w_2 \dots w_p$ jsou hrany
+      $w_1 w_2, w_3 w_4, \dots$ disjunktní ($\lfloor p/2 \rfloor$ hran), každá potřebuje vlastní
+      uzel, a uzly $w_2, w_4, \dots$ stačí; na kružnici s $c$ uzly je dolní mez
+      $\lceil c/2 \rceil$ (každý uzel pokryje 2 z $c$ hran) a stačí každý druhý uzel. Krok 3
+      tedy počítá optimum správně. Kroky 4–6 jsou správné podle
+      [Lemmatu](#lemma-cov-hrana) (větvení podle uzlu).
+
+      *Složitost.* Nechť $L(k)$ je maximální počet listů stromu rekurze pro parametr $k$.
+      Ve větvení je $\deg(v) \ge 3$, takže $L(k) \le L(k-1) + L(k-3)$ a $L(k) = 1$ pro
+      $k \le 0$ (a v listech řešených krokem 3). Indukcí ověříme $L(k) \le \lambda^k$:
+      $L(k) \le \lambda^{k-1} + \lambda^{k-3} = \lambda^{k-3}(\lambda^2 + 1) = \lambda^{k-3} \lambda^3 = \lambda^k$.
+      Vnitřních uzlů binárního stromu je méně než listů, každý uzel stromu stojí
+      $O(n + m)$, celkem $O(\lambda^k (n + m))$. $\square$
+    proof_steps:
+      - "V grafu s maximálním stupněm 2 (cesty a kružnice) je optimum $\\lfloor p/2 \\rfloor$ pro cestu s $p$ uzly a $\\lceil c/2 \\rceil$ pro kružnici s $c$ uzly – spočítá se v lineárním čase."
+      - "Jinak existuje uzel $v$ stupně $\\ge 3$; buď $v \\in C$ (parametr klesne o 1), nebo $N(v) \\subseteq C$ (parametr klesne o $\\deg(v) \\ge 3$) – správnost plyne z lemmatu o větvení."
+      - "Počet listů stromu splňuje rekurenci $L(k) \\le L(k-1) + L(k-3)$."
+      - "Indukcí $L(k) \\le \\lambda^k$, kde $\\lambda^3 = \\lambda^2 + 1$, $\\lambda \\approx 1{,}4656$."
+      - "Každý uzel stromu stojí $O(n+m)$, celkový čas je $O(1{,}4656^k (n+m))$."
+    related: [alg-cov-vetveni-stupen, thm-cov-fpt, lemma-cov-hrana]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 3)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 11.3
+  - id: def-kernelizace
+    kind: definition
+    section: "11.3"
+    title: Kernelizace (jádro problému)
+    terms: [kernelizace, kernelization, jádro, kernel, polynomiální jádro, redukční pravidla, předzpracování]
+    statement: |
+      **Kernelizace** (*kernelization*) parametrizovaného problému $L$ je algoritmus, který
+      instanci $(x, k)$ v čase polynomiálním v $|x| + k$ převede na instanci $(x', k')$
+      (tzv. **jádro**, *kernel*) takovou, že
+
+      1. $(x, k) \in L \Leftrightarrow (x', k') \in L$,
+      2. $|x'| + k' \le g(k)$ pro nějakou vyčíslitelnou funkci $g$.
+
+      Funkce $g$ je **velikost jádra**; je-li $g$ polynom, mluvíme o **polynomiálním jádru**.
+    intuition: |
+      Kernelizace je zaručeně účinné **předzpracování**: v polynomiálním čase „vyškrtáme"
+      snadné části instance a zůstane jen tvrdé jádro, jehož velikost závisí **jen na $k$**,
+      nikoli na $n$. Na jádro pak můžeme pustit i exponenciální algoritmus. Pozor:
+      nezaměňovat s jádrem orientovaného grafu z teorie grafů – jde o jiný pojem.
+    related: [alg-buss-pravidla, thm-buss-jadro, thm-kernel-fpt]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 2)"
+    supplemented: true
+
+  - id: alg-buss-pravidla
+    kind: algorithm
+    section: "11.3"
+    title: Bussova redukční pravidla pro vrcholové pokrytí
+    terms: [Bussova pravidla, Buss kernel, Bussovo jádro, redukční pravidla, uzel vysokého stupně, izolovaný uzel]
+    statement: |
+      **Vstup:** instance $(G, k)$ problému $k$-COV. **Výstup:** ekvivalentní instance
+      $(G', k')$ s $k' \le k$, která má nejvýše $k'^2$ hran a nejvýše $k'^2 + k'$ uzlů, nebo
+      odpověď NE.
+    intuition: |
+      Uzel stupně větší než $k$ *musí* být v každém pokrytí velikosti $\le k$ – kdyby v něm
+      nebyl, museli bychom vzít všech jeho více než $k$ sousedů. Po odebrání takových uzlů
+      má každý uzel stupeň $\le k$, takže $k$ uzlů pokryje nejvýše $k^2$ hran; víc hran
+      znamená jistě NE.
+    pseudocode: |
+      Opakuj, dokud lze některé pravidlo použít:
+
+      1. **(R1)** je-li $v$ izolovaný uzel, odeber ho: $G := G - v$
+      2. **(R2)** má-li uzel $v$ stupeň $> k$, přidej ho do pokrytí: $G := G - v$, $k := k - 1$
+      3. pokud $k < 0$, vrať **NE**
+
+      Po skončení:
+
+      4. **(R3)** má-li $G$ více než $k^2$ hran nebo více než $k^2 + k$ uzlů, vrať **NE**
+      5. jinak vrať jádro $(G, k)$
+    complexity: |
+      Polynomiální – při udržování stupňů a seznamu uzlů stupně $> k$ lze všechna pravidla
+      provést v čase $O(n + m)$ (každé odebrání uzlu stojí $O(\deg v)$). Kombinace s
+      [omezeným stromem hledání](#alg-cov-strom-hledani) na jádře dává
+      $O(n + m + 2^k k^2)$.
+    examples:
+      - title: Hvězda s přidanými hranami
+        body: |
+          Graf: uzel $s$ spojený s uzly $1, \dots, 10$, navíc hrany $\{1, 2\}$ a $\{3, 4\}$,
+          a izolovaný uzel $z$; $k = 3$.
+
+          * R1 odebere $z$.
+          * $\deg(s) = 10 > 3$ → R2: $s$ do pokrytí, $k := 2$. Uzly $5, \dots, 10$ jsou teď
+            izolované → R1 je odebere.
+          * Zbývají hrany $\{1,2\}, \{3,4\}$: $2 \le k^2 = 4$ hran, $4 \le k^2 + k = 6$ uzlů.
+
+          Jádro $(\{1,2\},\{3,4\};\ k = 2)$ má zřejmě pokrytí $\{1, 3\}$, takže původní graf
+          má pokrytí $\{s, 1, 3\}$ velikosti 3.
+    visualization: vertex-cover-fpt
+    related: [thm-buss-jadro, def-kernelizace, alg-cov-strom-hledani]
+    illustrations:
+      - title: Uzel stupně větší než k musí do pokrytí
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: s, x: 5, y: 5 }
+            - { id: a, x: 5, y: 1 }
+            - { id: b, x: 8.5, y: 3 }
+            - { id: c, x: 8.5, y: 7 }
+            - { id: d, x: 5, y: 9 }
+            - { id: e, x: 1.5, y: 7 }
+            - { id: f, x: 1.5, y: 3 }
+            - { id: z, x: 9.5, y: 0.5 }
+          edges:
+            - { from: s, to: a }
+            - { from: s, to: b }
+            - { from: s, to: c }
+            - { from: s, to: d }
+            - { from: s, to: e }
+            - { from: s, to: f }
+            - { from: a, to: b }
+            - { from: c, to: d }
+        steps:
+          - caption: |
+              $k = 3$. Izolovaný uzel $z$ nepokrývá žádnou hranu, pravidlo R1 ho odebere. Uzel $s$ má stupeň $6 > k$.
+          - caption: |
+              Kdyby $s$ v pokrytí nebyl, museli by tam být všichni jeho sousedé $a, \dots, f$ – pokrytí velikosti $6 > k$. Proto $s$ leží v každém pokrytí velikosti $\le 3$ (pravidlo R2).
+            set: [a, b, c, d, e, f]
+          - caption: |
+              R2: dáme $s$ do pokrytí, odebereme ho i s hranami a položíme $k := 2$. Uzly $e$, $f$ (a $z$) jsou teď izolované a R1 je odebere.
+            remove: [[s, a], [s, b], [s, c], [s, d], [s, e], [s, f]]
+            set: [s]
+          - caption: |
+              Zbylo jádro s hranami $ab$, $cd$: $2 \le k^2 = 4$ hran a $4 \le k^2 + k = 6$ uzlů, R3 neodmítá. Jádro má pokrytí velikosti 2, např. $\{a, c\}$.
+            set: [a, c]
+          - caption: |
+              Zpět v původním grafu: $\{s\} \cup \{a, c\}$ je pokrytí velikosti $3 = k$.
+            add: [[s, a], [s, b], [s, c], [s, d], [s, e], [s, f]]
+            set: [s, a, c]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 2.2.1)"
+    supplemented: true
+
+  - id: thm-buss-jadro
+    kind: theorem
+    section: "11.3"
+    title: Vrcholové pokrytí má jádro s nejvýše k² hranami
+    terms: [jádro vrcholového pokrytí, kvadratické jádro, k^2 hran, polynomiální jádro vrcholového pokrytí]
+    statement: |
+      $k$-COV má jádro s nejvýše $k^2$ hranami a nejvýše $k^2 + k$ uzly (tedy polynomiální
+      jádro velikosti $O(k^2)$); lze ho nalézt Bussovými pravidly v polynomiálním čase.
+    intuition: |
+      Po odstranění „zjevných" uzlů (izolovaných a vysokého stupně) je graf řídký v tom
+      smyslu, že každý uzel pokrývá málo hran – a malé pokrytí pak může existovat jen v
+      malém grafu.
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      Ukážeme, že každé pravidlo zachovává odpověď a že výsledek má požadovanou velikost.
+
+      **R1.** Izolovaný uzel nepokrývá žádnou hranu, žádné minimální pokrytí ho
+      neobsahuje; $(G, k)$ a $(G - v, k)$ jsou ekvivalentní.
+
+      **R2.** Nechť $\deg(v) > k$ a $C$ je pokrytí velikosti $\le k$. Kdyby $v \notin C$,
+      musely by všechny hrany $\{v, w\}$ být pokryty uzly $w$, tj. $N(v) \subseteq C$ a
+      $|C| \ge \deg(v) > k$ – spor. Tedy $v \in C$ a $C \setminus \{v\}$ pokrývá $G - v$; naopak
+      k pokrytí $G - v$ velikosti $\le k - 1$ stačí přidat $v$. Proto
+      $(G, k) \Leftrightarrow (G - v, k - 1)$. Je-li $k < 0$, pokrytí zjevně neexistuje.
+
+      **R3 a velikost.** Když už R1 ani R2 nelze použít, nemá $G$ izolované uzly a každý
+      uzel má stupeň $\le k$. Má-li $G$ pokrytí $C$, $|C| \le k$, pak každá hrana má konec v
+      $C$ a každý uzel $C$ pokrývá nejvýše $k$ hran, tedy $|H(G)| \le k \cdot k = k^2$. Každý
+      uzel leží v $C$ nebo (protože není izolovaný) sousedí s nějakým uzlem $C$, tedy
+      $|U(G)| \le |C| + k|C| \le k + k^2$. Pokud jsou tyto meze překročeny, je odpověď NE
+      (správně); jinak je $(G, k)$ jádro velikosti $O(k^2)$.
+
+      Každé použití R1 nebo R2 odebere uzel, pravidel se tedy použije nejvýše $n$ a celý
+      postup je polynomiální. $\square$
+    proof_steps:
+      - "R1: izolovaný uzel nepokrývá žádnou hranu, jeho odebrání odpověď nemění."
+      - "R2: uzel stupně $> k$ musí být v každém pokrytí velikosti $\\le k$ (jinak by tam musel být všech jeho $> k$ sousedů), proto $(G,k) \\Leftrightarrow (G - v, k-1)$."
+      - "Po vyčerpání R1 a R2 nemá graf izolované uzly a má maximální stupeň $\\le k$."
+      - "Pokrytí velikosti $\\le k$ pak pokryje nejvýše $k \\cdot k = k^2$ hran a každý uzel je v pokrytí nebo jeho soused, tedy uzlů je nejvýše $k + k^2$."
+      - "Při překročení mezí odpovíme NE, jinak je redukovaný graf jádrem velikosti $O(k^2)$; vše proběhne v polynomiálním čase."
+    related: [alg-buss-pravidla, def-kernelizace, thm-kernel-fpt, rem-lepsi-jadra]
+    illustrations:
+      - title: Malý stupeň a málo pokrývajících uzlů = málo hran
+        for: proof
+        property: vertex-cover
+        graph:
+          directed: false
+          nodes:
+            - { id: a, x: 1, y: 2 }
+            - { id: b, x: 5, y: 2 }
+            - { id: c, x: 9, y: 2 }
+            - { id: d, x: 9, y: 8 }
+            - { id: e, x: 5, y: 8 }
+            - { id: f, x: 1, y: 8 }
+          edges:
+            - { from: a, to: b }
+            - { from: b, to: c }
+            - { from: d, to: e }
+            - { from: e, to: f }
+        steps:
+          - caption: |
+              Po R1 a R2 nemá graf izolované uzly a každý uzel má stupeň $\le k = 2$. Každý uzel pokrytí tedy pokryje nejvýše $k$ hran: $b$ a $e$ pokryjí $2 + 2 = 4 = k^2$ hran. Uzlů je $6 = k^2 + k$ (pokrytí plus jejich sousedé) – obě meze jsou těsné.
+            set: [b, e]
+          - caption: |
+              Přidáme hranu $cd$: maximální stupeň je pořád 2, ale hran je $5 > k^2 = 4$. Dva uzly stupně $\le 2$ pokryjí nejvýše 4 hrany, takže R3 správně odpoví NE.
+            add: [[c, d]]
+            set: [b, e]
+          - caption: |
+              Ať zvolíme kterékoli dva uzly, některá hrana zbude – třeba $\{c, e\}$ nepokryje $ab$.
+            set: [c, e]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 2.2.1)"
+    supplemented: true
+
+  - id: thm-kernel-fpt
+    kind: theorem
+    section: "11.3"
+    title: Problém je FPT právě když má jádro
+    terms: [kernelizace a FPT, ekvivalence jádra a FPT, kernel iff FPT]
+    statement: |
+      Rozhodnutelný parametrizovaný problém $L$ patří do FPT právě když má kernelizaci
+      (jádro velikosti $g(k)$ pro nějakou vyčíslitelnou funkci $g$).
+    intuition: |
+      Kernelizace a FPT algoritmy jsou dvě strany téže mince. Jádro dává FPT algoritmus
+      (vyřeš jádro hrubou silou). Naopak z FPT algoritmu uděláme triviální jádro: velké
+      instance vyřešíme rovnou (jsou „velké vůči $f(k)$", takže $f(k) n^c$ je polynom),
+      malé necháme být. Zajímavá otázka proto není, *zda* jádro existuje, ale zda existuje
+      **polynomiální** jádro.
+    proof: |
+      *Doplněno – standardní literatura.*
+
+      **„$\Leftarrow$"** Nechť $L$ má kernelizaci s velikostí jádra $g(k)$. Pro instanci
+      $(x, k)$ nejprve v polynomiálním čase $p(|x| + k)$ spočítáme jádro $(x', k')$,
+      $|x'| + k' \le g(k)$. Protože $L$ je rozhodnutelný, rozhodneme $(x', k')$ libovolným
+      algoritmem; jeho čas závisí jen na velikosti jádra, tedy je omezen funkcí $h(g(k))$.
+      Celkem $p(|x| + k) + h(g(k))$, což je tvaru FPT (viz ekvivalence součtu a součinu u
+      [definice FPT](#def-fpt)).
+
+      **„$\Rightarrow$"** Nechť $A$ rozhoduje $L$ v čase $f(k) \cdot |x|^{c}$. Kernelizace pro
+      vstup $(x, k)$, $n = |x|$:
+
+      * Je-li $n \ge f(k)$, spustíme $A$; trvá $f(k) \cdot n^{c} \le n^{c+1}$, tedy polynomiálně.
+        Podle výsledku vrátíme pevnou malou instanci s odpovědí ANO, resp. NE (pokud
+        nějaké existují – jinak je $L$ triviální).
+      * Je-li $n < f(k)$, vrátíme $(x, k)$ beze změny; jeho velikost je menší než
+        $f(k) + k$.
+
+      V obou případech jde o polynomiální algoritmus, výstup je ekvivalentní a má velikost
+      nejvýše $g(k) = f(k) + k + O(1)$. $\square$
+    proof_steps:
+      - "⇐: jádro spočítáme v polynomiálním čase; jeho velikost je nejvýše $g(k)$."
+      - "Jádro rozhodneme libovolným algoritmem (problém je rozhodnutelný) v čase závislém jen na $k$; celkový čas je polynom plus funkce $k$, tedy FPT."
+      - "⇒: máme FPT algoritmus s časem $f(k) \\cdot n^c$; rozlišíme, zda $n \\ge f(k)$, nebo $n < f(k)$."
+      - "Je-li $n \\ge f(k)$, je $f(k) n^c \\le n^{c+1}$ – instanci vyřešíme v polynomiálním čase a vrátíme konstantní instanci se stejnou odpovědí."
+      - "Je-li $n < f(k)$, instance sama je jádrem velikosti nejvýše $f(k) + k$."
+    related: [def-kernelizace, def-fpt, thm-buss-jadro]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, Lemma 2.2)"
+    supplemented: true
+
+  - id: rem-lepsi-jadra
+    kind: remark
+    section: "11.3"
+    title: Menší jádra a rychlejší algoritmy pro vrcholové pokrytí
+    terms: [jádro s 2k uzly, Nemhauser–Trotter, crown decomposition, korunový rozklad, LP relaxace]
+    statement: |
+      Bussovo jádro má $O(k^2)$ uzlů a hran. Známá jsou i menší jádra:
+
+      * **jádro s nejvýše $2k$ uzly** pomocí lineárního programování (věta
+        Nemhauser–Trotter: v optimálním řešení LP relaxace lze hodnoty uzlů zvolit z
+        $\{0, \frac12, 1\}$; uzly s hodnotou 1 patří do pokrytí, uzly s hodnotou 0 lze
+        odebrat),
+      * jádro s $3k$ uzly pomocí **korunového rozkladu** (*crown decomposition*), který
+        využívá párování v bipartitním grafu.
+
+      Kombinace jádra a stromu hledání dává algoritmy typu $O(c^k + kn)$; nejlepší známý
+      odhad je $O(1{,}2738^k + kn)$ (Chen, Kanj, Xia, 2010).
+
+      Naopak je známo, že (pokud neplatí nepravděpodobná kolapsová hypotéza
+      $\mathrm{coNP} \subseteq \mathrm{NP/poly}$) vrcholové pokrytí nemá jádro s
+      $O(k^{2-\varepsilon})$ *hranami* – Bussovo jádro je v počtu hran v podstatě optimální.
+    intuition: |
+      Na jádra se lze dívat jako na kvantitativní teorii předzpracování: menší jádro =
+      účinnější redukční pravidla. Že se tu znovu objevují párování a LP, ukazuje, jak se
+      parametrizované algoritmy opírají o klasickou kombinatorickou optimalizaci.
+    related: [thm-buss-jadro, def-kernelizace]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 2.3–2.5)"
+    supplemented: true
+
+  # ------------------------------------------------------------------ 11.4
+  - id: rem-k-cesta-barevne-kodovani
+    kind: remark
+    section: "11.4"
+    title: k-cesta a barevné kódování (zmínka)
+    terms: [k-PATH, k-cesta, barevné kódování, color coding, Alon–Yuster–Zwick, randomizovaný FPT algoritmus]
+    statement: |
+      **$k$-PATH:** Vstup: graf $G$, parametr $k$. Úkol: existuje v $G$ cesta s $k$ uzly?
+
+      Pro $k = n$ jde o existenci hamiltonovské cesty, problém je tedy NP-úplný. Přesto je
+      $k$-PATH ve FPT: technika **barevného kódování** (*color coding*, Alon–Yuster–Zwick
+      1995) obarví uzly náhodně $k$ barvami a dynamickým programováním přes podmnožiny barev
+      hledá „barevnou" cestu (všechny uzly různých barev) v čase $2^{O(k)} \cdot n^{O(1)}$.
+      Konkrétní $k$-cesta je barevná s pravděpodobností alespoň $k!/k^k > e^{-k}$, takže
+      stačí $e^k$ opakování. Algoritmus lze derandomizovat.
+    intuition: |
+      Hledat cestu bez opakování uzlů je těžké, protože si musíme pamatovat *množinu*
+      navštívených uzlů ($2^n$ možností). Náhodné obarvení stačí pamatovat si jen množinu
+      použitých *barev* – a těch je jen $2^k$.
+    related: [def-fpt, alg-ham-nedeterministicky]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 5.2)"
+    supplemented: true
+
+  - id: def-parametrizovana-redukce
+    kind: definition
+    section: "11.4"
+    title: Parametrizovaná redukce
+    terms: [parametrizovaná redukce, FPT redukce, parameterized reduction]
+    statement: |
+      **Parametrizovaná redukce** z parametrizovaného problému $A$ na problém $B$ je
+      algoritmus, který instanci $(x, k)$ problému $A$ převede na instanci $(x', k')$ problému
+      $B$ tak, že
+
+      1. $(x, k) \in A \Leftrightarrow (x', k') \in B$,
+      2. $k' \le g(k)$ pro nějakou vyčíslitelnou funkci $g$,
+      3. převod trvá $f(k) \cdot |x|^{c}$ pro vyčíslitelnou $f$ a konstantu $c$.
+
+      Je-li $B \in \mathrm{FPT}$ a existuje parametrizovaná redukce z $A$ na $B$, je
+      $A \in \mathrm{FPT}$.
+    intuition: |
+      Oproti [polynomiální redukci](#def-polynomialni-redukce) je navíc nutné, aby nový
+      parametr závisel **jen na starém parametru**. Klasická redukce
+      IND ◁ COV, $(G, k) \mapsto (G, n - k)$, tuto podmínku **nesplňuje** – nový parametr
+      $n - k$ závisí na $n$. Proto z $k$-COV ∈ FPT nic neplyne pro $k$-IND. Naopak
+      IND ◁ CLIQUE, $(G, k) \mapsto (\bar G, k)$, parametrizovaná redukce je.
+    related: [def-polynomialni-redukce, rem-w1-tezkost, thm-cov-npc, thm-clique-npc]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 13.1)"
+    supplemented: true
+
+  - id: rem-w1-tezkost
+    kind: remark
+    section: "11.4"
+    title: W[1]-těžkost – CLIQUE a IND pravděpodobně nejsou FPT
+    terms: ["W[1]", "W[1]-těžkost", "W[1]-hard", W-hierarchie, "FPT ≠ W[1]", ETH, hypotéza exponenciálního času, k-CLIQUE, k-IND]
+    statement: |
+      Analogií NP-úplnosti v parametrizovaném světě je **W[1]-těžkost**. Třída **W[1]** je
+      definována pomocí parametrizovaných redukcí; $k$-CLIQUE (a díky redukci přes doplněk
+      grafu i $k$-IND) je **W[1]-úplný**. Platí $\mathrm{FPT} \subseteq \mathrm{W}[1]$ a
+      obecně se věří, že $\mathrm{FPT} \ne \mathrm{W}[1]$ – tedy že **$k$-CLIQUE ani $k$-IND
+      nemají FPT algoritmus**, i když jsou v XP (hrubá síla $O(n^k)$).
+
+      Silnější předpoklad – **hypotéza exponenciálního času (ETH)**, že 3-SAT nelze řešit
+      v čase $2^{o(n)}$ – dokonce implikuje, že $k$-CLIQUE nelze řešit v čase
+      $f(k) \cdot n^{o(k)}$; hrubá síla $n^{k}$ je tedy v podstatě optimální.
+
+      Shrnutí pro problémy z kapitoly 10, parametrizované velikostí řešení $k$:
+
+      | problém | klasicky | parametrizovaně |
+      |---|---|---|
+      | $k$-COV | NP-úplný | FPT ($O(1{,}2738^k + kn)$), polynomiální jádro |
+      | $k$-IND, $k$-CLIQUE | NP-úplný | XP, W[1]-úplný (pravděpodobně ne FPT) |
+      | COL s $k$ barvami | NP-úplný pro $k \ge 3$ | ani XP (pokud $\mathrm{P} \ne \mathrm{NP}$) |
+    intuition: |
+      Klasicky jsou COV a IND „stejně těžké" (doplněk nezávislé množiny je pokrytí),
+      parametrizovaně se ale dramaticky liší: hledat **malé** pokrytí je snadné, hledat
+      **velkou** nezávislou množinu velikosti $k$ ne. Parametrizovaná složitost tak
+      jemněji rozlišuje mezi NP-úplnými problémy.
+    related: [def-parametrizovana-redukce, thm-clique-npc, thm-ind-npc, def-xp, rem-hranice-parametrizace]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 13–14; Downey–Fellows)"
+    supplemented: true
+
+  - id: rem-hranice-parametrizace
+    kind: remark
+    section: "11.4"
+    title: Volba parametru – barvení jako problém mimo XP
+    terms: [para-NP-těžkost, volba parametru, k-COL parametrizovaný počtem barev]
+    statement: |
+      Zda je problém FPT, závisí na **volbě parametru**. COL parametrizovaný počtem barev
+      $k$ není ani v XP (pokud $\mathrm{P} \ne \mathrm{NP}$): algoritmus s časem
+      $f(k) \cdot n^{g(k)}$ by pro pevné $k = 3$ běžel v polynomiálním čase
+      $f(3) \cdot n^{g(3)}$, ale 3-COL je NP-úplný ([Věta 9.11](#thm-3col-npc)). Takovým
+      problémům se říká *para-NP-těžké*.
+
+      Jiné parametry naopak mohou pomoci – např. barvení i nezávislá množina jsou FPT
+      vzhledem ke **stromové šířce** grafu (dynamické programování na stromovém rozkladu).
+    intuition: |
+      Parametr je smysluplný, jen když je v praktických instancích malý **a** zachycuje
+      zdroj obtížnosti. Počet barev je malý, ale obtížnost nezachycuje; velikost pokrytí
+      ano.
+    related: [def-k-col, thm-3col-npc, def-xp, rem-w1-tezkost]
+    source: "doplněno – standardní literatura (Cygan et al., Parameterized Algorithms, kap. 1, 7)"
+    supplemented: true
+
+quiz:
+  - id: q-fpt-01
+    question: |
+      Který z následujících časů (parametr $k$, velikost vstupu $n$) **je** FPT?
+    options:
+      - $O(n^{k})$
+      - $O(n^{\sqrt{k}})$
+      - $O(2^{2^k} \cdot n^3)$
+      - $O(k^{n})$
+    correct: 2
+    explanation: |
+      FPT vyžaduje tvar $f(k) \cdot n^{c}$ s konstantou $c$. Funkce $f(k) = 2^{2^k}$ smí být
+      libovolně rychle rostoucí. $n^k$ a $n^{\sqrt k}$ mají exponent závislý na $k$ (jsou
+      „jen" XP), $k^n$ je exponenciální v $n$.
+    related: [def-fpt, def-xp]
+  - id: q-fpt-02
+    question: |
+      Proč je větvení „pro hranu $uv$ zkus $u$, nebo $v$" v algoritmu pro vrcholové pokrytí správné?
+    options:
+      - Protože $u$ a $v$ mají vždy nejvyšší stupeň.
+      - Protože každé pokrytí musí obsahovat alespoň jeden konec každé hrany.
+      - Protože optimální pokrytí obsahuje oba konce každé hrany.
+      - Protože graf je bipartitní.
+    correct: 1
+    explanation: |
+      Hrana $uv$ musí být pokryta, takže jakékoli řešení obsahuje $u$ nebo $v$. Vyzkoušením
+      obou možností tedy neztratíme žádné řešení.
+    related: [lemma-cov-hrana, alg-cov-strom-hledani]
+  - id: q-fpt-03
+    question: |
+      Kolik uzlů má nejvýše strom rekurze základního algoritmu omezeného stromu hledání pro
+      vrcholové pokrytí s parametrem $k$?
+    options:
+      - $n$
+      - $\binom{n}{k}$
+      - $k^2$
+      - $2^{k+1} - 1$
+    correct: 3
+    explanation: |
+      Každé volání snižuje $k$ o 1 a větví se na 2, strom je binární s hloubkou nejvýše $k$:
+      $1 + 2 + \dots + 2^k = 2^{k+1} - 1$ uzlů. Velikost nezávisí na $n$ – proto je algoritmus FPT.
+    related: [thm-cov-fpt, alg-cov-strom-hledani]
+  - id: q-fpt-04
+    question: |
+      Bussovo pravidlo R2 říká: má-li uzel $v$ stupeň $> k$, dej ho do pokrytí a sniž $k$ o 1.
+      Proč je to správné?
+    options:
+      - Kdyby $v$ v pokrytí velikosti $\le k$ nebyl, musely by v něm být všichni jeho sousedé, a těch je víc než $k$.
+      - Protože uzly vysokého stupně jsou vždy artikulace.
+      - Protože po odebrání $v$ zůstane graf souvislý.
+      - Není to správné, jde jen o heuristiku.
+    correct: 0
+    explanation: |
+      Hrany z $v$ musí být pokryty buď uzlem $v$, nebo všemi jeho sousedy. Sousedů je víc
+      než $k$, takže pokrytí velikosti $\le k$ musí obsahovat $v$.
+    related: [alg-buss-pravidla, thm-buss-jadro]
+  - id: q-fpt-05
+    question: |
+      Po vyčerpání Bussových pravidel R1, R2 má graf 30 hran a $k = 5$. Co odpovíme?
+    options:
+      - ANO, protože hran je málo.
+      - Nelze rozhodnout bez dalšího výpočtu.
+      - NE, protože každý uzel má stupeň $\le 5$, a 5 uzlů tedy pokryje nejvýše 25 hran.
+      - NE, protože graf obsahuje kružnici.
+    correct: 2
+    explanation: |
+      Po R2 má každý uzel stupeň nejvýše $k$, pokrytí velikosti $\le k$ tedy pokryje nejvýše
+      $k^2 = 25 < 30$ hran. Pravidlo R3 proto vrací NE.
+    related: [thm-buss-jadro, alg-buss-pravidla]
+  - id: q-fpt-06
+    question: |
+      Které tvrzení o vztahu kernelizace a FPT je pravdivé (pro rozhodnutelné problémy)?
+    options:
+      - Problém má jádro právě když má polynomiální jádro.
+      - Každý problém z FPT má polynomiální jádro.
+      - Jádro existuje jen pro problémy v P.
+      - Problém je ve FPT právě když má nějaké jádro (velikosti $g(k)$ pro vyčíslitelnou $g$).
+    correct: 3
+    explanation: |
+      Z jádra dostaneme FPT algoritmus (vyřeš jádro hrubou silou) a z FPT algoritmu s časem
+      $f(k) n^c$ jádro velikosti $f(k) + k$. Polynomiální jádro je silnější vlastnost – některé
+      FPT problémy ho (za standardních předpokladů) nemají.
+    related: [thm-kernel-fpt, def-kernelizace]
+  - id: q-fpt-07
+    question: |
+      Klasická redukce IND ◁ COV převádí $(G, k)$ na $(G, n-k)$. Proč z toho, že $k$-COV ∈ FPT,
+      neplyne $k$-IND ∈ FPT?
+    options:
+      - Protože redukce není polynomiální.
+      - Protože nový parametr $n - k$ není omezen funkcí původního parametru $k$ – nejde o parametrizovanou redukci.
+      - Protože redukce nezachovává odpověď.
+      - Plyne – $k$-IND je také FPT.
+    correct: 1
+    explanation: |
+      Parametrizovaná redukce vyžaduje $k' \le g(k)$. Pro malé $k$ je $n - k$ velké, takže
+      algoritmus $O(2^{n-k} \cdot n)$ je pro IND exponenciální v $n$. $k$-IND je W[1]-úplný
+      a pravděpodobně FPT není.
+    related: [def-parametrizovana-redukce, rem-w1-tezkost, thm-cov-npc]
+  - id: q-fpt-08
+    question: |
+      Proč COL parametrizovaný počtem barev $k$ (pokud $\mathrm{P} \ne \mathrm{NP}$) není ani v XP?
+    options:
+      - Protože pro pevné $k = 3$ by algoritmus z XP běžel v polynomiálním čase, ale 3-COL je NP-úplný.
+      - Protože počet barev může být větší než $n$.
+      - Protože 2-COL je NP-úplný.
+      - Protože barvení nemá jádro.
+    correct: 0
+    explanation: |
+      XP znamená polynomiální čas pro každé pevné $k$. Pro $k = 3$ by to dávalo polynomiální
+      algoritmus pro NP-úplný 3-COL, tedy $\mathrm{P} = \mathrm{NP}$.
+    related: [rem-hranice-parametrizace, def-xp, thm-3col-npc]
+  - id: q-fpt-09
+    question: |
+      Vylepšený algoritmus pro vrcholové pokrytí se větví podle uzlu $v$ stupně $\ge 3$
+      ($v \in C$, nebo $N(v) \subseteq C$). Jaká rekurence a jaký čas z toho plyne?
+    options:
+      - $T(k) = 2T(k-1)$, čas $O(2^k (n+m))$
+      - $T(k) = T(k-1) + T(k-3)$, čas $O(1{,}4656^k (n+m))$
+      - $T(k) = T(k-3)$, čas $O(k(n+m))$
+      - $T(k) = 3T(k-1)$, čas $O(3^k (n+m))$
+    correct: 1
+    explanation: |
+      V první větvi klesne $k$ o 1, ve druhé o $\deg(v) \ge 3$. Kořen $\lambda$ rovnice
+      $\lambda^3 = \lambda^2 + 1$ je přibližně $1{,}4656$. Grafy s maximálním stupněm 2
+      (cesty a kružnice) se dořeší v lineárním čase.
+    related: [alg-cov-vetveni-stupen, thm-cov-zlepseny-odhad]
+  - id: q-fpt-10
+    question: |
+      Kterému problému odpovídá tvrzení „je v XP, ale je W[1]-úplný, a proto se věří, že není FPT"?
+    options:
+      - $k$-COV
+      - 2-SAT
+      - 3-COL parametrizovaný počtem barev
+      - $k$-CLIQUE
+    correct: 3
+    explanation: |
+      $k$-CLIQUE je hrubou silou řešitelný v čase $O(n^k k^2)$ (XP), ale je W[1]-úplný. $k$-COV
+      je FPT, 2-SAT je dokonce v P a barvení podle počtu barev není ani v XP.
+    related: [rem-w1-tezkost, def-xp, thm-clique-npc]

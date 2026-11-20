@@ -1,0 +1,36 @@
+id: test
+number: 1
+title: Testovací kapitola
+exam_questions: [6]
+summary: |
+  Kapitola pro testy.
+sections:
+  - number: "1.1"
+    title: Sítě
+items:
+  - id: def-sit
+    kind: definition
+    label: "Definice 2.1"
+    section: "1.1"
+    title: Síť
+    terms: [síť, propustnost]
+    statement: |
+      Síť je orientovaný graf $\vec{G}$ s ohodnocením hran $r$.
+  - id: thm-ford-fulkerson
+    kind: theorem
+    label: "Věta 2.2"
+    section: "1.1"
+    title: Ford–Fulkersonova věta
+    terms: [max-flow min-cut]
+    statement: |
+      Velikost maximálního toku je rovna propustnosti minimálního řezu.
+    proof: |
+      Důkaz.
+    proof_steps: [A, B, C]
+    related: [def-sit]
+    visualization: max-flow
+quiz:
+  - id: q-test-1
+    question: Kolik je 1+1?
+    options: ["1", "2"]
+    correct: 1

@@ -1,0 +1,15 @@
+.env
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.venv/
+*.tsbuildinfo
+*/launch.json
+
+# server access (contains a private SSH key) – never commit
+vitaliy*
+*_key
+*.pem
